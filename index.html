@@ -174,7 +174,7 @@ canvas{display:block;width:100%;height:100%}
           <button class="btn alt" id="guideBtn">Slime guide</button>
         </nav>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 12 · minimap</p>
+        <p class="ver">Version 13 · huge garden, moon jumps, minimap</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -259,28 +259,35 @@ const UPGRADES = [
   { id: 'magnet', name: 'Gel magnet',      text: 'Pull in gel drops from farther away.', icon: 'magnet', apply: p => p.magnet *= 1.5, when: p => p.magnet < 12 },
   { id: 'dash',   name: 'Quick feet',      text: 'Dashes recharge 25% faster.',           icon: 'bolt',   apply: p => p.dashCd *= 0.75, when: p => p.dashCd > 0.4 },
   { id: 'range',  name: 'Long hose',       text: 'Shots fly 25% faster and farther.',    icon: 'arrow',  apply: p => p.shotSpeed *= 1.25, when: p => p.shotSpeed < 90 },
-  { id: 'spring', name: 'Springy socks',   text: 'Jump higher.',                         icon: 'boot',   apply: p => p.jump *= 1.2, when: p => p.jump < 13 },
+  { id: 'spring', name: 'Springy socks',   text: 'Jump higher.',                         icon: 'boot',   apply: p => p.jump *= 1.2, when: p => p.jump < 15 },
 ];
-const A = 48; // the garden runs from -A to A on both axes
+const A = 80; // the garden runs from -A to A on both axes
 // Boxes the player and slimes can't walk through: x, z = centre, w, d = size, h = height.
-// Buildings are too tall to jump on; they block water and goo, so use them for cover.
+// Buildings block water and goo, so use them for cover; with moon gravity you can jump onto most roofs.
 const OBSTACLES = [
   { x: 0, z: 0, w: 4.4, d: 4.4, h: 1.2, kind: 'fountain' },
-  { x: -28, z: -26, w: 10, d: 8, h: 5, kind: 'house', wall: '#f2d7b6', roof: '#c8553d' },
-  { x: 26, z: -28, w: 9, d: 8, h: 5, kind: 'house', wall: '#cfe3f2', roof: '#3d6fa8' },
-  { x: 38, z: 4, w: 7, d: 9, h: 4.5, kind: 'house', wall: '#fff0c2', roof: '#7a5236' },
-  { x: -30, z: 24, w: 12, d: 10, h: 6, kind: 'barn' },
-  { x: 28, z: 26, w: 10, d: 7, h: 3.6, kind: 'greenhouse' },
-  { x: 8, z: -34, w: 5, d: 4, h: 3, kind: 'shed' }, { x: -38, z: 0, w: 5, d: 5, h: 3, kind: 'shed' },
-  { x: -12, z: -10, w: 8, d: 2, h: 2.2, kind: 'hedge' }, { x: 13, z: 9, w: 2, d: 9, h: 2.2, kind: 'hedge' },
-  { x: -14, z: 36, w: 12, d: 2, h: 2.2, kind: 'hedge' }, { x: 16, z: -16, w: 2, d: 10, h: 2.2, kind: 'hedge' },
-  { x: -8, z: -38, w: 10, d: 2, h: 2.2, kind: 'hedge' },
-  { x: 14, z: -6, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 16.4, z: -5, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
-  { x: -15, z: 13, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 20, z: 40, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
-  { x: 22.4, z: 40.8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: -40, z: -38, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
-  { x: 38, z: -12, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
-  { x: -3, z: 20, w: 7, d: 2, h: 1.1, kind: 'planter' }, { x: -20, z: -2, w: 2, d: 6, h: 1.1, kind: 'planter' },
-  { x: 0, z: -22, w: 8, d: 2, h: 1.1, kind: 'planter' }, { x: 34, z: 14, w: 2, d: 6, h: 1.1, kind: 'planter' },
+  { x: -44.8, z: -41.6, w: 10, d: 8, h: 5, kind: 'house', wall: '#f2d7b6', roof: '#c8553d' },
+  { x: 41.6, z: -44.8, w: 9, d: 8, h: 5, kind: 'house', wall: '#cfe3f2', roof: '#3d6fa8' },
+  { x: 60.8, z: 6.4, w: 7, d: 9, h: 4.5, kind: 'house', wall: '#fff0c2', roof: '#7a5236' },
+  { x: -48, z: 38.4, w: 12, d: 10, h: 6, kind: 'barn' },
+  { x: 44.8, z: 41.6, w: 10, d: 7, h: 3.6, kind: 'greenhouse' },
+  { x: 12.8, z: -54.4, w: 5, d: 4, h: 3, kind: 'shed' }, { x: -60.8, z: 0, w: 5, d: 5, h: 3, kind: 'shed' },
+  { x: -19.2, z: -16, w: 8, d: 2, h: 2.2, kind: 'hedge' }, { x: 20.8, z: 14.4, w: 2, d: 9, h: 2.2, kind: 'hedge' },
+  { x: -22.4, z: 57.6, w: 12, d: 2, h: 2.2, kind: 'hedge' }, { x: 25.6, z: -25.6, w: 2, d: 10, h: 2.2, kind: 'hedge' },
+  { x: -12.8, z: -60.8, w: 10, d: 2, h: 2.2, kind: 'hedge' },
+  { x: 22.4, z: -9.6, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 26.2, z: -8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: -24, z: 20.8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 32, z: 64, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: 35.8, z: 65.3, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: -64, z: -60.8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: 60.8, z: -19.2, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: -4.8, z: 32, w: 7, d: 2, h: 1.1, kind: 'planter' }, { x: -32, z: -3.2, w: 2, d: 6, h: 1.1, kind: 'planter' },
+  { x: 0, z: -35.2, w: 8, d: 2, h: 1.1, kind: 'planter' }, { x: 54.4, z: 22.4, w: 2, d: 6, h: 1.1, kind: 'planter' },
+  { x: 0, z: 62, w: 10, d: 8, h: 5, kind: 'house', wall: '#efd3ea', roof: '#7d4a8c' },
+  { x: -20, z: -67, w: 9, d: 8, h: 5, kind: 'house', wall: '#d8ecc9', roof: '#3f7a45' },
+  { x: 66, z: -30, w: 12, d: 10, h: 6, kind: 'barn' }, { x: -66, z: -30, w: 5, d: 5, h: 3, kind: 'shed' },
+  { x: 62, z: 62, w: 7, d: 7, h: 4.5, kind: 'house', wall: '#fbe3c4', roof: '#a8432f' },
+  { x: -64, z: 64, w: 5, d: 4, h: 3, kind: 'shed' }, { x: 30, z: 12, w: 2, d: 12, h: 2.2, kind: 'hedge' },
+  { x: -40, z: -14, w: 12, d: 2, h: 2.2, kind: 'hedge' }, { x: 20, z: -64, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: -48, z: 8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 48, z: -8, w: 7, d: 2, h: 1.1, kind: 'planter' },
 ];
 const ICONS = {
   drop: '<path d="M17 4c5 7 8 11 8 15a8 8 0 0 1-16 0c0-4 3-8 8-15z" fill="#7fd3ff" stroke="#2a83c7" stroke-width="2"/>',
@@ -319,13 +326,13 @@ if (!T) { stage.innerHTML = '<p style="padding:24px;color:#22301d">The 3D engine
 const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
 const scene = new T.Scene();
-scene.background = new T.Color('#9fdcff'); scene.fog = new T.Fog('#bfe8ff', 55, 150);
-const camera = new T.PerspectiveCamera(75, 1, 0.05, 260); camera.rotation.order = 'YXZ';
+scene.background = new T.Color('#9fdcff'); scene.fog = new T.Fog('#bfe8ff', 70, 210);
+const camera = new T.PerspectiveCamera(75, 1, 0.05, 340); camera.rotation.order = 'YXZ';
 scene.add(camera);
 scene.add(new T.HemisphereLight('#eef8ff', '#3f7a35', 0.9));
 const sun = new T.DirectionalLight('#fff1d0', 0.75); sun.position.set(25, 45, 15); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, far: 180 });
-scene.add(sun);
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 180 });
+scene.add(sun); scene.add(sun.target); // the shadow area follows you round the big garden
 const lam = c => new T.MeshLambertMaterial({ color: c });
 function grassTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
@@ -335,7 +342,7 @@ function grassTexture() {
   for (let i = 0; i < 260; i++) { const x = sr() * 256, y = sr() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 2, y - 6); g.stroke(); }
   const fl = ['#fff6dc', '#ffd23f', '#ff9ecb'];
   for (let i = 0; i < 14; i++) { const x = sr() * 256, y = sr() * 256; g.fillStyle = fl[i % 3]; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(x + Math.cos(k * 1.26) * 3, y + Math.sin(k * 1.26) * 3, 2.4, 0, 7); g.fill(); } }
-  const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(30, 30); t.anisotropy = 4; return t;
+  const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(48, 48); t.anisotropy = 4; return t;
 }
 const ground = new T.Mesh(new T.PlaneGeometry(A * 2 + 40, A * 2 + 40), new T.MeshLambertMaterial({ map: grassTexture() }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
@@ -378,8 +385,8 @@ for (const o of OBSTACLES) {
   }
 }
 // trees outside the walls, for a sense of place
-for (let i = 0; i < 48; i++) {
-  const a = i / 48 * Math.PI * 2, d = A + rnd(6, 16), x = Math.cos(a) * d, z = Math.sin(a) * d, s = rnd(1.4, 2.4);
+for (let i = 0; i < 72; i++) {
+  const a = i / 72 * Math.PI * 2, d = A + rnd(6, 16), x = Math.cos(a) * d, z = Math.sin(a) * d, s = rnd(1.4, 2.4);
   const tr = new T.Mesh(new T.CylinderGeometry(.35 * s, .45 * s, 3 * s, 8), lam('#7a4b26')); tr.position.set(x, 1.5 * s, z); scene.add(tr);
   const top = new T.Mesh(new T.IcosahedronGeometry(2.2 * s, 0), lam(['#2f7a35', '#3b8a3a', '#2a6a30'][i % 3])); top.position.set(x, 3.6 * s, z); scene.add(top);
 }
@@ -425,7 +432,7 @@ const live = { foes: new Map(), shots: [], spit: [], gels: [], parts: [], splats
 let nextId = 1;
 function newRun() {
   return { mode: 'play', wave: 0, score: 0, t: 0, toSpawn: [], spawnTimer: 0, offer: [],
-    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: 2, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 5, maxHp: 5, speed: 7.5, fireRate: 4.5, dmg: 1, shots: 1, pierce: 0, shotSpeed: 42, magnet: 3.2, dashCd: 1.2, jump: 8.5,
+    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: 2, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 5, maxHp: 5, speed: 7.5, fireRate: 4.5, dmg: 1, shots: 1, pierce: 0, shotSpeed: 42, magnet: 3.2, dashCd: 1.2, jump: 11,
          cool: 0, dashT: 0, dashReady: 0, dvx: 0, dvz: 0, inv: 0, upgrades: [] },
     foes: [], threats: [] };
 }
@@ -480,6 +487,7 @@ function hitsGarden(x, y, z) {
 // ===================== Update =====================
 const input = { keys: {}, fire: false, move: null, look: null, locked: false, dragLook: false, mlook: false, releasing: false };
 const EYE = 1.6;
+const GRAV = 10; // low, moon-ish gravity: big floaty jumps (was 24)
 function update(dt) {
   if (!G || G.mode !== 'play') return;
   G.t += dt;
@@ -496,8 +504,8 @@ function update(dt) {
   if (p.dashT > 0) { p.dashT -= dt; vx = p.dvx * 3; vz = p.dvz * 3; } else if (l > .1) { p.dvx = vx; p.dvz = vz; }
   p.x += vx * p.speed * dt; p.z += vz * p.speed * dt;
   pushOut(p, p.r);
-  // jumping and landing (you can stand on crates and planters)
-  p.vy -= 24 * dt; p.y += p.vy * dt;
+  // jumping and landing (you can stand on crates, planters and, with a good jump, rooftops)
+  p.vy -= GRAV * dt; p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
   if (p.y <= floor) { p.y = floor; p.vy = 0; }
   p.dashCharges ??= 2; if (p.dashCharges < 2) { p.dashReady -= dt; if (p.dashReady <= 0) p.dashCharges = 2; }
@@ -565,7 +573,15 @@ function update(dt) {
     // walking into a wall: slide along it for a moment
     if (dir && !(fo.stuck > 0) && Math.hypot(fo.x - ox, fo.z - oz) < fo.speed * dt * .35) { fo.stuck = .9; fo.side = fo.side || (Math.random() < .5 ? 1 : -1); }
     fo.ph += dt * (3 + fo.speed); fo.flash -= dt;
-    fo.y = fo.r + Math.abs(Math.sin(fo.ph)) * e.hop * fo.r;
+    if (!e.boss && p.y > 1.8 && d < 9 && !(fo.ly > 0)) { fo.leapCd = (fo.leapCd ?? rnd(.5, 2)) - dt; if (fo.leapCd <= 0) { fo.lvy = Math.sqrt(2 * GRAV * (p.y + .6)); fo.ly = (fo.gy || 0) + .01; fo.leapCd = rnd(2, 4); } }
+    // fo.gy: the top they're standing on (0 = grass); fo.ly: height while mid-leap
+    const under = groundAt(fo.x, fo.z, fo.r * .3);
+    if (fo.ly > 0) {
+      fo.x += dx / d * fo.speed * .8 * dt; fo.z += dz / d * fo.speed * .8 * dt; // drift towards you mid-air
+      fo.lvy -= GRAV * dt; fo.ly += fo.lvy * dt;
+      if (fo.lvy < 0 && fo.ly <= under) { fo.gy = under; fo.ly = 0; fo.lvy = 0; }
+    } else if ((fo.gy || 0) > under + .01) fo.gy = under; // walked off the edge
+    fo.y = fo.r + Math.abs(Math.sin(fo.ph)) * e.hop * fo.r + Math.max(fo.gy || 0, fo.ly || 0);
     if (e.shootEvery || e.ringEvery) {
       fo.cd -= dt;
       if (fo.cd <= 0) {
@@ -668,6 +684,7 @@ function render(dt) {
     bob += dt * (moving ? 9 : 0);
     camera.position.set(p.x + rnd(-shake, shake), p.y + EYE + (moving ? Math.sin(bob * 2) * .05 : 0), p.z + rnd(-shake, shake));
     camera.rotation.set(p.pitch, p.yaw, 0);
+    sun.position.set(p.x + 25, 45, p.z + 15); sun.target.position.set(p.x, 0, p.z);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4, gunSwing * 3, gunSwing * 3.5);
     drawThreats(p); drawMinimap(p);
     gun.position.x = .2 + Math.sin(bob) * .012; gun.position.y = -.19 + Math.abs(Math.cos(bob)) * .012; gun.position.z += (-.55 - gun.position.z) * Math.min(1, dt * 14);
