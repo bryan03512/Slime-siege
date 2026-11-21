@@ -43,6 +43,13 @@ canvas{display:block;width:100%;height:100%}
 .dashm{position:absolute;left:16px;bottom:16px;font:15px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 2px 0 #10280f;pointer-events:none}
 .dashm div{width:90px;height:8px;border-radius:4px;background:rgba(16,40,15,.45);margin-top:5px;overflow:hidden}
 .dashm b{display:block;height:100%;background:var(--sun)}
+.dashm span{display:block;margin-top:8px}
+.dashm #parryBar{background:#ff9ecb}
+.threats{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+.threats i{position:absolute;left:-7px;top:-6px;width:14px;height:12px;background:var(--berry);clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 2px #000);opacity:0;transition:opacity .15s}
+.parryfx{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid var(--sun);opacity:0;pointer-events:none}
+.parryfx.on{animation:parry .3s ease-out}
+@keyframes parry{from{opacity:1;transform:scale(.5)}to{opacity:0;transform:scale(1.8)}}
 .toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font:clamp(28px,5vw,44px)/1 'Lilita One',sans-serif;color:var(--sun);text-shadow:0 4px 0 #0e2412;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .3s}
 .toast.on{opacity:1}
 .overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(18,40,16,.55)}
@@ -107,6 +114,7 @@ canvas{display:block;width:100%;height:100%}
 .tfire{right:22px;bottom:26px;width:84px;height:84px;background:var(--sun)}
 .tjump{right:120px;bottom:22px;width:58px;height:58px;background:#e8dfc3}
 .tdash{right:28px;bottom:126px;width:58px;height:58px;background:#7fd3ff}
+.tparry{right:120px;bottom:96px;width:58px;height:58px;background:#ffb3c8}
 .tbtn.on{transform:translateY(3px);filter:brightness(.92)}
 .desk{position:absolute;right:16px;bottom:16px;display:flex;gap:8px}
 .dbtn{font:16px/1 'Lilita One',sans-serif;border:0;border-radius:12px;min-height:44px;padding:8px 14px;background:rgba(255,246,220,.92);color:var(--ink);box-shadow:0 4px 0 rgba(16,40,15,.45);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -135,17 +143,21 @@ canvas{display:block;width:100%;height:100%}
     <div class="cross" id="cross" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div class="vign" id="vign"></div>
     <div class="boss" id="boss" hidden>Slime King<div><b id="bossHp"></b></div></div>
-    <div class="dashm" id="dashm">Dash<div><b id="dashBar"></b></div></div>
+    <div class="dashm" id="dashm">Dash<div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
+    <div class="threats" id="threats" aria-hidden="true"></div>
+    <div class="parryfx" id="parryFx" aria-hidden="true"></div>
     <div class="toast" id="toast"></div>
     <div class="mlook" id="mlook" hidden></div>
     <div class="desk" id="desk" hidden>
       <button class="dbtn" id="dJump" tabindex="-1">Jump<small>Space</small></button>
       <button class="dbtn" id="dDash" tabindex="-1">Dash<small>Shift</small></button>
+      <button class="dbtn" id="dParry" tabindex="-1">Parry<small>F</small></button>
     </div>
     <div class="touch" id="touch" hidden>
       <button class="tbtn tfire" id="tFire" aria-label="Shoot">Spray</button>
       <button class="tbtn tjump" id="tJump" aria-label="Jump">Jump</button>
       <button class="tbtn tdash" id="tDash" aria-label="Dash">Dash</button>
+      <button class="tbtn tparry" id="tParry" aria-label="Parry">Parry</button>
     </div>
     <section class="overlay menu" id="ovTitle">
       <div class="menu-col">
@@ -157,7 +169,7 @@ canvas{display:block;width:100%;height:100%}
           <button class="btn alt" id="guideBtn">Slime guide</button>
         </nav>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 7 · ⌘ Cmd for mouse look, Shift to dash</p>
+        <p class="ver">Version 8 · bigger garden, buildings, F to parry</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -170,6 +182,7 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Spray</b><span>Hold the left mouse button</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Hop onto crates and planters</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>A quick burst. Slimes can’t hurt you mid-dash</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">F</span></div><b>Parry</b><span>Bat goo back at whoever spat it, or shove a slime away. Time it just before it hits</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">⌘ Cmd</span></div><b>Mouse look on / off</b><span>Locks the mouse to the middle of the screen. Ctrl on Windows</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">P</span><span class="kc">Esc</span></div><b>Pause</b><span>Esc also releases the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">1</span><span class="kc">2</span><span class="kc">3</span></div><b>Pick an upgrade</b><span>Between waves</span></div>
@@ -180,7 +193,7 @@ canvas{display:block;width:100%;height:100%}
             <b>Move</b><span>Drag on the left half of the screen</span>
             <b>Look</b><span>Drag on the right half</span>
             <b>Spray</b><span>Hold the big yellow button</span>
-            <b>Jump / dash</b><span>The two smaller round buttons</span>
+            <b>Jump / dash / parry</b><span>The three smaller round buttons</span>
           </div>
         </div>
         <div class="row"><button class="btn" data-back>Back</button></div>
@@ -226,7 +239,7 @@ canvas{display:block;width:100%;height:100%}
 const ENEMIES = {
   slime:   { hp: 3,   speed: 3.4, r: 0.9,  hop: 0.55, dmg: 1, score: 10,  from: 1, weight: 10, body: '#7ed957' , desc: 'Hops straight at you. Easy alone, trouble in a crowd.' },
   zippy:   { hp: 1,   speed: 6.8, r: 0.55, hop: 0.35, dmg: 1, score: 15,  from: 2, weight: 5,  body: '#6fc8ff' , desc: 'Small and fast. Hard to hit, goes down in one shot.' },
-  spitter: { hp: 4,   speed: 2.6, r: 0.9,  hop: 0.3,  dmg: 1, score: 25,  from: 3, weight: 3,  body: '#ffa24d', keepAway: 12, shootEvery: 2.4 , desc: 'Keeps its distance and spits goo. Close in on it.' },
+  spitter: { hp: 4,   speed: 2.6, r: 0.9,  hop: 0.3,  dmg: 1, score: 25,  from: 3, weight: 3,  body: '#ffa24d', keepAway: 12, shootEvery: 2.4 , desc: 'Keeps its distance and spits goo. Parry it back with F.' },
   brute:   { hp: 14,  speed: 2.1, r: 1.5,  hop: 0.4,  dmg: 2, score: 40,  from: 4, weight: 2,  body: '#b07cff' , desc: 'Big, slow and tough. Hits for two hearts.' },
   king:    { hp: 150, speed: 1.9, r: 3.0,  hop: 0.5,  dmg: 2, score: 400, boss: true,        body: '#ff6fa8', ringEvery: 2.8, splitInto: 'slime', splits: 6 , desc: 'Every fifth wave. Fires rings of goo and splits into slimes when it falls.' },
 };
@@ -243,13 +256,26 @@ const UPGRADES = [
   { id: 'range',  name: 'Long hose',       text: 'Shots fly 25% faster and farther.',    icon: 'arrow',  apply: p => p.shotSpeed *= 1.25, when: p => p.shotSpeed < 90 },
   { id: 'spring', name: 'Springy socks',   text: 'Jump higher.',                         icon: 'boot',   apply: p => p.jump *= 1.2, when: p => p.jump < 13 },
 ];
-const A = 24; // the garden runs from -A to A on both axes
+const A = 48; // the garden runs from -A to A on both axes
 // Boxes the player and slimes can't walk through: x, z = centre, w, d = size, h = height.
+// Buildings are too tall to jump on; they block water and goo, so use them for cover.
 const OBSTACLES = [
+  { x: 0, z: 0, w: 4.4, d: 4.4, h: 1.2, kind: 'fountain' },
+  { x: -28, z: -26, w: 10, d: 8, h: 5, kind: 'house', wall: '#f2d7b6', roof: '#c8553d' },
+  { x: 26, z: -28, w: 9, d: 8, h: 5, kind: 'house', wall: '#cfe3f2', roof: '#3d6fa8' },
+  { x: 38, z: 4, w: 7, d: 9, h: 4.5, kind: 'house', wall: '#fff0c2', roof: '#7a5236' },
+  { x: -30, z: 24, w: 12, d: 10, h: 6, kind: 'barn' },
+  { x: 28, z: 26, w: 10, d: 7, h: 3.6, kind: 'greenhouse' },
+  { x: 8, z: -34, w: 5, d: 4, h: 3, kind: 'shed' }, { x: -38, z: 0, w: 5, d: 5, h: 3, kind: 'shed' },
   { x: -12, z: -10, w: 8, d: 2, h: 2.2, kind: 'hedge' }, { x: 13, z: 9, w: 2, d: 9, h: 2.2, kind: 'hedge' },
-  { x: 14, z: -14, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 16.4, z: -13, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
-  { x: -15, z: 13, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: -3, z: 18, w: 7, d: 2, h: 1.1, kind: 'planter' },
-  { x: -20, z: -2, w: 2, d: 6, h: 1.1, kind: 'planter' }, { x: 0, z: 0, w: 4.4, d: 4.4, h: 1.2, kind: 'fountain' },
+  { x: -14, z: 36, w: 12, d: 2, h: 2.2, kind: 'hedge' }, { x: 16, z: -16, w: 2, d: 10, h: 2.2, kind: 'hedge' },
+  { x: -8, z: -38, w: 10, d: 2, h: 2.2, kind: 'hedge' },
+  { x: 14, z: -6, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 16.4, z: -5, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: -15, z: 13, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 20, z: 40, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: 22.4, z: 40.8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: -40, z: -38, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: 38, z: -12, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: -3, z: 20, w: 7, d: 2, h: 1.1, kind: 'planter' }, { x: -20, z: -2, w: 2, d: 6, h: 1.1, kind: 'planter' },
+  { x: 0, z: -22, w: 8, d: 2, h: 1.1, kind: 'planter' }, { x: 34, z: 14, w: 2, d: 6, h: 1.1, kind: 'planter' },
 ];
 const ICONS = {
   drop: '<path d="M17 4c5 7 8 11 8 15a8 8 0 0 1-16 0c0-4 3-8 8-15z" fill="#7fd3ff" stroke="#2a83c7" stroke-width="2"/>',
@@ -279,12 +305,12 @@ if (!T) { stage.innerHTML = '<p style="padding:24px;color:#22301d">The 3D engine
 const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
 const scene = new T.Scene();
-scene.background = new T.Color('#9fdcff'); scene.fog = new T.Fog('#bfe8ff', 38, 95);
-const camera = new T.PerspectiveCamera(75, 1, 0.05, 200); camera.rotation.order = 'YXZ';
+scene.background = new T.Color('#9fdcff'); scene.fog = new T.Fog('#bfe8ff', 55, 150);
+const camera = new T.PerspectiveCamera(75, 1, 0.05, 260); camera.rotation.order = 'YXZ';
 scene.add(camera);
 scene.add(new T.HemisphereLight('#eef8ff', '#3f7a35', 0.9));
 const sun = new T.DirectionalLight('#fff1d0', 0.75); sun.position.set(25, 45, 15); sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40, far: 120 });
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, far: 180 });
 scene.add(sun);
 const lam = c => new T.MeshLambertMaterial({ color: c });
 function grassTexture() {
@@ -295,11 +321,32 @@ function grassTexture() {
   for (let i = 0; i < 260; i++) { const x = sr() * 256, y = sr() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 2, y - 6); g.stroke(); }
   const fl = ['#fff6dc', '#ffd23f', '#ff9ecb'];
   for (let i = 0; i < 14; i++) { const x = sr() * 256, y = sr() * 256; g.fillStyle = fl[i % 3]; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(x + Math.cos(k * 1.26) * 3, y + Math.sin(k * 1.26) * 3, 2.4, 0, 7); g.fill(); } }
-  const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(16, 16); t.anisotropy = 4; return t;
+  const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(30, 30); t.anisotropy = 4; return t;
 }
 const ground = new T.Mesh(new T.PlaneGeometry(A * 2 + 40, A * 2 + 40), new T.MeshLambertMaterial({ map: grassTexture() }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 function box(w, h, d, color, x, y, z) { const m = new T.Mesh(new T.BoxGeometry(w, h, d), lam(color)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; }
+// a building: walls, a pyramid roof, a door and windows (the roof is just for looks)
+function building(o) {
+  const glass = o.kind === 'greenhouse';
+  const wall = glass ? new T.MeshLambertMaterial({ color: '#cfefff', transparent: true, opacity: .55 }) : lam(o.wall || (o.kind === 'barn' ? '#b8413a' : '#9c7a54'));
+  const m = new T.Mesh(new T.BoxGeometry(o.w, o.h, o.d), wall); m.position.set(o.x, o.h / 2, o.z); m.castShadow = m.receiveShadow = !glass; scene.add(m);
+  if (glass) for (let i = -1; i <= 1; i += 2) for (const [w, d, dx, dz] of [[o.w + .1, .15, 0, o.d / 2 * i], [.15, o.d + .1, o.w / 2 * i, 0]]) box(w, .15, d, '#ffffff', o.x + dx, o.h, o.z + dz);
+  const rh = o.kind === 'shed' ? 1.4 : o.kind === 'greenhouse' ? 1.6 : 3;
+  const roof = new T.Mesh(new T.ConeGeometry(Math.SQRT1_2, 1, 4), glass ? wall : lam(o.roof || (o.kind === 'barn' ? '#6b2a24' : '#5a4632')));
+  roof.rotation.y = Math.PI / 4; roof.scale.set(o.w + .8, rh, o.d + .8); roof.position.set(o.x, o.h + rh / 2, o.z); roof.castShadow = !glass; scene.add(roof);
+  if (glass) return;
+  // door on the side facing the fountain, windows on every side
+  const fx = Math.abs(o.x) > Math.abs(o.z), sgn = -Math.sign(fx ? o.x : o.z) || 1;
+  const door = fx ? box(.12, 2.1, 1.2, '#5c3814', o.x + sgn * (o.w / 2 + .05), 1.05, o.z) : box(1.2, 2.1, .12, '#5c3814', o.x, 1.05, o.z + sgn * (o.d / 2 + .05));
+  door.castShadow = false;
+  if (o.kind === 'shed') return;
+  for (const side of [-1, 1]) for (const k of [-1, 1]) {
+    box(1.1, 1, .1, '#3d5a6e', o.x + k * o.w / 4, o.h * .62, o.z + side * (o.d / 2 + .04)).castShadow = false;
+    box(.1, 1, 1.1, '#3d5a6e', o.x + side * (o.w / 2 + .04), o.h * .62, o.z + k * o.d / 4).castShadow = false;
+  }
+  if (o.kind === 'barn') { box(o.w + .1, .25, .3, '#fff6dc', o.x, o.h * .45, o.z + o.d / 2); box(o.w + .1, .25, .3, '#fff6dc', o.x, o.h * .45, o.z - o.d / 2); }
+}
 // garden walls: tall hedges all around, with a fence-post rhythm on top
 for (const [w, d, x, z] of [[A * 2 + 2, 2, 0, -A - 1], [A * 2 + 2, 2, 0, A + 1], [2, A * 2 + 2, -A - 1, 0], [2, A * 2 + 2, A + 1, 0]]) {
   box(w, 3.2, d, '#2f6b31', x, 1.6, z);
@@ -309,6 +356,7 @@ for (const o of OBSTACLES) {
   if (o.kind === 'hedge') { box(o.w, o.h, o.d, '#2f6b31', o.x, o.h / 2, o.z); box(o.w + .2, .35, o.d + .2, '#3c823c', o.x, o.h + .1, o.z); }
   else if (o.kind === 'crate') { box(o.w, o.h, o.d, '#c98a4b', o.x, o.h / 2, o.z); box(o.w + .04, .18, o.d + .04, '#8a5527', o.x, o.h * .25, o.z); box(o.w + .04, .18, o.d + .04, '#8a5527', o.x, o.h * .75, o.z); }
   else if (o.kind === 'planter') { box(o.w, o.h, o.d, '#b5643a', o.x, o.h / 2, o.z); for (let i = 0; i < Math.max(o.w, o.d) / 1.2; i++) { const t = i / (Math.max(o.w, o.d) / 1.2 - 1 || 1) - .5; const fx = o.x + (o.w > o.d ? t * (o.w - 1) : 0), fz = o.z + (o.d > o.w ? t * (o.d - 1) : 0); const f = new T.Mesh(new T.SphereGeometry(.38, 10, 8), lam(['#ff7ab6', '#ffd23f', '#fff6dc'][i % 3])); f.position.set(fx, o.h + .35, fz); scene.add(f); } }
+  else if (['house', 'barn', 'greenhouse', 'shed'].includes(o.kind)) building(o);
   else if (o.kind === 'fountain') {
     const b = new T.Mesh(new T.CylinderGeometry(2.2, 2.4, o.h, 24), lam('#d9d2c0')); b.position.set(o.x, o.h / 2, o.z); b.castShadow = b.receiveShadow = true; scene.add(b);
     const w = new T.Mesh(new T.CylinderGeometry(1.9, 1.9, .1, 24), new T.MeshLambertMaterial({ color: '#6fc8ff' })); w.position.set(o.x, o.h - .02, o.z); scene.add(w);
@@ -316,8 +364,8 @@ for (const o of OBSTACLES) {
   }
 }
 // trees outside the walls, for a sense of place
-for (let i = 0; i < 26; i++) {
-  const a = i / 26 * Math.PI * 2, d = A + rnd(6, 14), x = Math.cos(a) * d, z = Math.sin(a) * d, s = rnd(1.4, 2.4);
+for (let i = 0; i < 48; i++) {
+  const a = i / 48 * Math.PI * 2, d = A + rnd(6, 16), x = Math.cos(a) * d, z = Math.sin(a) * d, s = rnd(1.4, 2.4);
   const tr = new T.Mesh(new T.CylinderGeometry(.35 * s, .45 * s, 3 * s, 8), lam('#7a4b26')); tr.position.set(x, 1.5 * s, z); scene.add(tr);
   const top = new T.Mesh(new T.IcosahedronGeometry(2.2 * s, 0), lam(['#2f7a35', '#3b8a3a', '#2a6a30'][i % 3])); top.position.set(x, 3.6 * s, z); scene.add(top);
 }
@@ -331,7 +379,7 @@ gun.scale.setScalar(.42); gun.position.set(.2, -.19, -.55); camera.add(gun);
 
 // shared shapes for things that come and go
 const geo = { sphere: new T.SphereGeometry(1, 20, 14), eye: new T.SphereGeometry(1, 10, 8), drop: new T.SphereGeometry(1, 8, 6), splat: new T.CircleGeometry(1, 14), cone: new T.ConeGeometry(1, 1, 5) };
-const mats = { white: lam('#ffffff'), pupil: lam('#1c2618'), shot: new T.MeshBasicMaterial({ color: '#8fdcff' }), spit: new T.MeshBasicMaterial({ color: '#ff8a2b' }), gel: new T.MeshBasicMaterial({ color: '#d6ff8a' }), heart: new T.MeshBasicMaterial({ color: '#ff4d5e' }), crown: lam('#ffd23f') };
+const mats = { parried: new T.MeshBasicMaterial({ color: '#ffd23f' }), white: lam('#ffffff'), pupil: lam('#1c2618'), shot: new T.MeshBasicMaterial({ color: '#8fdcff' }), spit: new T.MeshBasicMaterial({ color: '#ff8a2b' }), gel: new T.MeshBasicMaterial({ color: '#d6ff8a' }), heart: new T.MeshBasicMaterial({ color: '#ff4d5e' }), crown: lam('#ffd23f') };
 const bodyMat = {}; for (const [k, e] of Object.entries(ENEMIES)) bodyMat[k] = new T.MeshLambertMaterial({ color: e.body, emissive: '#000000' });
 function slimeMesh(type) {
   const e = ENEMIES[type], g = new T.Group();
@@ -363,9 +411,9 @@ const live = { foes: new Map(), shots: [], spit: [], gels: [], parts: [], splats
 let nextId = 1;
 function newRun() {
   return { mode: 'play', wave: 0, score: 0, t: 0, toSpawn: [], spawnTimer: 0, offer: [],
-    p: { x: 0, z: 12, y: 0, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 5, maxHp: 5, speed: 7.5, fireRate: 4.5, dmg: 1, shots: 1, pierce: 0, shotSpeed: 42, magnet: 3.2, dashCd: 1.2, jump: 8.5,
+    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.9, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 5, maxHp: 5, speed: 7.5, fireRate: 4.5, dmg: 1, shots: 1, pierce: 0, shotSpeed: 42, magnet: 3.2, dashCd: 1.2, jump: 8.5,
          cool: 0, dashT: 0, dashReady: 0, dvx: 0, dvz: 0, inv: 0, upgrades: [] },
-    foes: [] };
+    foes: [], threats: [] };
 }
 function clearLive() {
   for (const m of live.foes.values()) scene.remove(m);
@@ -385,10 +433,12 @@ function startWave() {
 function spawn(type, x, z) {
   const e = ENEMIES[type];
   if (x === undefined) {
-    for (let tries = 0; tries < 20; tries++) {
-      const side = Math.floor(Math.random() * 4), m = A - e.r - 1;
-      x = side === 0 ? -m : side === 1 ? m : rnd(-m, m); z = side === 2 ? -m : side === 3 ? m : rnd(-m, m);
-      if (Math.hypot(x - G.p.x, z - G.p.z) > 14) break;
+    // somewhere 20 to 34 steps from you, on open grass
+    const m = A - e.r - 1;
+    for (let tries = 0; tries < 30; tries++) {
+      const a = rnd(0, Math.PI * 2), d = rnd(20, 34);
+      x = clamp(G.p.x + Math.cos(a) * d, -m, m); z = clamp(G.p.z + Math.sin(a) * d, -m, m);
+      if (Math.hypot(x - G.p.x, z - G.p.z) > 16 && !OBSTACLES.some(b => Math.abs(x - b.x) < b.w / 2 + e.r && Math.abs(z - b.z) < b.d / 2 + e.r)) break;
     }
   }
   const hp = Math.ceil(e.hp * (e.boss ? 1 + 0.35 * (G.wave / 5 - 1) : 1 + 0.13 * (G.wave - 1)));
@@ -436,7 +486,9 @@ function update(dt) {
   p.vy -= 24 * dt; p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
   if (p.y <= floor) { p.y = floor; p.vy = 0; }
-  p.dashReady -= dt; p.inv -= dt; p.cool -= dt;
+  p.dashReady -= dt; p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
+  for (const t of (G.threats ||= [])) { t.t -= dt; const f = G.foes.find(f => f.id === t.id); if (f) { t.x = f.x; t.z = f.z; } }
+  G.threats = G.threats.filter(t => t.t > 0);
   if (input.look) { p.yaw -= input.look.dx * 2.6 * dt; p.pitch = clamp(p.pitch - input.look.dy * 1.6 * dt, -1.3, 1.3); }
   if (input.fire && p.cool <= 0) fire();
   // your water
@@ -463,7 +515,20 @@ function update(dt) {
   // slime spit
   for (const sp of live.spit) {
     sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.z += sp.vz * dt; sp.m.position.set(sp.x, sp.y, sp.z);
-    if (p.inv <= 0 && Math.hypot(sp.x - p.x, sp.y - (p.y + 1.1), sp.z - p.z) < 0.75) { sp.dead = true; hurt(1, sp.vx, sp.vz); }
+    const near = Math.hypot(sp.x - p.x, sp.y - (p.y + 1.1), sp.z - p.z);
+    if (sp.mine) {
+      for (const fo of G.foes) if (fo.hp > 0 && Math.hypot(sp.x - fo.x, sp.y - (fo.y ?? fo.r), sp.z - fo.z) < fo.r + .35) {
+        sp.dead = true; fo.hp -= 3 * p.dmg; fo.flash = .12; fo.kx += sp.vx * .25; fo.kz += sp.vz * .25; burst(sp.x, sp.y, sp.z, '#ffd23f', 8, 5, .14); marker();
+        if (fo.hp <= 0) kill(fo); else sfx.hit(); break;
+      }
+    } else if (p.parryT > 0 && near < 2.6) {
+      // parried: send it back at whoever spat it (or where you're aiming), faster
+      const src = G.foes.find(f => f.id === sp.from && f.hp > 0);
+      let [ax, ay, az] = aimDir();
+      if (src) { const tx = src.x - sp.x, ty = (src.y ?? src.r) - sp.y, tz = src.z - sp.z, tl = Math.hypot(tx, ty, tz) || 1; ax = tx / tl; ay = ty / tl; az = tz / tl; }
+      sp.vx = ax * 28; sp.vy = ay * 28; sp.vz = az * 28; sp.mine = true; sp.m.material = mats.parried; sp.m.scale.setScalar(.34);
+      parried();
+    } else if (p.inv <= 0 && near < 0.75) { sp.dead = true; hurt(1, sp.vx, sp.vz); }
     if (hitsGarden(sp.x, sp.y, sp.z)) { sp.dead = true; burst(sp.x, sp.y, sp.z, '#ff8a2b', 5, 3, .12); }
   }
   live.spit = live.spit.filter(sp => !sp.dead || (scene.remove(sp.m), false));
@@ -471,20 +536,29 @@ function update(dt) {
   for (const fo of G.foes) {
     const e = ENEMIES[fo.type], dx = p.x - fo.x, dz = p.z - fo.z, d = Math.hypot(dx, dz) || 1;
     let dir = 1; if (e.keepAway && d < e.keepAway) dir = d < e.keepAway - 4 ? -0.7 : 0;
-    fo.x += (dx / d * fo.speed * dir + fo.kx) * dt; fo.z += (dz / d * fo.speed * dir + fo.kz) * dt;
+    let mx = dx / d * dir, mz = dz / d * dir;
+    if (fo.stuck > 0) { fo.stuck -= dt; const sx = -mz * fo.side, sz = mx * fo.side; mx = mx * .2 + sx; mz = mz * .2 + sz; }
+    const ox = fo.x, oz = fo.z;
+    fo.x += (mx * fo.speed + fo.kx) * dt; fo.z += (mz * fo.speed + fo.kz) * dt;
     fo.kx *= Math.pow(0.02, dt); fo.kz *= Math.pow(0.02, dt);
     pushOut(fo, fo.r * .9);
+    // walking into a wall: slide along it for a moment
+    if (dir && !(fo.stuck > 0) && Math.hypot(fo.x - ox, fo.z - oz) < fo.speed * dt * .35) { fo.stuck = .9; fo.side = fo.side || (Math.random() < .5 ? 1 : -1); }
     fo.ph += dt * (3 + fo.speed); fo.flash -= dt;
     fo.y = fo.r + Math.abs(Math.sin(fo.ph)) * e.hop * fo.r;
     if (e.shootEvery || e.ringEvery) {
       fo.cd -= dt;
       if (fo.cd <= 0) {
-        if (e.ringEvery) { fo.cd = e.ringEvery; const off = rnd(0, 1); for (let i = 0; i < 16; i++) { const a = (i + off) / 16 * Math.PI * 2; addSpit(fo.x, 1.1, fo.z, Math.cos(a) * 9, 0, Math.sin(a) * 9); } }
-        else if (d < 40) { fo.cd = e.shootEvery * rnd(0.8, 1.2); const ty = p.y + 1.2, dy = ty - fo.y, dd = Math.hypot(dx, dy, dz) || 1; addSpit(fo.x, fo.y, fo.z, dx / dd * 13, dy / dd * 13, dz / dd * 13); }
+        if (e.ringEvery) { fo.cd = e.ringEvery; const off = rnd(0, 1); for (let i = 0; i < 16; i++) { const a = (i + off) / 16 * Math.PI * 2; addSpit(fo.x, 1.1, fo.z, Math.cos(a) * 9, 0, Math.sin(a) * 9, fo.id); } }
+        else if (d < 40) { fo.cd = e.shootEvery * rnd(0.8, 1.2); const ty = p.y + 1.2, dy = ty - fo.y, dd = Math.hypot(dx, dy, dz) || 1; addSpit(fo.x, fo.y, fo.z, dx / dd * 13, dy / dd * 13, dz / dd * 13, fo.id); }
         beep(240, 0.08, 'sine', 0.03, -80);
+        if (d < 60) { G.threats = (G.threats || []).filter(t => t.id !== fo.id); G.threats.push({ id: fo.id, x: fo.x, z: fo.z, t: 1.4 }); }
       }
     }
-    if (p.inv <= 0 && d < p.r + fo.r * 0.95 && p.y < fo.y + fo.r) hurt(e.dmg, -dx, -dz);
+    if (d < p.r + fo.r * 0.95 + (p.parryT > 0 ? .6 : 0) && p.y < fo.y + fo.r) {
+      if (p.parryT > 0) { if (!fo.shoved) { fo.shoved = true; fo.kx = -dx / d * 22; fo.kz = -dz / d * 22; fo.hp -= p.dmg; fo.flash = .12; if (fo.hp <= 0) kill(fo); parried(); } }
+      else if (p.inv <= 0) hurt(e.dmg, -dx, -dz);
+    } else fo.shoved = false;
   }
   for (let i = 0; i < G.foes.length; i++) for (let j = i + 1; j < G.foes.length; j++) {
     const a = G.foes[i], b = G.foes[j], dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz), m = a.r + b.r;
@@ -501,6 +575,7 @@ function update(dt) {
   live.gels = live.gels.filter(g => (!g.got && g.life > 0) || (scene.remove(g.m), false));
   if (!G.toSpawn.length && !G.foes.length && G.wave > 0) { for (const sp of live.spit) scene.remove(sp.m); live.spit = []; for (const g of live.gels) { G.score += g.v; scene.remove(g.m); } live.gels = []; offerUpgrades(); }
   $('dashBar').style.width = `${clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
+  $('parryBar').style.width = `${clamp(1 - p.parryReady / p.parryCd, 0, 1) * 100}%`;
   const king = G.foes.find(fo => ENEMIES[fo.type].boss);
   $('boss').hidden = !king; if (king) $('bossHp').style.width = `${king.hp / king.maxHp * 100}%`;
 }
@@ -516,7 +591,7 @@ function fire() {
   }
   gun.position.z = -.5; sfx.shoot();
 }
-function addSpit(x, y, z, vx, vy, vz) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.setScalar(.28); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz }); }
+function addSpit(x, y, z, vx, vy, vz, from) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.setScalar(.28); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz, from }); }
 function kill(fo) {
   const e = ENEMIES[fo.type]; G.score += e.score; hud();
   const mesh = live.foes.get(fo.id); if (mesh) { scene.remove(mesh); live.foes.delete(fo.id); }
@@ -537,6 +612,16 @@ function hurt(n, kx, kz) {
   hud(); if (p.hp <= 0) gameOver();
 }
 function dash() { const p = G?.p; if (!p || G.mode !== 'play' || p.dashReady > 0) return; if (Math.hypot(p.dvx, p.dvz) < .1) { const [dx, , dz] = aimDir(); p.dvx = dx; p.dvz = dz; } p.dashT = .18; p.dashReady = p.dashCd; sfx.dash(); }
+function parry() {
+  const p = G?.p; if (!p || G.mode !== 'play' || p.parryReady > 0) return;
+  p.parryT = .3; p.parryReady = p.parryCd ?? .9; p.parryHit = false;
+  gunSwing = .25; beep(700, .07, 'triangle', .03, -300);
+  const r = $('parryFx'); r.classList.remove('on'); void r.offsetWidth; r.classList.add('on');
+}
+function parried() {
+  const p = G.p; if (!p.parryHit) { p.parryHit = true; p.parryReady = Math.min(p.parryReady, .15); p.inv = Math.max(p.inv, .3); toast('Parry!'); }
+  beep(1300, .1, 'square', .04, 500); shake = Math.max(shake, .08);
+}
 function jump() { const p = G?.p; if (!p || G.mode !== 'play' || p.y > groundAt(p.x, p.z, p.r) + .01) return; p.vy = p.jump; sfx.jump(); }
 
 // ===================== Effects =====================
@@ -554,7 +639,7 @@ function stepFx(dt) {
 function marker() { markT = .12; }
 
 // ===================== Drawing =====================
-let bob = 0;
+let bob = 0, gunSwing = 0;
 function render(dt) {
   const t = performance.now() / 1000;
   if (G) {
@@ -562,6 +647,8 @@ function render(dt) {
     bob += dt * (moving ? 9 : 0);
     camera.position.set(p.x + rnd(-shake, shake), p.y + EYE + (moving ? Math.sin(bob * 2) * .05 : 0), p.z + rnd(-shake, shake));
     camera.rotation.set(p.pitch, p.yaw, 0);
+    gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4, gunSwing * 3, gunSwing * 3.5);
+    drawThreats(p);
     gun.position.x = .2 + Math.sin(bob) * .012; gun.position.y = -.19 + Math.abs(Math.cos(bob)) * .012; gun.position.z += (-.55 - gun.position.z) * Math.min(1, dt * 14);
     for (const fo of G.foes) {
       let m = live.foes.get(fo.id); if (!m) { m = slimeMesh(fo.type); live.foes.set(fo.id, m); }
@@ -575,6 +662,17 @@ function render(dt) {
     camera.position.set(Math.sin(t * .1) * 16, 6, Math.cos(t * .1) * 16); camera.lookAt(0, 1, 0);
   }
   renderer.render(scene, camera);
+}
+// little red arrows round the crosshair, pointing at whoever just shot at you
+function drawThreats(p) {
+  const box = $('threats'), list = G.mode === 'play' ? G.threats || [] : [];
+  while (box.children.length < list.length) box.appendChild(document.createElement('i'));
+  [...box.children].forEach((el, i) => {
+    const t = list[i]; if (!t) { el.style.opacity = 0; return; }
+    const dx = t.x - p.x, dz = t.z - p.z, sn = Math.sin(p.yaw), cs = Math.cos(p.yaw);
+    const ang = Math.atan2(dx * cs - dz * sn, -dx * sn - dz * cs);
+    el.style.transform = `rotate(${ang}rad) translateY(-34px)`; el.style.opacity = Math.min(1, t.t / .5);
+  });
 }
 let demo = [];
 function showDemo(on) {
@@ -678,6 +776,7 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.code === 'Space') jump();
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') dash();
+  if (e.code === 'KeyF') parry();
   if (['MetaLeft', 'MetaRight', 'ControlLeft', 'ControlRight'].includes(e.code) && G?.mode === 'play') setLook(!(input.mlook || input.lockWait));
   if (e.code === 'KeyP' || e.code === 'Escape') { if (G?.mode === 'play') pause(true); else if (G?.mode === 'paused' && e.code === 'KeyP') pause(false); }
   if (G?.mode === 'pick' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) takeUpgrade(G.offer[+e.code.slice(5) - 1]);
@@ -695,7 +794,7 @@ addEventListener('mousemove', e => {
   if (!G || G.mode !== 'play' || touchMode) return;
   if (input.locked || input.mlook || input.dragLook) { G.p.yaw -= e.movementX * .0023; G.p.pitch = clamp(G.p.pitch - e.movementY * .0023, -1.35, 1.35); }
 });
-for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()]]) {
+for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()], ['dParry', () => parry()]]) {
   const b = $(id);
   b.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); fn(); });
   for (const ev of ['mouseup', 'mouseleave']) b.addEventListener(ev, () => b.classList.remove('on'));
@@ -719,7 +818,7 @@ const endTouch = e => { const k = sticks.get(e.pointerId); if (k) { input[k] = n
 stage.addEventListener('pointerup', endTouch); stage.addEventListener('pointercancel', endTouch);
 const hold = (id, on, off) => { const b = $(id); b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); on(); }); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { b.classList.remove('on'); off?.(); }); };
 hold('tFire', () => { input.fire = true; }, () => { input.fire = false; });
-hold('tJump', jump); hold('tDash', dash);
+hold('tJump', jump); hold('tDash', dash); hold('tParry', parry);
 $('startBtn').onclick = start; $('againBtn').onclick = start;
 // Controls and the slime guide open from the menu or the pause screen, and Back returns there.
 let backTo = 'ovTitle';

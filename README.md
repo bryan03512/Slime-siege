@@ -10,6 +10,7 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 - Look: mouse. ⌘ Command (Ctrl on Windows) turns mouse look on and off; mouse look locks the cursor to the middle of the screen
 - Spray: hold the left mouse button
 - Jump: Space, or the Jump button
+- Parry: F. Bats goo back at whoever spat it, or shoves a slime away
 - Dash: Shift, or the Dash button
 - Pause: Esc or P
 
