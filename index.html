@@ -47,6 +47,35 @@ canvas{display:block;width:100%;height:100%}
 .toast.on{opacity:1}
 .overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(18,40,16,.55)}
 .overlay[hidden],[hidden]{display:none!important}
+.menu{place-items:stretch;justify-items:start;background:linear-gradient(90deg,rgba(18,40,16,.78),rgba(18,40,16,.35) 55%,rgba(18,40,16,0));padding:clamp(16px,4vw,48px)}
+.menu-col{align-self:center;display:flex;flex-direction:column;gap:14px;max-width:420px}
+.logo{font:clamp(64px,11vw,120px)/.88 'Lilita One',sans-serif;margin:0;color:var(--sun);text-shadow:0 6px 0 #0e2412,0 0 0 #000;letter-spacing:-.01em}
+.tag{margin:0;font-size:18px;font-weight:800;color:var(--cream);text-shadow:0 2px 0 rgba(14,36,18,.6);max-width:30ch}
+.menu-btns{display:flex;flex-direction:column;gap:12px;align-items:flex-start;margin-top:6px}
+.menu-btns .btn{min-width:220px;text-align:left}
+.btn.big{font-size:30px;padding:16px 26px}
+.menu-best{color:#cfe3bf}
+.card.wide{width:min(760px,100%)}
+.ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:14px 0 18px}
+.ctrl{background:#fff;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.ctrl b{font:18px/1.2 'Lilita One',sans-serif;color:#2c6b2f;margin-top:8px}
+.ctrl span:not(.kc){font-size:14px;color:var(--muted);line-height:1.4}
+.caps{display:grid;grid-template-columns:repeat(3,38px);gap:4px}
+.caps.one{display:flex;gap:6px;flex-wrap:wrap}
+.kc{display:grid;place-items:center;min-width:38px;height:38px;padding:0 8px;border-radius:8px;background:#f3ecd6;border:1.5px solid #cfc4a2;box-shadow:0 3px 0 #b9ad8a;font:16px/1 'Lilita One',sans-serif;color:var(--ink)}
+.kc.gap{visibility:hidden}
+.kc.space{min-width:150px}
+.kc.wide{min-width:72px}
+.kc.mouse{width:30px;min-width:30px;height:42px;padding:0;border-radius:15px;position:relative}
+.kc.mouse i{position:absolute;left:50%;top:6px;width:2px;height:10px;margin-left:-1px;background:#b9ad8a;border-radius:1px}
+.kc.mouse.left::before{content:"";position:absolute;left:2px;top:2px;width:12px;height:16px;border-radius:12px 0 0 0;background:var(--sun)}
+.guide{list-style:none;margin:14px 0 18px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.guide li{background:#fff;border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.guide svg{grid-row:span 3;width:52px;height:48px}
+.guide b{font:18px/1.2 'Lilita One',sans-serif;color:#2c6b2f}
+.guide span{font-size:14px;line-height:1.4}
+.guide i{font-style:normal;font-size:13px;color:var(--muted);font-weight:800}
+@media(max-width:600px){.menu{background:rgba(18,40,16,.6)}.menu-btns .btn{min-width:0;width:100%}.menu-col{width:100%}}
 .card{width:min(580px,100%);max-height:100%;overflow:auto;background:var(--cream);color:var(--ink);border-radius:18px;padding:24px 26px;box-shadow:0 10px 0 #0e2412;user-select:text}
 .card h1,.card h2{font:clamp(34px,6vw,50px)/1.05 'Lilita One',sans-serif;margin:0 0 6px;color:#2c6b2f}
 .card h2{font-size:clamp(28px,5vw,38px)}
@@ -117,23 +146,49 @@ canvas{display:block;width:100%;height:100%}
       <button class="tbtn tjump" id="tJump" aria-label="Jump">Jump</button>
       <button class="tbtn tdash" id="tDash" aria-label="Dash">Dash</button>
     </div>
-    <section class="overlay" id="ovTitle">
-      <div class="card">
-        <h1>Slime Siege</h1>
-        <p>The slimes want your garden. Hose them down, wave after wave, and pick an upgrade after each one. Every fifth wave, the Slime King shows up.</p>
-        <div class="keys" id="keysDesk">
-          <b>Move</b><span>WASD or arrow keys</span>
-          <b>Look</b><span>Move the mouse. Shift turns mouse look on and off, so you can free the cursor to click buttons.</span>
-          <b>Spray</b><span>Hold the left mouse button (or F)</span>
-          <b>Jump / dash</b><span>Space / Q or E, or click the buttons in the corner</span>
-          <b>Pause</b><span>Esc or P</span>
+    <section class="overlay menu" id="ovTitle">
+      <div class="menu-col">
+        <h1 class="logo">Slime<br>Siege</h1>
+        <p class="tag">Hold the garden. Hose down the slimes. Pick an upgrade after every wave.</p>
+        <nav class="menu-btns" aria-label="Main menu">
+          <button class="btn big" id="startBtn">Play</button>
+          <button class="btn alt" id="ctrlBtn">Controls</button>
+          <button class="btn alt" id="guideBtn">Slime guide</button>
+        </nav>
+        <p class="best menu-best" id="bestTitle"></p>
+      </div>
+    </section>
+    <section class="overlay" id="ovControls" hidden>
+      <div class="card wide">
+        <h2>Controls</h2>
+        <div id="ctrlDesk">
+          <div class="ctrl-grid">
+            <div class="ctrl"><div class="caps"><span class="kc gap"></span><span class="kc">W</span><span class="kc gap"></span><span class="kc">A</span><span class="kc">S</span><span class="kc">D</span></div><b>Move</b><span>Arrow keys work too</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span><span class="kc">F</span></div><b>Spray</b><span>Hold the left button, or F</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Hop onto crates and planters</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">Q</span><span class="kc">E</span></div><b>Dash</b><span>A quick burst. Slimes can’t hurt you mid-dash</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Mouse look on / off</b><span>Free the cursor to click the Jump and Dash buttons</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">P</span><span class="kc">Esc</span></div><b>Pause</b><span>Esc also releases the mouse</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">1</span><span class="kc">2</span><span class="kc">3</span></div><b>Pick an upgrade</b><span>Between waves</span></div>
+          </div>
         </div>
-        <div class="keys" id="keysTouch" hidden>
-          <b>Move</b><span>Drag on the left half of the screen</span>
-          <b>Look</b><span>Drag on the right half</span>
-          <b>Spray / jump / dash</b><span>The round buttons</span>
+        <div id="ctrlTouch" hidden>
+          <div class="keys">
+            <b>Move</b><span>Drag on the left half of the screen</span>
+            <b>Look</b><span>Drag on the right half</span>
+            <b>Spray</b><span>Hold the big yellow button</span>
+            <b>Jump / dash</b><span>The two smaller round buttons</span>
+          </div>
         </div>
-        <div class="row"><button class="btn" id="startBtn">Start</button><span class="best" id="bestTitle"></span></div>
+        <div class="row"><button class="btn" data-back>Back</button></div>
+      </div>
+    </section>
+    <section class="overlay" id="ovGuide" hidden>
+      <div class="card wide">
+        <h2>Slime guide</h2>
+        <ul class="guide" id="guideList"></ul>
+        <div class="row"><button class="btn" data-back>Back</button></div>
       </div>
     </section>
     <section class="overlay" id="ovPick" hidden>
@@ -147,7 +202,7 @@ canvas{display:block;width:100%;height:100%}
       <div class="card">
         <h2>Paused</h2>
         <p id="pauseInfo"></p>
-        <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="quitBtn">Quit run</button></div>
+        <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Quit to menu</button></div>
         <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game; if it reaches the edge, press Shift twice or hold the left button and drag.</p>
       </div>
     </section>
@@ -156,7 +211,7 @@ canvas{display:block;width:100%;height:100%}
         <h2>The slimes got through</h2>
         <div class="figs"><div><b id="oScore">0</b><span>Score</span></div><div><b id="oWave">1</b><span>Wave reached</span></div><div><b id="oBest">0</b><span>Best score</span></div></div>
         <p id="oNote"></p>
-        <div class="row"><button class="btn" id="againBtn">Play again</button></div>
+        <div class="row"><button class="btn" id="againBtn">Play again</button><button class="btn alt" id="menuBtn">Main menu</button></div>
       </div>
     </section>
   </main>
@@ -167,11 +222,11 @@ canvas{display:block;width:100%;height:100%}
 // ===================== Content: add enemies, upgrades and garden pieces here =====================
 // Sizes in metres, speeds in metres per second. hp scales up each wave. from = first wave it appears.
 const ENEMIES = {
-  slime:   { hp: 3,   speed: 3.4, r: 0.9,  hop: 0.55, dmg: 1, score: 10,  from: 1, weight: 10, body: '#7ed957' },
-  zippy:   { hp: 1,   speed: 6.8, r: 0.55, hop: 0.35, dmg: 1, score: 15,  from: 2, weight: 5,  body: '#6fc8ff' },
-  spitter: { hp: 4,   speed: 2.6, r: 0.9,  hop: 0.3,  dmg: 1, score: 25,  from: 3, weight: 3,  body: '#ffa24d', keepAway: 12, shootEvery: 2.4 },
-  brute:   { hp: 14,  speed: 2.1, r: 1.5,  hop: 0.4,  dmg: 2, score: 40,  from: 4, weight: 2,  body: '#b07cff' },
-  king:    { hp: 150, speed: 1.9, r: 3.0,  hop: 0.5,  dmg: 2, score: 400, boss: true,        body: '#ff6fa8', ringEvery: 2.8, splitInto: 'slime', splits: 6 },
+  slime:   { hp: 3,   speed: 3.4, r: 0.9,  hop: 0.55, dmg: 1, score: 10,  from: 1, weight: 10, body: '#7ed957' , desc: 'Hops straight at you. Easy alone, trouble in a crowd.' },
+  zippy:   { hp: 1,   speed: 6.8, r: 0.55, hop: 0.35, dmg: 1, score: 15,  from: 2, weight: 5,  body: '#6fc8ff' , desc: 'Small and fast. Hard to hit, goes down in one shot.' },
+  spitter: { hp: 4,   speed: 2.6, r: 0.9,  hop: 0.3,  dmg: 1, score: 25,  from: 3, weight: 3,  body: '#ffa24d', keepAway: 12, shootEvery: 2.4 , desc: 'Keeps its distance and spits goo. Close in on it.' },
+  brute:   { hp: 14,  speed: 2.1, r: 1.5,  hop: 0.4,  dmg: 2, score: 40,  from: 4, weight: 2,  body: '#b07cff' , desc: 'Big, slow and tough. Hits for two hearts.' },
+  king:    { hp: 150, speed: 1.9, r: 3.0,  hop: 0.5,  dmg: 2, score: 400, boss: true,        body: '#ff6fa8', ringEvery: 2.8, splitInto: 'slime', splits: 6 , desc: 'Every fifth wave. Fires rings of goo and splits into slimes when it falls.' },
 };
 const UPGRADES = [
   { id: 'rapid',  name: 'Rapid pump',      text: 'Spray 20% faster.',                    icon: 'drop',   apply: p => p.fireRate *= 1.2 },
@@ -536,7 +591,7 @@ function hud() {
   $('hearts').setAttribute('aria-label', p ? `Health ${p.hp} of ${p.maxHp}` : 'Health');
   $('wave').textContent = G ? Math.max(1, G.wave) : 1; $('score').textContent = G ? G.score : 0;
 }
-function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
+function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver', 'ovControls', 'ovGuide']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
 let toastT = 0;
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1600); }
 function offerUpgrades() {
@@ -587,6 +642,7 @@ function setLook(on) {
 function lookHud() {
   const playing = G?.mode === 'play' && !touchMode;
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
+  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
   $('mlook').innerHTML = input.mlook ? 'Mouse look <b>on</b> · Shift to free the cursor' : 'Cursor free · <b>Shift</b> to look around';
 }
@@ -649,13 +705,26 @@ const hold = (id, on, off) => { const b = $(id); b.addEventListener('pointerdown
 hold('tFire', () => { input.fire = true; }, () => { input.fire = false; });
 hold('tJump', jump); hold('tDash', dash);
 $('startBtn').onclick = start; $('againBtn').onclick = start;
+// Controls and the slime guide open from the menu or the pause screen, and Back returns there.
+let backTo = 'ovTitle';
+const openPanel = id => { backTo = G?.mode === 'paused' ? 'ovPause' : 'ovTitle'; show(id); };
+$('ctrlBtn').onclick = () => openPanel('ovControls');
+$('pauseCtrl').onclick = () => openPanel('ovControls');
+$('guideBtn').onclick = () => openPanel('ovGuide');
+for (const b of document.querySelectorAll('[data-back]')) b.onclick = () => show(backTo);
+function toMenu() { unlock(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); show('ovTitle'); }
+$('menuBtn').onclick = toMenu;
+const slimeIcon = (c, crown) => `<svg viewBox="0 0 52 48" aria-hidden="true"><ellipse cx="26" cy="44" rx="20" ry="3.5" fill="rgba(0,0,0,.15)"/><path d="M6 40c0-16 9-30 20-30s20 14 20 30c0 2-2 3-4 3H10c-2 0-4-1-4-3z" fill="${c}"/><ellipse cx="17" cy="20" rx="5" ry="3" fill="rgba(255,255,255,.5)" transform="rotate(-30 17 20)"/><circle cx="20" cy="28" r="4" fill="#fff"/><circle cx="32" cy="28" r="4" fill="#fff"/><circle cx="21" cy="29" r="2" fill="#1c2618"/><circle cx="33" cy="29" r="2" fill="#1c2618"/>${crown ? '<path d="M16 12l3-9 4 6 3-8 3 8 4-6 3 9z" fill="#ffd23f" stroke="#b38a00" stroke-width="1.5"/>' : ''}</svg>`;
+const names = { slime: 'Slime', zippy: 'Zippy', spitter: 'Spitter', brute: 'Brute', king: 'Slime King' };
+$('guideList').innerHTML = Object.entries(ENEMIES).map(([k, e]) => `<li>${slimeIcon(e.body, e.boss)}<b>${names[k] ?? k}</b><span>${e.desc ?? ''}</span><i>${e.boss ? 'Waves 5, 10, 15…' : `From wave ${e.from}`} · ${e.score} points</i></li>`).join('');
+$('ctrlDesk').hidden = touchMode; $('ctrlTouch').hidden = !touchMode;
 $('resumeBtn').onclick = () => pause(false);
-$('quitBtn').onclick = () => gameOver();
+$('quitBtn').onclick = () => toMenu();
 $('pauseBtn').onclick = () => (G?.mode === 'paused' ? pause(false) : pause(true));
 $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) takeUpgrade(b.dataset.id); });
 function setMute(m) { muted = m; store.set('ss-muted', m); $('mute').setAttribute('aria-label', m ? 'Sound off' : 'Sound on'); $('wav').style.display = m ? 'none' : ''; }
 $('mute').onclick = () => setMute(!muted);
-$('touch').hidden = !touchMode; $('keysDesk').hidden = touchMode; $('keysTouch').hidden = !touchMode;
+$('touch').hidden = !touchMode;
 
 // ===================== Loop =====================
 function resize() {
@@ -678,6 +747,7 @@ const boot = data => {
     if (G.mode === 'play') G.mode = 'paused';
     hud(); if (G.mode === 'pick') offerUpgrades(); else { $('pauseInfo').textContent = `Wave ${G.wave} · ${G.score} points`; show('ovPause'); }
   } else showDemo(true);
+  lookHud();
   requestAnimationFrame(frame);
 };
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
