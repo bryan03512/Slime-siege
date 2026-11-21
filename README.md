@@ -7,10 +7,10 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 ## Controls
 
 - Move: WASD or arrow keys
-- Look: mouse
-- Spray: hold the left mouse button
-- Jump: Space
-- Dash: Shift
+- Look: mouse. Shift turns mouse look on and off, so you can free the cursor to click buttons
+- Spray: hold the left mouse button (or F)
+- Jump: Space, or the Jump button
+- Dash: Q or E, or the Dash button
 - Pause: Esc or P
 
 On a phone: drag the left half of the screen to move, the right half to look, and use the round buttons to spray, jump and dash.

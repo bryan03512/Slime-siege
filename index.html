@@ -78,6 +78,14 @@ canvas{display:block;width:100%;height:100%}
 .tjump{right:120px;bottom:22px;width:58px;height:58px;background:#e8dfc3}
 .tdash{right:28px;bottom:126px;width:58px;height:58px;background:#7fd3ff}
 .tbtn.on{transform:translateY(3px);filter:brightness(.92)}
+.desk{position:absolute;right:16px;bottom:16px;display:flex;gap:8px}
+.dbtn{font:16px/1 'Lilita One',sans-serif;border:0;border-radius:12px;min-height:44px;padding:8px 14px;background:rgba(255,246,220,.92);color:var(--ink);box-shadow:0 4px 0 rgba(16,40,15,.45);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.dbtn small{font:12px/1 Nunito,sans-serif;font-weight:800;color:var(--muted)}
+.dbtn:active,.dbtn.on{transform:translateY(3px);box-shadow:0 1px 0 rgba(16,40,15,.45)}
+.mlook{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font:14px/1.2 Nunito,sans-serif;font-weight:800;padding:8px 14px;border-radius:999px;background:rgba(16,40,15,.62);color:#fff;pointer-events:none;white-space:nowrap}
+.mlook b{color:var(--sun)}
+.stage.looking canvas{cursor:none}
+@media(max-width:700px){.mlook{bottom:72px}}
 @media(max-width:600px){.picks{grid-template-columns:1fr}.pick{min-height:0}.name{font-size:22px}.stat{font-size:17px}.hearts svg{width:18px;height:16px}.card{padding:18px}}
 @media(prefers-reduced-motion:reduce){.toast,.vign{transition:none}}
 </style>
@@ -99,6 +107,11 @@ canvas{display:block;width:100%;height:100%}
     <div class="boss" id="boss" hidden>Slime King<div><b id="bossHp"></b></div></div>
     <div class="dashm" id="dashm">Dash<div><b id="dashBar"></b></div></div>
     <div class="toast" id="toast"></div>
+    <div class="mlook" id="mlook" hidden></div>
+    <div class="desk" id="desk" hidden>
+      <button class="dbtn" id="dJump" tabindex="-1">Jump<small>Space</small></button>
+      <button class="dbtn" id="dDash" tabindex="-1">Dash<small>Q or E</small></button>
+    </div>
     <div class="touch" id="touch" hidden>
       <button class="tbtn tfire" id="tFire" aria-label="Shoot">Spray</button>
       <button class="tbtn tjump" id="tJump" aria-label="Jump">Jump</button>
@@ -110,9 +123,9 @@ canvas{display:block;width:100%;height:100%}
         <p>The slimes want your garden. Hose them down, wave after wave, and pick an upgrade after each one. Every fifth wave, the Slime King shows up.</p>
         <div class="keys" id="keysDesk">
           <b>Move</b><span>WASD or arrow keys</span>
-          <b>Look</b><span>Move the mouse</span>
-          <b>Spray</b><span>Hold the left mouse button</span>
-          <b>Jump / dash</b><span>Space / Shift</span>
+          <b>Look</b><span>Move the mouse. Shift turns mouse look on and off, so you can free the cursor to click buttons.</span>
+          <b>Spray</b><span>Hold the left mouse button (or F)</span>
+          <b>Jump / dash</b><span>Space / Q or E, or click the buttons in the corner</span>
           <b>Pause</b><span>Esc or P</span>
         </div>
         <div class="keys" id="keysTouch" hidden>
@@ -135,7 +148,7 @@ canvas{display:block;width:100%;height:100%}
         <h2>Paused</h2>
         <p id="pauseInfo"></p>
         <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="quitBtn">Quit run</button></div>
-        <p class="note" id="lockNote" hidden>Your browser didn't let the game lock the mouse, so hold the left button and drag to look around.</p>
+        <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game; if it reaches the edge, press Shift twice or hold the left button and drag.</p>
       </div>
     </section>
     <section class="overlay" id="ovOver" hidden>
@@ -344,7 +357,7 @@ function hitsGarden(x, y, z) {
 }
 
 // ===================== Update =====================
-const input = { keys: {}, fire: false, move: null, look: null, locked: false, dragLook: false };
+const input = { keys: {}, fire: false, move: null, look: null, locked: false, dragLook: false, mlook: false, releasing: false };
 const EYE = 1.6;
 function update(dt) {
   if (!G || G.mode !== 'play') return;
@@ -523,7 +536,7 @@ function hud() {
   $('hearts').setAttribute('aria-label', p ? `Health ${p.hp} of ${p.maxHp}` : 'Health');
   $('wave').textContent = G ? Math.max(1, G.wave) : 1; $('score').textContent = G ? G.score : 0;
 }
-function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver']) $(o).hidden = o !== id; if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
+function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
 let toastT = 0;
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1600); }
 function offerUpgrades() {
@@ -561,22 +574,40 @@ function pause(on) {
 }
 
 // ===================== Input =====================
-function lock() {
+// Mouse look: on when a run starts; Shift turns it off (cursor free to click) and on again.
+// The game asks the browser to capture the mouse; if it says no, moving the cursor
+// over the game still turns the view.
+function setLook(on) {
   if (touchMode) return;
-  try { const r = cv.requestPointerLock?.(); r?.catch?.(() => { $('lockNote').hidden = false; }); } catch { $('lockNote').hidden = false; }
+  input.mlook = on;
+  if (on) { try { const r = cv.requestPointerLock?.(); r?.catch?.(() => { $('lockNote').hidden = false; }); } catch { $('lockNote').hidden = false; } }
+  else if (document.pointerLockElement) { input.releasing = true; document.exitPointerLock?.(); }
+  lookHud();
 }
-function unlock() { if (document.pointerLockElement) document.exitPointerLock?.(); }
+function lookHud() {
+  const playing = G?.mode === 'play' && !touchMode;
+  $('mlook').hidden = !playing; $('desk').hidden = !playing;
+  stage.classList.toggle('looking', playing && input.mlook);
+  $('mlook').innerHTML = input.mlook ? 'Mouse look <b>on</b> · Shift to free the cursor' : 'Cursor free · <b>Shift</b> to look around';
+}
+function lock() { setLook(true); }
+function unlock() { if (document.pointerLockElement) { input.releasing = true; document.exitPointerLock?.(); } input.mlook = false; lookHud(); }
 document.addEventListener('pointerlockchange', () => {
   input.locked = document.pointerLockElement === cv;
-  if (!input.locked && G?.mode === 'play') pause(true); // Esc releases the mouse: treat it as pause
+  if (input.locked) { input.releasing = false; return; }
+  if (input.releasing) { input.releasing = false; return; }
+  // the browser let go of the mouse (Esc): pause
+  input.mlook = false; lookHud();
+  if (G?.mode === 'play') pause(true);
 });
 document.addEventListener('pointerlockerror', () => { $('lockNote').hidden = false; });
 addEventListener('keydown', e => {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code) && G?.mode === 'play') e.preventDefault();
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code) && G?.mode === 'play') e.preventDefault();
   input.keys[e.code] = true;
   if (e.repeat) return;
   if (e.code === 'Space') jump();
-  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyQ') dash();
+  if (e.code === 'KeyQ' || e.code === 'KeyE') dash();
+  if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && G?.mode === 'play') setLook(!input.mlook);
   if (e.code === 'KeyP' || e.code === 'Escape') { if (G?.mode === 'play') pause(true); else if (G?.mode === 'paused' && e.code === 'KeyP') pause(false); }
   if (G?.mode === 'pick' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) takeUpgrade(G.offer[+e.code.slice(5) - 1]);
 });
@@ -584,14 +615,19 @@ addEventListener('keyup', e => { input.keys[e.code] = false; });
 addEventListener('blur', () => { input.keys = {}; input.fire = false; pause(true); });
 cv.addEventListener('mousedown', e => {
   if (e.button !== 0 || G?.mode !== 'play') return;
-  if (!input.locked && !touchMode) { lock(); input.dragLook = true; }
+  if (!input.mlook && !touchMode) input.dragLook = true; // cursor free: hold and drag to look
   input.fire = true;
 });
 addEventListener('mouseup', e => { if (e.button === 0) { input.fire = false; input.dragLook = false; } });
 addEventListener('mousemove', e => {
   if (!G || G.mode !== 'play' || touchMode) return;
-  if (input.locked || input.dragLook) { G.p.yaw -= e.movementX * .0023; G.p.pitch = clamp(G.p.pitch - e.movementY * .0023, -1.35, 1.35); }
+  if (input.locked || input.mlook || input.dragLook) { G.p.yaw -= e.movementX * .0023; G.p.pitch = clamp(G.p.pitch - e.movementY * .0023, -1.35, 1.35); }
 });
+for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()]]) {
+  const b = $(id);
+  b.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); fn(); });
+  for (const ev of ['mouseup', 'mouseleave']) b.addEventListener(ev, () => b.classList.remove('on'));
+}
 cv.addEventListener('contextmenu', e => e.preventDefault());
 // phones: left half moves, right half looks
 const sticks = new Map();
