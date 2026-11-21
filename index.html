@@ -170,7 +170,7 @@ canvas{display:block;width:100%;height:100%}
           <button class="btn alt" id="guideBtn">Slime guide</button>
         </nav>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 10 · iPad keyboard + trackpad support</p>
+        <p class="ver">Version 11 · edge turning when the mouse can’t lock</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -500,6 +500,11 @@ function update(dt) {
   p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
   for (const t of (G.threats ||= [])) { t.t -= dt; const f = G.foes.find(f => f.id === t.id); if (f) { t.x = f.x; t.z = f.z; } }
   G.threats = G.threats.filter(t => t.t > 0);
+  if (input.mlook && !input.locked && input.cur && !touchMode) {
+    const c = input.cur, edge = .18;
+    if (c.x < edge) p.yaw += (edge - c.x) / edge * 2.8 * dt; else if (c.x > 1 - edge) p.yaw -= (c.x - (1 - edge)) / edge * 2.8 * dt;
+    p.pitch += (clamp((.5 - c.y) * 2.6, -1.3, 1.3) - p.pitch) * Math.min(1, dt * 12);
+  }
   if (input.look) { p.yaw -= input.look.dx * 2.6 * dt; p.pitch = clamp(p.pitch - input.look.dy * 1.6 * dt, -1.3, 1.3); }
   if (input.fire && p.cool <= 0) fire();
   // your water
@@ -768,7 +773,7 @@ function lookHud() {
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
   const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
-  $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This window can’t lock the mouse. Play at bryan03512.github.io/Slime-siege</small>'
+  $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This browser can’t lock the mouse here: hold the cursor near the left or right edge to keep turning</small>'
     : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';
 }
 function lock() { input.fromClick = true; setLook(true); } // called from the Play / Resume clicks
@@ -807,8 +812,16 @@ cv.addEventListener('mousedown', e => {
 addEventListener('mouseup', e => { if (e.button === 0) { input.fire = false; input.dragLook = false; } });
 addEventListener('mousemove', e => {
   if (!G || G.mode !== 'play' || touchMode) return;
-  if (input.locked || input.mlook || input.dragLook) { G.p.yaw -= e.movementX * .0023; G.p.pitch = clamp(G.p.pitch - e.movementY * .0023, -1.35, 1.35); }
+  if (input.locked || input.dragLook) { G.p.yaw -= e.movementX * .0023; G.p.pitch = clamp(G.p.pitch - e.movementY * .0023, -1.35, 1.35); }
+  else if (input.mlook) {
+    // the mouse isn't locked (some tablets and embedded windows can't): turn with the cursor,
+    // aim up and down by where it sits on screen, and keep turning while it's near the left or right edge
+    const r = stage.getBoundingClientRect();
+    input.cur = { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+    G.p.yaw -= e.movementX * .0035;
+  }
 });
+stage.addEventListener('mouseleave', () => { input.cur = null; });
 for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()], ['dParry', () => parry()]]) {
   const b = $(id);
   b.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); fn(); });
