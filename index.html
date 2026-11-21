@@ -168,7 +168,7 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Spray</b><span>Hold the left mouse button</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Hop onto crates and planters</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>A quick burst. Slimes can’t hurt you mid-dash</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc wide">Ctrl</span></div><b>Mouse look on / off</b><span>Free the cursor to click the Jump and Dash buttons</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc wide">⌘ Cmd</span></div><b>Mouse look on / off</b><span>Locks the mouse to the middle of the screen. Ctrl on Windows</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">P</span><span class="kc">Esc</span></div><b>Pause</b><span>Esc also releases the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">1</span><span class="kc">2</span><span class="kc">3</span></div><b>Pick an upgrade</b><span>Between waves</span></div>
           </div>
@@ -203,7 +203,7 @@ canvas{display:block;width:100%;height:100%}
         <h2>Paused</h2>
         <p id="pauseInfo"></p>
         <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Quit to menu</button></div>
-        <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game; if it reaches the edge, press Ctrl twice or hold the left button and drag.</p>
+        <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game; if it reaches the edge, press ⌘ Command twice or hold the left button and drag.</p>
       </div>
     </section>
     <section class="overlay" id="ovOver" hidden>
@@ -629,7 +629,7 @@ function pause(on) {
 }
 
 // ===================== Input =====================
-// Mouse look: on when a run starts; Ctrl turns it off (cursor free to click) and on again.
+// Mouse look: on when a run starts; ⌘ Command (or Ctrl) turns it off and on again.
 // The game asks the browser to capture the mouse; if it says no, moving the cursor
 // over the game still turns the view.
 function setLook(on) {
@@ -639,10 +639,15 @@ function setLook(on) {
   else if (document.pointerLockElement) { input.releasing = true; document.exitPointerLock?.(); }
   lookHud();
 }
-// Browsers only capture the mouse right after a click or an ordinary key. Ctrl and Shift
+// Browsers only capture the mouse right after a click or an ordinary key. Command, Ctrl and Shift
 // don't count, so if the browser says no, wait for the next click on the game.
 function requestLock() {
-  const refused = () => { if (input.locked || !input.mlook) return; input.mlook = false; input.lockWait = true; lookHud(); };
+  const refused = () => {
+    if (input.locked || !input.mlook) return;
+    if (input.fromClick) { input.noLock = true; lookHud(); return; } // even a click was refused: this page can't lock here
+    input.mlook = false; input.lockWait = true; lookHud();
+  };
+  setTimeout(() => { input.fromClick = false; }, 400);
   try { const r = cv.requestPointerLock?.(); if (r?.catch) r.catch(refused); else if (!r) setTimeout(() => { if (!document.pointerLockElement) refused(); }, 150); }
   catch { refused(); }
 }
@@ -651,26 +656,27 @@ function lookHud() {
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
   const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
-  $('mlook').innerHTML = input.mlook ? 'Mouse look <b>on</b> · Ctrl to free the cursor' : input.lockWait ? '<b>Click the game</b> to look around' : 'Cursor free · <b>Ctrl</b> to look around';
+  $('mlook').innerHTML = input.noLock ? 'This window can’t lock the mouse. Play at <b>bryan03512.github.io/Slime-siege</b>'
+    : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';
 }
-function lock() { setLook(true); }
+function lock() { input.fromClick = true; setLook(true); } // called from the Play / Resume clicks
 function unlock() { if (document.pointerLockElement) { input.releasing = true; document.exitPointerLock?.(); } input.mlook = false; input.lockWait = false; lookHud(); }
 document.addEventListener('pointerlockchange', () => {
   input.locked = document.pointerLockElement === cv;
-  if (input.locked) { input.releasing = false; return; }
+  if (input.locked) { input.releasing = false; input.noLock = false; lookHud(); return; }
   if (input.releasing) { input.releasing = false; return; }
   // the browser let go of the mouse (Esc): pause
   input.mlook = false; input.lockWait = false; lookHud();
   if (G?.mode === 'play') pause(true);
 });
-document.addEventListener('pointerlockerror', () => { if (input.mlook && !input.locked) { input.mlook = false; input.lockWait = true; lookHud(); } });
+document.addEventListener('pointerlockerror', () => { if (!input.mlook || input.locked) return; if (input.fromClick) input.noLock = true; else { input.mlook = false; input.lockWait = true; } lookHud(); });
 addEventListener('keydown', e => {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight'].includes(e.code) && G?.mode === 'play') e.preventDefault();
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'MetaLeft', 'MetaRight'].includes(e.code) && G?.mode === 'play') e.preventDefault();
   input.keys[e.code] = true;
   if (e.repeat) return;
   if (e.code === 'Space') jump();
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') dash();
-  if ((e.code === 'ControlLeft' || e.code === 'ControlRight') && G?.mode === 'play') setLook(!(input.mlook || input.lockWait));
+  if (['MetaLeft', 'MetaRight', 'ControlLeft', 'ControlRight'].includes(e.code) && G?.mode === 'play') setLook(!(input.mlook || input.lockWait));
   if (e.code === 'KeyP' || e.code === 'Escape') { if (G?.mode === 'play') pause(true); else if (G?.mode === 'paused' && e.code === 'KeyP') pause(false); }
   if (G?.mode === 'pick' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) takeUpgrade(G.offer[+e.code.slice(5) - 1]);
 });
@@ -678,7 +684,7 @@ addEventListener('keyup', e => { input.keys[e.code] = false; });
 addEventListener('blur', () => { input.keys = {}; input.fire = false; pause(true); });
 cv.addEventListener('mousedown', e => {
   if (e.button !== 0 || G?.mode !== 'play') return;
-  if (input.lockWait) { input.lockWait = false; input.mlook = true; requestLock(); lookHud(); return; } // this click captures the mouse
+  if (input.lockWait) { input.lockWait = false; input.mlook = true; input.fromClick = true; requestLock(); lookHud(); return; } // this click captures the mouse
   if (!input.mlook && !touchMode) input.dragLook = true; // cursor free: hold and drag to look
   input.fire = true;
 });

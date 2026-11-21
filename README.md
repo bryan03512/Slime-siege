@@ -7,7 +7,7 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 ## Controls
 
 - Move: WASD or arrow keys
-- Look: mouse. Ctrl turns mouse look on and off, so you can free the cursor to click buttons
+- Look: mouse. ⌘ Command (Ctrl on Windows) turns mouse look on and off; mouse look locks the cursor to the middle of the screen
 - Spray: hold the left mouse button
 - Jump: Space, or the Jump button
 - Dash: Shift, or the Dash button
