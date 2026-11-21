@@ -55,6 +55,7 @@ canvas{display:block;width:100%;height:100%}
 .menu-btns .btn{min-width:220px;text-align:left}
 .btn.big{font-size:30px;padding:16px 26px}
 .menu-best{color:#cfe3bf}
+.ver{margin:0;font-size:12px;font-weight:800;color:rgba(255,246,220,.6)}
 .card.wide{width:min(760px,100%)}
 .ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:14px 0 18px}
 .ctrl{background:#fff;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
@@ -156,6 +157,7 @@ canvas{display:block;width:100%;height:100%}
           <button class="btn alt" id="guideBtn">Slime guide</button>
         </nav>
         <p class="best menu-best" id="bestTitle"></p>
+        <p class="ver">Version 7 · ⌘ Cmd for mouse look, Shift to dash</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -656,7 +658,7 @@ function lookHud() {
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
   const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
-  $('mlook').innerHTML = input.noLock ? 'This window can’t lock the mouse. Play at <b>bryan03512.github.io/Slime-siege</b>'
+  $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This window can’t lock the mouse. Play at bryan03512.github.io/Slime-siege</small>'
     : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';
 }
 function lock() { input.fromClick = true; setLook(true); } // called from the Play / Resume clicks
