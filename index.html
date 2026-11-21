@@ -139,7 +139,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="mlook" id="mlook" hidden></div>
     <div class="desk" id="desk" hidden>
       <button class="dbtn" id="dJump" tabindex="-1">Jump<small>Space</small></button>
-      <button class="dbtn" id="dDash" tabindex="-1">Dash<small>Q or E</small></button>
+      <button class="dbtn" id="dDash" tabindex="-1">Dash<small>Shift</small></button>
     </div>
     <div class="touch" id="touch" hidden>
       <button class="tbtn tfire" id="tFire" aria-label="Shoot">Spray</button>
@@ -165,10 +165,10 @@ canvas{display:block;width:100%;height:100%}
           <div class="ctrl-grid">
             <div class="ctrl"><div class="caps"><span class="kc gap"></span><span class="kc">W</span><span class="kc gap"></span><span class="kc">A</span><span class="kc">S</span><span class="kc">D</span></div><b>Move</b><span>Arrow keys work too</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span><span class="kc">F</span></div><b>Spray</b><span>Hold the left button, or F</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Spray</b><span>Hold the left mouse button</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Hop onto crates and planters</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc">Q</span><span class="kc">E</span></div><b>Dash</b><span>A quick burst. Slimes can’t hurt you mid-dash</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Mouse look on / off</b><span>Free the cursor to click the Jump and Dash buttons</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>A quick burst. Slimes can’t hurt you mid-dash</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc wide">Ctrl</span></div><b>Mouse look on / off</b><span>Free the cursor to click the Jump and Dash buttons</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">P</span><span class="kc">Esc</span></div><b>Pause</b><span>Esc also releases the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">1</span><span class="kc">2</span><span class="kc">3</span></div><b>Pick an upgrade</b><span>Between waves</span></div>
           </div>
@@ -203,7 +203,7 @@ canvas{display:block;width:100%;height:100%}
         <h2>Paused</h2>
         <p id="pauseInfo"></p>
         <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Quit to menu</button></div>
-        <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game; if it reaches the edge, press Shift twice or hold the left button and drag.</p>
+        <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game; if it reaches the edge, press Ctrl twice or hold the left button and drag.</p>
       </div>
     </section>
     <section class="overlay" id="ovOver" hidden>
@@ -436,7 +436,7 @@ function update(dt) {
   if (p.y <= floor) { p.y = floor; p.vy = 0; }
   p.dashReady -= dt; p.inv -= dt; p.cool -= dt;
   if (input.look) { p.yaw -= input.look.dx * 2.6 * dt; p.pitch = clamp(p.pitch - input.look.dy * 1.6 * dt, -1.3, 1.3); }
-  if ((input.fire || input.keys.KeyF) && p.cool <= 0) fire();
+  if (input.fire && p.cool <= 0) fire();
   // your water
   for (const sh of live.shots) {
     const nx = sh.x + sh.vx * dt, ny = sh.y + sh.vy * dt, nz = sh.z + sh.vz * dt;
@@ -629,7 +629,7 @@ function pause(on) {
 }
 
 // ===================== Input =====================
-// Mouse look: on when a run starts; Shift turns it off (cursor free to click) and on again.
+// Mouse look: on when a run starts; Ctrl turns it off (cursor free to click) and on again.
 // The game asks the browser to capture the mouse; if it says no, moving the cursor
 // over the game still turns the view.
 function setLook(on) {
@@ -644,7 +644,7 @@ function lookHud() {
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
   const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
-  $('mlook').innerHTML = input.mlook ? 'Mouse look <b>on</b> · Shift to free the cursor' : 'Cursor free · <b>Shift</b> to look around';
+  $('mlook').innerHTML = input.mlook ? 'Mouse look <b>on</b> · Ctrl to free the cursor' : 'Cursor free · <b>Ctrl</b> to look around';
 }
 function lock() { setLook(true); }
 function unlock() { if (document.pointerLockElement) { input.releasing = true; document.exitPointerLock?.(); } input.mlook = false; lookHud(); }
@@ -658,12 +658,12 @@ document.addEventListener('pointerlockchange', () => {
 });
 document.addEventListener('pointerlockerror', () => { $('lockNote').hidden = false; });
 addEventListener('keydown', e => {
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight'].includes(e.code) && G?.mode === 'play') e.preventDefault();
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight'].includes(e.code) && G?.mode === 'play') e.preventDefault();
   input.keys[e.code] = true;
   if (e.repeat) return;
   if (e.code === 'Space') jump();
-  if (e.code === 'KeyQ' || e.code === 'KeyE') dash();
-  if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight') && G?.mode === 'play') setLook(!input.mlook);
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') dash();
+  if ((e.code === 'ControlLeft' || e.code === 'ControlRight') && G?.mode === 'play') setLook(!input.mlook);
   if (e.code === 'KeyP' || e.code === 'Escape') { if (G?.mode === 'play') pause(true); else if (G?.mode === 'paused' && e.code === 'KeyP') pause(false); }
   if (G?.mode === 'pick' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) takeUpgrade(G.offer[+e.code.slice(5) - 1]);
 });
