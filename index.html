@@ -40,7 +40,10 @@ canvas{display:block;width:100%;height:100%}
 .boss{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(420px,70%);pointer-events:none;text-align:center;font:18px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 2px 0 #3a0f1f}
 .boss div{height:12px;margin-top:6px;border-radius:6px;background:rgba(40,10,20,.5);overflow:hidden}
 .boss b{display:block;height:100%;background:#ff6fa8}
-.dashm{position:absolute;left:16px;bottom:16px;font:15px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 2px 0 #10280f;pointer-events:none}
+.minimap{position:absolute;left:16px;bottom:16px;width:var(--mm);height:var(--mm);border-radius:12px;background:rgba(16,40,15,.55);box-shadow:0 0 0 2px rgba(255,246,220,.5);pointer-events:none}
+.stage{--mm:150px}
+@media(max-width:700px){.stage{--mm:104px}}
+.dashm{position:absolute;left:calc(var(--mm) + 28px);bottom:16px;font:15px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 2px 0 #10280f;pointer-events:none}
 .dashm div{width:90px;height:8px;border-radius:4px;background:rgba(16,40,15,.45);margin-top:5px;overflow:hidden}
 .dashm b{display:block;height:100%;background:var(--sun)}
 .dashm span{display:block;margin-top:8px}
@@ -144,6 +147,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="cross" id="cross" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div class="vign" id="vign"></div>
     <div class="boss" id="boss" hidden>Slime King<div><b id="bossHp"></b></div></div>
+    <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
     <div class="parryfx" id="parryFx" aria-hidden="true"></div>
@@ -170,7 +174,7 @@ canvas{display:block;width:100%;height:100%}
           <button class="btn alt" id="guideBtn">Slime guide</button>
         </nav>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 11 · edge turning when the mouse can’t lock</p>
+        <p class="ver">Version 12 · minimap</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -665,7 +669,7 @@ function render(dt) {
     camera.position.set(p.x + rnd(-shake, shake), p.y + EYE + (moving ? Math.sin(bob * 2) * .05 : 0), p.z + rnd(-shake, shake));
     camera.rotation.set(p.pitch, p.yaw, 0);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4, gunSwing * 3, gunSwing * 3.5);
-    drawThreats(p);
+    drawThreats(p); drawMinimap(p);
     gun.position.x = .2 + Math.sin(bob) * .012; gun.position.y = -.19 + Math.abs(Math.cos(bob)) * .012; gun.position.z += (-.55 - gun.position.z) * Math.min(1, dt * 14);
     for (const fo of G.foes) {
       let m = live.foes.get(fo.id); if (!m) { m = slimeMesh(fo.type); live.foes.set(fo.id, m); }
@@ -679,6 +683,31 @@ function render(dt) {
     camera.position.set(Math.sin(t * .1) * 16, 6, Math.cos(t * .1) * 16); camera.lookAt(0, 1, 0);
   }
   renderer.render(scene, camera);
+}
+// the whole garden from above, north up: buildings, every slime, and you as an arrow
+const mm = $('minimap'), mmx = mm.getContext('2d');
+function drawMinimap(p) {
+  const size = mm.clientWidth; if (!size) return;
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  if (mm.width !== Math.round(size * dpr)) { mm.width = mm.height = Math.round(size * dpr); }
+  const c = mmx, pad = 8, k = (size - pad * 2) / (A * 2), X = x => pad + (x + A) * k, Z = z => pad + (z + A) * k;
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size);
+  c.fillStyle = 'rgba(126,200,90,.35)'; c.fillRect(pad, pad, size - pad * 2, size - pad * 2);
+  for (const b of OBSTACLES) {
+    const big = ['house', 'barn', 'greenhouse', 'shed'].includes(b.kind);
+    c.fillStyle = big ? 'rgba(255,246,220,.85)' : b.kind === 'hedge' ? 'rgba(20,60,22,.9)' : 'rgba(201,138,75,.8)';
+    c.fillRect(X(b.x - b.w / 2), Z(b.z - b.d / 2), Math.max(1.5, b.w * k), Math.max(1.5, b.d * k));
+  }
+  for (const fo of G.foes) {
+    const e = ENEMIES[fo.type]; if (fo.hp <= 0) continue;
+    c.fillStyle = e.body; c.strokeStyle = '#10280f'; c.lineWidth = 1;
+    c.beginPath(); c.arc(X(fo.x), Z(fo.z), e.boss ? 6 : fo.type === 'brute' ? 4 : 3.2, 0, 7); c.fill(); c.stroke();
+  }
+  // you: a yellow arrow pointing where you look
+  c.save(); c.translate(X(p.x), Z(p.z)); c.rotate(-p.yaw);
+  c.fillStyle = '#ffd23f'; c.strokeStyle = '#10280f'; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(0, -7); c.lineTo(5, 5); c.lineTo(0, 2.5); c.lineTo(-5, 5); c.closePath(); c.fill(); c.stroke();
+  c.restore();
 }
 // little red arrows round the crosshair, pointing at whoever just shot at you
 function drawThreats(p) {
@@ -771,7 +800,7 @@ function requestLock() {
 function lookHud() {
   const playing = G?.mode === 'play' && !touchMode;
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
-  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
+  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
   $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This browser can’t lock the mouse here: hold the cursor near the left or right edge to keep turning</small>'
     : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';
