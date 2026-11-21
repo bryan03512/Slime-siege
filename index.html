@@ -44,6 +44,7 @@ canvas{display:block;width:100%;height:100%}
 .dashm div{width:90px;height:8px;border-radius:4px;background:rgba(16,40,15,.45);margin-top:5px;overflow:hidden}
 .dashm b{display:block;height:100%;background:var(--sun)}
 .dashm span{display:block;margin-top:8px}
+.dashm em{font-style:normal;color:var(--sun);letter-spacing:2px}
 .dashm #parryBar{background:#ff9ecb}
 .threats{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 .threats i{position:absolute;left:-7px;top:-6px;width:14px;height:12px;background:var(--berry);clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 2px #000);opacity:0;transition:opacity .15s}
@@ -143,7 +144,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="cross" id="cross" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
     <div class="vign" id="vign"></div>
     <div class="boss" id="boss" hidden>Slime King<div><b id="bossHp"></b></div></div>
-    <div class="dashm" id="dashm">Dash<div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
+    <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
     <div class="parryfx" id="parryFx" aria-hidden="true"></div>
     <div class="toast" id="toast"></div>
@@ -169,7 +170,7 @@ canvas{display:block;width:100%;height:100%}
           <button class="btn alt" id="guideBtn">Slime guide</button>
         </nav>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 8 · bigger garden, buildings, F to parry</p>
+        <p class="ver">Version 9 · two dash charges, quicker parry</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -181,7 +182,7 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Spray</b><span>Hold the left mouse button</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Hop onto crates and planters</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>A quick burst. Slimes can’t hurt you mid-dash</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Two dashes in a row, then both recharge. Slimes can’t hurt you mid-dash</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">F</span></div><b>Parry</b><span>Bat goo back at whoever spat it, or shove a slime away. Time it just before it hits</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">⌘ Cmd</span></div><b>Mouse look on / off</b><span>Locks the mouse to the middle of the screen. Ctrl on Windows</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">P</span><span class="kc">Esc</span></div><b>Pause</b><span>Esc also releases the mouse</span></div>
@@ -252,7 +253,7 @@ const UPGRADES = [
   { id: 'heart',  name: 'Thick gloves',    text: '+1 max heart, and heal 1.',            icon: 'heart',  apply: p => { p.maxHp += 1; p.hp = Math.min(p.maxHp, p.hp + 1); }, when: p => p.maxHp < 12 },
   { id: 'patch',  name: 'Lemonade',        text: 'Heal 3 hearts.',                       icon: 'cup',    apply: p => p.hp = Math.min(p.maxHp, p.hp + 3), when: p => p.hp < p.maxHp },
   { id: 'magnet', name: 'Gel magnet',      text: 'Pull in gel drops from farther away.', icon: 'magnet', apply: p => p.magnet *= 1.5, when: p => p.magnet < 12 },
-  { id: 'dash',   name: 'Quick feet',      text: 'Dash recharges 25% faster.',           icon: 'bolt',   apply: p => p.dashCd *= 0.75, when: p => p.dashCd > 0.4 },
+  { id: 'dash',   name: 'Quick feet',      text: 'Dashes recharge 25% faster.',           icon: 'bolt',   apply: p => p.dashCd *= 0.75, when: p => p.dashCd > 0.4 },
   { id: 'range',  name: 'Long hose',       text: 'Shots fly 25% faster and farther.',    icon: 'arrow',  apply: p => p.shotSpeed *= 1.25, when: p => p.shotSpeed < 90 },
   { id: 'spring', name: 'Springy socks',   text: 'Jump higher.',                         icon: 'boot',   apply: p => p.jump *= 1.2, when: p => p.jump < 13 },
 ];
@@ -411,7 +412,7 @@ const live = { foes: new Map(), shots: [], spit: [], gels: [], parts: [], splats
 let nextId = 1;
 function newRun() {
   return { mode: 'play', wave: 0, score: 0, t: 0, toSpawn: [], spawnTimer: 0, offer: [],
-    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.9, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 5, maxHp: 5, speed: 7.5, fireRate: 4.5, dmg: 1, shots: 1, pierce: 0, shotSpeed: 42, magnet: 3.2, dashCd: 1.2, jump: 8.5,
+    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: 2, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 5, maxHp: 5, speed: 7.5, fireRate: 4.5, dmg: 1, shots: 1, pierce: 0, shotSpeed: 42, magnet: 3.2, dashCd: 1.2, jump: 8.5,
          cool: 0, dashT: 0, dashReady: 0, dvx: 0, dvz: 0, inv: 0, upgrades: [] },
     foes: [], threats: [] };
 }
@@ -486,7 +487,8 @@ function update(dt) {
   p.vy -= 24 * dt; p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
   if (p.y <= floor) { p.y = floor; p.vy = 0; }
-  p.dashReady -= dt; p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
+  p.dashCharges ??= 2; if (p.dashCharges < 2) { p.dashReady -= dt; if (p.dashReady <= 0) p.dashCharges = 2; }
+  p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
   for (const t of (G.threats ||= [])) { t.t -= dt; const f = G.foes.find(f => f.id === t.id); if (f) { t.x = f.x; t.z = f.z; } }
   G.threats = G.threats.filter(t => t.t > 0);
   if (input.look) { p.yaw -= input.look.dx * 2.6 * dt; p.pitch = clamp(p.pitch - input.look.dy * 1.6 * dt, -1.3, 1.3); }
@@ -574,7 +576,8 @@ function update(dt) {
   }
   live.gels = live.gels.filter(g => (!g.got && g.life > 0) || (scene.remove(g.m), false));
   if (!G.toSpawn.length && !G.foes.length && G.wave > 0) { for (const sp of live.spit) scene.remove(sp.m); live.spit = []; for (const g of live.gels) { G.score += g.v; scene.remove(g.m); } live.gels = []; offerUpgrades(); }
-  $('dashBar').style.width = `${clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
+  $('dashBar').style.width = `${p.dashCharges >= 2 ? 100 : clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
+  $('dashPips').textContent = '●'.repeat(p.dashCharges ?? 2) + '○'.repeat(2 - (p.dashCharges ?? 2));
   $('parryBar').style.width = `${clamp(1 - p.parryReady / p.parryCd, 0, 1) * 100}%`;
   const king = G.foes.find(fo => ENEMIES[fo.type].boss);
   $('boss').hidden = !king; if (king) $('bossHp').style.width = `${king.hp / king.maxHp * 100}%`;
@@ -611,10 +614,10 @@ function hurt(n, kx, kz) {
   const v = $('vign'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 60);
   hud(); if (p.hp <= 0) gameOver();
 }
-function dash() { const p = G?.p; if (!p || G.mode !== 'play' || p.dashReady > 0) return; if (Math.hypot(p.dvx, p.dvz) < .1) { const [dx, , dz] = aimDir(); p.dvx = dx; p.dvz = dz; } p.dashT = .18; p.dashReady = p.dashCd; sfx.dash(); }
+function dash() { const p = G?.p; if (!p || G.mode !== 'play' || (p.dashCharges ?? 2) <= 0) return; if (Math.hypot(p.dvx, p.dvz) < .1) { const [dx, , dz] = aimDir(); p.dvx = dx; p.dvz = dz; } p.dashT = .18; if (p.dashCharges === 2) p.dashReady = p.dashCd; p.dashCharges--; sfx.dash(); }
 function parry() {
   const p = G?.p; if (!p || G.mode !== 'play' || p.parryReady > 0) return;
-  p.parryT = .3; p.parryReady = p.parryCd ?? .9; p.parryHit = false;
+  p.parryT = .3; p.parryReady = p.parryCd ?? .45; p.parryHit = false;
   gunSwing = .25; beep(700, .07, 'triangle', .03, -300);
   const r = $('parryFx'); r.classList.remove('on'); void r.offsetWidth; r.classList.add('on');
 }

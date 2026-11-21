@@ -11,7 +11,7 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 - Spray: hold the left mouse button
 - Jump: Space, or the Jump button
 - Parry: F. Bats goo back at whoever spat it, or shoves a slime away
-- Dash: Shift, or the Dash button
+- Dash: Shift, or the Dash button. Two charges; both come back when the cooldown ends
 - Pause: Esc or P
 
 On a phone: drag the left half of the screen to move, the right half to look, and use the round buttons to spray, jump and dash.
