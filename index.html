@@ -37,6 +37,21 @@ canvas{display:block;width:100%;height:100%}
 .cross.hit{transform:rotate(45deg) scale(1.15)}
 .vign{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px 30px rgba(255,40,60,.75);opacity:0;transition:opacity .35s}
 .vign.on{opacity:1;transition:none}
+.cine{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(20,10,0,.42) 100%)}
+.speed{position:absolute;inset:-10%;pointer-events:none;opacity:0;transition:opacity .25s;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.55) 0 .6deg,transparent .6deg 7deg);-webkit-mask:radial-gradient(circle,transparent 32%,#000 70%);mask:radial-gradient(circle,transparent 32%,#000 70%)}
+.speed.on{opacity:.55;transition:opacity .05s}
+.bars i{position:absolute;left:0;right:0;height:9%;background:#0b0b08;transform:scaleY(0);pointer-events:none;z-index:2}
+.bars i:first-child{top:0;transform-origin:top}.bars i:last-child{bottom:0;transform-origin:bottom}
+.intro .bars i{animation:bars 1.7s ease forwards}
+@keyframes bars{0%{transform:scaleY(0)}18%,78%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+.banner{position:absolute;left:0;right:0;top:36%;text-align:center;pointer-events:none;opacity:0;z-index:3}
+.banner b{display:block;font:clamp(44px,9vw,96px)/1 'Lilita One',sans-serif;color:var(--sun);text-shadow:0 6px 0 #3a1a00,0 0 40px rgba(255,160,40,.6);letter-spacing:.02em}
+.banner small{display:block;margin-top:10px;font:800 clamp(14px,2vw,18px)/1 Nunito,sans-serif;color:#fff;letter-spacing:.3em;text-transform:uppercase;text-shadow:0 2px 0 #000}
+.intro .banner{animation:slam 1.7s ease-out forwards}
+@keyframes slam{0%{opacity:0;transform:scale(2.4)}12%{opacity:1;transform:scale(.94)}20%{transform:scale(1)}80%{opacity:1;transform:scale(1.04)}100%{opacity:0;transform:scale(1.08)}}
+.combo{position:absolute;left:calc(50% + 40px);top:calc(50% - 46px);font:22px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 3px 0 #b81f30,0 0 12px rgba(255,77,94,.8);pointer-events:none;opacity:0}
+.combo.on{animation:combo .9s ease-out forwards}
+@keyframes combo{0%{opacity:1;transform:scale(1.6) rotate(-6deg)}20%{transform:scale(1) rotate(-4deg)}70%{opacity:1}100%{opacity:0;transform:translateY(-14px) rotate(-4deg)}}
 .boss{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(420px,70%);pointer-events:none;text-align:center;font:18px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 2px 0 #3a0f1f}
 .boss div{height:12px;margin-top:6px;border-radius:6px;background:rgba(40,10,20,.5);overflow:hidden}
 .boss b{display:block;height:100%;background:#ff6fa8}
@@ -129,7 +144,7 @@ canvas{display:block;width:100%;height:100%}
 .stage.looking canvas{cursor:none}
 @media(max-width:700px){.mlook{bottom:72px}}
 @media(max-width:600px){.picks{grid-template-columns:1fr}.pick{min-height:0}.name{font-size:22px}.stat{font-size:17px}.hearts svg{width:18px;height:16px}.card{padding:18px}}
-@media(prefers-reduced-motion:reduce){.toast,.vign{transition:none}}
+@media(prefers-reduced-motion:reduce){.toast,.vign{transition:none}.intro .banner{animation:none;opacity:1}.combo.on{animation:none;opacity:1}}
 </style>
 </head>
 <body>
@@ -145,7 +160,12 @@ canvas{display:block;width:100%;height:100%}
   <main class="stage" id="stage">
     <canvas id="cv" aria-label="Game view"></canvas>
     <div class="cross" id="cross" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="cine" aria-hidden="true"></div>
+    <div class="speed" id="speed" aria-hidden="true"></div>
     <div class="vign" id="vign"></div>
+    <div class="bars" aria-hidden="true"><i></i><i></i></div>
+    <div class="banner" id="banner" aria-live="polite"></div>
+    <div class="combo" id="combo" aria-hidden="true"></div>
     <div class="boss" id="boss" hidden>Slime King<div><b id="bossHp"></b></div></div>
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
@@ -174,7 +194,7 @@ canvas{display:block;width:100%;height:100%}
           <button class="btn alt" id="guideBtn">Slime guide</button>
         </nav>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 13 · huge garden, moon jumps, minimap</p>
+        <p class="ver">Version 14 · cinematic look, more buildings</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -264,6 +284,7 @@ const UPGRADES = [
 const A = 80; // the garden runs from -A to A on both axes
 // Boxes the player and slimes can't walk through: x, z = centre, w, d = size, h = height.
 // Buildings block water and goo, so use them for cover; with moon gravity you can jump onto most roofs.
+const BUILDINGS = ['house', 'barn', 'greenhouse', 'shed', 'tower'];
 const OBSTACLES = [
   { x: 0, z: 0, w: 4.4, d: 4.4, h: 1.2, kind: 'fountain' },
   { x: -44.8, z: -41.6, w: 10, d: 8, h: 5, kind: 'house', wall: '#f2d7b6', roof: '#c8553d' },
@@ -282,6 +303,14 @@ const OBSTACLES = [
   { x: -4.8, z: 32, w: 7, d: 2, h: 1.1, kind: 'planter' }, { x: -32, z: -3.2, w: 2, d: 6, h: 1.1, kind: 'planter' },
   { x: 0, z: -35.2, w: 8, d: 2, h: 1.1, kind: 'planter' }, { x: 54.4, z: 22.4, w: 2, d: 6, h: 1.1, kind: 'planter' },
   { x: 0, z: 62, w: 10, d: 8, h: 5, kind: 'house', wall: '#efd3ea', roof: '#7d4a8c' },
+  { x: 20, z: 30, w: 8, d: 7, h: 4.5, kind: 'house', wall: '#ffe6b0', roof: '#c0582f' },
+  { x: -12, z: 46, w: 8, d: 7, h: 4.5, kind: 'house', wall: '#d6e6f5', roof: '#40618f' },
+  { x: 50, z: -62, w: 9, d: 7, h: 5, kind: 'house', wall: '#f5d0c0', roof: '#7a3a2a' },
+  { x: -50, z: -62, w: 8, d: 8, h: 5, kind: 'house', wall: '#e8e0c8', roof: '#56663a' },
+  { x: 66, z: 30, w: 8, d: 9, h: 5, kind: 'house', wall: '#f0e2ff', roof: '#5a3d8a' },
+  { x: -66, z: 40, w: 7, d: 8, h: 4.5, kind: 'house', wall: '#fff3d6', roof: '#b0472c' },
+  { x: 0, z: -45, w: 14, d: 6, h: 4, kind: 'barn' },
+  { x: 36, z: -36, w: 5, d: 5, h: 11, kind: 'tower' }, { x: -36, z: 56, w: 5, d: 5, h: 11, kind: 'tower' },
   { x: -20, z: -67, w: 9, d: 8, h: 5, kind: 'house', wall: '#d8ecc9', roof: '#3f7a45' },
   { x: 66, z: -30, w: 12, d: 10, h: 6, kind: 'barn' }, { x: -66, z: -30, w: 5, d: 5, h: 3, kind: 'shed' },
   { x: 62, z: 62, w: 7, d: 7, h: 4.5, kind: 'house', wall: '#fbe3c4', roof: '#a8432f' },
@@ -325,12 +354,19 @@ const T = window.THREE;
 if (!T) { stage.innerHTML = '<p style="padding:24px;color:#22301d">The 3D engine didn’t load. Check your connection and reload the page.</p>'; throw new Error('three.js missing'); }
 const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.35; // filmic contrast
 const scene = new T.Scene();
-scene.background = new T.Color('#9fdcff'); scene.fog = new T.Fog('#bfe8ff', 70, 210);
+scene.background = new T.Color('#f2c99a'); scene.fog = new T.Fog('#f0c9a0', 60, 220); // warm late-afternoon haze
+// a gradient sky dome: deep blue overhead fading to a warm horizon
+const sky = new T.Mesh(new T.SphereGeometry(300, 24, 12), new T.ShaderMaterial({ side: T.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new T.Color('#3a78c9') }, mid: { value: new T.Color('#9cc7ec') }, low: { value: new T.Color('#ffcf9a') } },
+  vertexShader: 'varying float h; void main(){ h = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 low; varying float h; void main(){ vec3 c = h > 0.15 ? mix(mid, top, smoothstep(0.15, 0.7, h)) : mix(low, mid, smoothstep(-0.05, 0.15, h)); gl_FragColor = vec4(c, 1.0); }' }));
+scene.add(sky);
 const camera = new T.PerspectiveCamera(75, 1, 0.05, 340); camera.rotation.order = 'YXZ';
 scene.add(camera);
-scene.add(new T.HemisphereLight('#eef8ff', '#3f7a35', 0.9));
-const sun = new T.DirectionalLight('#fff1d0', 0.75); sun.position.set(25, 45, 15); sun.castShadow = true;
+scene.add(new T.HemisphereLight('#cfe3ff', '#4a5a2a', 0.62));
+const sun = new T.DirectionalLight('#ffcf8f', 1.15); sun.position.set(25, 45, 15); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 180 });
 scene.add(sun); scene.add(sun.target); // the shadow area follows you round the big garden
 const lam = c => new T.MeshLambertMaterial({ color: c });
@@ -344,17 +380,17 @@ function grassTexture() {
   for (let i = 0; i < 14; i++) { const x = sr() * 256, y = sr() * 256; g.fillStyle = fl[i % 3]; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(x + Math.cos(k * 1.26) * 3, y + Math.sin(k * 1.26) * 3, 2.4, 0, 7); g.fill(); } }
   const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(48, 48); t.anisotropy = 4; return t;
 }
-const ground = new T.Mesh(new T.PlaneGeometry(A * 2 + 40, A * 2 + 40), new T.MeshLambertMaterial({ map: grassTexture() }));
+const ground = new T.Mesh(new T.PlaneGeometry(A * 2 + 40, A * 2 + 40), new T.MeshLambertMaterial({ map: grassTexture(), color: '#c4f28e' }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 function box(w, h, d, color, x, y, z) { const m = new T.Mesh(new T.BoxGeometry(w, h, d), lam(color)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; }
 // a building: walls, a pyramid roof, a door and windows (the roof is just for looks)
 function building(o) {
   const glass = o.kind === 'greenhouse';
-  const wall = glass ? new T.MeshLambertMaterial({ color: '#cfefff', transparent: true, opacity: .55 }) : lam(o.wall || (o.kind === 'barn' ? '#b8413a' : '#9c7a54'));
+  const wall = glass ? new T.MeshLambertMaterial({ color: '#cfefff', transparent: true, opacity: .55 }) : lam(o.wall || (o.kind === 'barn' ? '#b8413a' : o.kind === 'tower' ? '#c9c2b0' : '#9c7a54'));
   const m = new T.Mesh(new T.BoxGeometry(o.w, o.h, o.d), wall); m.position.set(o.x, o.h / 2, o.z); m.castShadow = m.receiveShadow = !glass; scene.add(m);
   if (glass) for (let i = -1; i <= 1; i += 2) for (const [w, d, dx, dz] of [[o.w + .1, .15, 0, o.d / 2 * i], [.15, o.d + .1, o.w / 2 * i, 0]]) box(w, .15, d, '#ffffff', o.x + dx, o.h, o.z + dz);
-  const rh = o.kind === 'shed' ? 1.4 : o.kind === 'greenhouse' ? 1.6 : 3;
-  const roof = new T.Mesh(new T.ConeGeometry(Math.SQRT1_2, 1, 4), glass ? wall : lam(o.roof || (o.kind === 'barn' ? '#6b2a24' : '#5a4632')));
+  const rh = o.kind === 'shed' ? 1.4 : o.kind === 'greenhouse' ? 1.6 : o.kind === 'tower' ? 5 : 3;
+  const roof = new T.Mesh(new T.ConeGeometry(Math.SQRT1_2, 1, 4), glass ? wall : lam(o.roof || (o.kind === 'barn' ? '#6b2a24' : o.kind === 'tower' ? '#ff4d5e' : '#5a4632')));
   roof.rotation.y = Math.PI / 4; roof.scale.set(o.w + .8, rh, o.d + .8); roof.position.set(o.x, o.h + rh / 2, o.z); roof.castShadow = !glass; scene.add(roof);
   if (glass) return;
   // door on the side facing the fountain, windows on every side
@@ -362,6 +398,7 @@ function building(o) {
   const door = fx ? box(.12, 2.1, 1.2, '#5c3814', o.x + sgn * (o.w / 2 + .05), 1.05, o.z) : box(1.2, 2.1, .12, '#5c3814', o.x, 1.05, o.z + sgn * (o.d / 2 + .05));
   door.castShadow = false;
   if (o.kind === 'shed') return;
+  if (o.kind === 'tower') { for (let y = 3; y < o.h; y += 3.2) for (const side of [-1, 1]) { box(.9, 1.2, .1, '#3d5a6e', o.x, y, o.z + side * (o.d / 2 + .04)).castShadow = false; box(.1, 1.2, .9, '#3d5a6e', o.x + side * (o.w / 2 + .04), y, o.z).castShadow = false; } return; }
   for (const side of [-1, 1]) for (const k of [-1, 1]) {
     box(1.1, 1, .1, '#3d5a6e', o.x + k * o.w / 4, o.h * .62, o.z + side * (o.d / 2 + .04)).castShadow = false;
     box(.1, 1, 1.1, '#3d5a6e', o.x + side * (o.w / 2 + .04), o.h * .62, o.z + k * o.d / 4).castShadow = false;
@@ -377,7 +414,7 @@ for (const o of OBSTACLES) {
   if (o.kind === 'hedge') { box(o.w, o.h, o.d, '#2f6b31', o.x, o.h / 2, o.z); box(o.w + .2, .35, o.d + .2, '#3c823c', o.x, o.h + .1, o.z); }
   else if (o.kind === 'crate') { box(o.w, o.h, o.d, '#c98a4b', o.x, o.h / 2, o.z); box(o.w + .04, .18, o.d + .04, '#8a5527', o.x, o.h * .25, o.z); box(o.w + .04, .18, o.d + .04, '#8a5527', o.x, o.h * .75, o.z); }
   else if (o.kind === 'planter') { box(o.w, o.h, o.d, '#b5643a', o.x, o.h / 2, o.z); for (let i = 0; i < Math.max(o.w, o.d) / 1.2; i++) { const t = i / (Math.max(o.w, o.d) / 1.2 - 1 || 1) - .5; const fx = o.x + (o.w > o.d ? t * (o.w - 1) : 0), fz = o.z + (o.d > o.w ? t * (o.d - 1) : 0); const f = new T.Mesh(new T.SphereGeometry(.38, 10, 8), lam(['#ff7ab6', '#ffd23f', '#fff6dc'][i % 3])); f.position.set(fx, o.h + .35, fz); scene.add(f); } }
-  else if (['house', 'barn', 'greenhouse', 'shed'].includes(o.kind)) building(o);
+  else if (BUILDINGS.includes(o.kind)) building(o);
   else if (o.kind === 'fountain') {
     const b = new T.Mesh(new T.CylinderGeometry(2.2, 2.4, o.h, 24), lam('#d9d2c0')); b.position.set(o.x, o.h / 2, o.z); b.castShadow = b.receiveShadow = true; scene.add(b);
     const w = new T.Mesh(new T.CylinderGeometry(1.9, 1.9, .1, 24), new T.MeshLambertMaterial({ color: '#6fc8ff' })); w.position.set(o.x, o.h - .02, o.z); scene.add(w);
@@ -396,6 +433,7 @@ const gBody = new T.Mesh(new T.BoxGeometry(.16, .16, .62), lam('#ffd23f')); gun.
 const gTank = new T.Mesh(new T.SphereGeometry(.14, 14, 10), new T.MeshLambertMaterial({ color: '#7fd3ff', transparent: true, opacity: .9 })); gTank.position.set(0, .15, .05); gun.add(gTank);
 const gTip = new T.Mesh(new T.CylinderGeometry(.04, .05, .14, 10), lam('#ff4d5e')); gTip.rotation.x = Math.PI / 2; gTip.position.set(0, .02, -.36); gun.add(gTip);
 const gGrip = new T.Mesh(new T.BoxGeometry(.1, .22, .12), lam('#2f6fd0')); gGrip.position.set(0, -.15, .16); gGrip.rotation.x = .3; gun.add(gGrip);
+const flash = new T.PointLight('#bfeaff', 0, 9); flash.position.set(0, .05, -.5); gun.add(flash);
 gun.scale.setScalar(.42); gun.position.set(.2, -.19, -.55); camera.add(gun);
 
 // shared shapes for things that come and go
@@ -449,7 +487,7 @@ function startWave() {
   for (let i = 0; i < total; i++) { let r = Math.random() * sum; for (const [k, e] of pool) { r -= e.weight; if (r <= 0) { G.toSpawn.push(k); break; } } }
   if (n % 5 === 0) G.toSpawn.splice(Math.floor(total / 3), 0, 'king');
   G.spawnTimer = 0.8;
-  toast(n % 5 === 0 ? `Wave ${n}: the Slime King!` : `Wave ${n}`); sfx.wave(); hud();
+  banner(n % 5 === 0 ? 'The Slime King' : `Wave ${n}`, n % 5 === 0 ? 'Boss wave' : `${total} slimes incoming`); sfx.wave(); hud();
 }
 function spawn(type, x, z) {
   const e = ENEMIES[type];
@@ -507,7 +545,7 @@ function update(dt) {
   // jumping and landing (you can stand on crates, planters and, with a good jump, rooftops)
   p.vy -= GRAV * dt; p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
-  if (p.y <= floor) { p.y = floor; p.vy = 0; }
+  if (p.y <= floor) { if (p.vy < -7) { landDip = Math.min(.45, -p.vy * .03); shake = Math.max(shake, -p.vy * .006); beep(110, .12, 'sine', .05, -40); } p.y = floor; p.vy = 0; }
   p.dashCharges ??= 2; if (p.dashCharges < 2) { p.dashReady -= dt; if (p.dashReady <= 0) p.dashCharges = 2; }
   p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
   for (const t of (G.threats ||= [])) { t.t -= dt; const f = G.foes.find(f => f.id === t.id); if (f) { t.x = f.x; t.z = f.z; } }
@@ -626,7 +664,7 @@ function fire() {
     // start just in front of the nozzle, but aim along the view so the crosshair is true
     live.shots.push({ m, x: p.x + dx * .7 + Math.cos(p.yaw) * .18, y: p.y + EYE - .16 + dy * .7, z: p.z + dz * .7 - Math.sin(p.yaw) * .18, vx: dx * p.shotSpeed, vy: dy * p.shotSpeed, vz: dz * p.shotSpeed, life: 1.1, hit: [] });
   }
-  gun.position.z = -.5; sfx.shoot();
+  gun.position.z = -.47; recoil = Math.min(.05, recoil + .012); flashT = .05; sfx.shoot();
 }
 function addSpit(x, y, z, vx, vy, vz, from) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.setScalar(.28); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz, from }); }
 function kill(fo) {
@@ -639,7 +677,10 @@ function kill(fo) {
   const n = e.boss ? 14 : 1 + (Math.random() < .3 ? 1 : 0);
   for (let i = 0; i < n; i++) { const heart = !e.boss && Math.random() < .035, m = new T.Mesh(geo.drop, heart ? mats.heart : mats.gel); m.scale.setScalar(heart ? .25 : .18); scene.add(m); live.gels.push({ m, x: fo.x + rnd(-1, 1), z: fo.z + rnd(-1, 1), v: 2, life: 14, heart }); }
   if (e.splitInto) for (let i = 0; i < e.splits; i++) { const a = i / e.splits * Math.PI * 2; spawn(e.splitInto, fo.x + Math.cos(a) * 3.5, fo.z + Math.sin(a) * 3.5); }
-  shake = Math.max(shake, e.boss ? .35 : .06); sfx.splat();
+  shake = Math.max(shake, e.boss ? .5 : .14); hitStop = Math.max(hitStop, e.boss ? .25 : .05); sfx.splat();
+  burst(fo.x, fo.y, fo.z, '#ffffff', e.boss ? 20 : 6, e.boss ? 18 : 10, .1);
+  combo = comboT > 0 ? combo + 1 : 1; comboT = 1.6;
+  if (combo > 1) { const c = $('combo'); c.textContent = `${combo}× combo`; c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
 }
 function hurt(n, kx, kz) {
   const p = G.p; if (p.dashT > 0) return;
@@ -674,17 +715,27 @@ function stepFx(dt) {
   shake *= Math.pow(.01, dt); markT -= dt; $('cross').classList.toggle('hit', markT > 0);
 }
 function marker() { markT = .12; }
+function tickCombo(dt) { comboT -= dt; if (comboT <= 0 && combo) { combo = 0; } }
 
 // ===================== Drawing =====================
-let bob = 0, gunSwing = 0;
+let bob = 0, gunSwing = 0, recoil = 0, roll = 0, landDip = 0, fovKick = 0, hitStop = 0, combo = 0, comboT = 0, flashT = 0, baseFov = 75;
 function render(dt) {
   const t = performance.now() / 1000;
   if (G) {
     const p = G.p, moving = Math.hypot(p.dvx, p.dvz) > .1 && (G.mode === 'play') && (input.move || ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].some(k => input.keys[k]));
     bob += dt * (moving ? 9 : 0);
     camera.position.set(p.x + rnd(-shake, shake), p.y + EYE + (moving ? Math.sin(bob * 2) * .05 : 0), p.z + rnd(-shake, shake));
-    camera.rotation.set(p.pitch, p.yaw, 0);
-    sun.position.set(p.x + 25, 45, p.z + 15); sun.target.position.set(p.x, 0, p.z);
+    // action camera: recoil kick, a lean into strafes, a dip on landing, wider view while dashing
+    recoil *= Math.pow(.001, dt); landDip *= Math.pow(.002, dt);
+    const strafe = (input.keys.KeyD || input.keys.ArrowRight ? 1 : 0) - (input.keys.KeyA || input.keys.ArrowLeft ? 1 : 0) + (input.move ? input.move.dx : 0);
+    roll += ((G.mode === 'play' ? -strafe * .035 : 0) + (p.dashT > 0 ? -Math.sign(strafe) * .03 : 0) - roll) * Math.min(1, dt * 8);
+    fovKick += (((p.dashT > 0 ? 16 : 0) + (moving ? 3 : 0)) - fovKick) * Math.min(1, dt * (p.dashT > 0 ? 18 : 6));
+    if (Math.abs(camera.fov - (baseFov + fovKick)) > .05) { camera.fov = baseFov + fovKick; camera.updateProjectionMatrix(); }
+    camera.position.y -= landDip;
+    camera.rotation.set(p.pitch + recoil, p.yaw, roll);
+    flashT -= dt; flash.intensity = flashT > 0 ? 2.2 : 0;
+    $('speed').classList.toggle('on', p.dashT > 0);
+    sun.position.set(p.x - 45, 32, p.z - 30); sun.target.position.set(p.x, 0, p.z); sky.position.copy(camera.position);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4, gunSwing * 3, gunSwing * 3.5);
     drawThreats(p); drawMinimap(p);
     gun.position.x = .2 + Math.sin(bob) * .012; gun.position.y = -.19 + Math.abs(Math.cos(bob)) * .012; gun.position.z += (-.55 - gun.position.z) * Math.min(1, dt * 14);
@@ -697,7 +748,7 @@ function render(dt) {
     }
   } else {
     // title screen: a slow look around the garden with slimes posed in it
-    camera.position.set(Math.sin(t * .1) * 16, 6, Math.cos(t * .1) * 16); camera.lookAt(0, 1, 0);
+    camera.position.set(Math.sin(t * .1) * 16, 6, Math.cos(t * .1) * 16); camera.lookAt(0, 1, 0); sky.position.copy(camera.position);
   }
   renderer.render(scene, camera);
 }
@@ -711,7 +762,7 @@ function drawMinimap(p) {
   c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size);
   c.fillStyle = 'rgba(126,200,90,.35)'; c.fillRect(pad, pad, size - pad * 2, size - pad * 2);
   for (const b of OBSTACLES) {
-    const big = ['house', 'barn', 'greenhouse', 'shed'].includes(b.kind);
+    const big = BUILDINGS.includes(b.kind);
     c.fillStyle = big ? 'rgba(255,246,220,.85)' : b.kind === 'hedge' ? 'rgba(20,60,22,.9)' : 'rgba(201,138,75,.8)';
     c.fillRect(X(b.x - b.w / 2), Z(b.z - b.d / 2), Math.max(1.5, b.w * k), Math.max(1.5, b.d * k));
   }
@@ -756,6 +807,10 @@ function hud() {
 }
 function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver', 'ovControls', 'ovGuide']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
 let toastT = 0;
+function banner(big, small) {
+  const b = $('banner'); b.innerHTML = `<b>${big}</b><small>${small}</small>`; stage.classList.remove('intro'); void stage.offsetWidth; stage.classList.add('intro');
+  clearTimeout(banner.t); banner.t = setTimeout(() => stage.classList.remove('intro'), 1700);
+}
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1600); }
 function offerUpgrades() {
   G.mode = 'pick'; unlock();
@@ -919,13 +974,14 @@ $('touch').hidden = !touchMode;
 function resize() {
   const r = stage.getBoundingClientRect();
   renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1)); renderer.setSize(r.width, r.height, false);
-  camera.aspect = r.width / Math.max(1, r.height); camera.fov = camera.aspect < 0.8 ? 85 : 75; camera.updateProjectionMatrix();
+  camera.aspect = r.width / Math.max(1, r.height); baseFov = camera.aspect < 0.8 ? 85 : 75; camera.fov = baseFov + fovKick; camera.updateProjectionMatrix();
 }
 const ro = new ResizeObserver(resize); ro.observe(stage);
 let last = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  update(dt); stepFx(dt); render(dt);
+  let dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (hitStop > 0) { hitStop -= dt; dt *= .08; } // a beat of freeze-frame on kills
+  update(dt); stepFx(dt); tickCombo(dt); render(dt);
   requestAnimationFrame(frame);
 }
 setMute(muted); bestLine(); resize(); hud();
