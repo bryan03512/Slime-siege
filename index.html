@@ -298,7 +298,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 27 · bigger shop, loadouts, railgun, hammer</p>
+        <p class="ver">Version 28 · melee swings hit up to 3 robots</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -430,6 +430,7 @@ const LEVEL_COST = [40, 80, 130, 190, 260], MAX_LEVEL = 5;
 const COLORS = { stock: { name: 'Stock', price: 0, c: null }, pink: { name: 'Hot pink', price: 30, c: '#ff3d8b' }, toxic: { name: 'Toxic green', price: 30, c: '#3dff8a' }, violet: { name: 'Violet', price: 30, c: '#b45cff' }, gold: { name: 'Gold', price: 50, c: '#ffcf3a' }, ice: { name: 'Ice white', price: 40, c: '#e8f4ff' } };
 const CROSSES = { cross: { name: 'Cross', price: 0 }, dot: { name: 'Dot', price: 20 }, circle: { name: 'Circle', price: 20 }, x: { name: 'X', price: 20 } };
 const MAX_RANGED = 2, MAX_MELEE = 1;
+const MAX_SWING_HITS = 3; // most robots one melee swing can hit
 const A = 80; // the city block runs from -A to A on both axes
 // Boxes the player and robots can't walk through: x, z = centre, w, d = size, h = height.
 // Buildings block bullets and bolts, so use them for cover; with low gravity you can jump onto most roofs.
@@ -1206,6 +1207,7 @@ function swingTick(dt) {
   const p = G.p; if (!(p.slashT > 0)) return; p.slashT -= dt;
   const g = GUNS[p.swingGun] || GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1; let hit = 0;
   for (const fo of G.foes) {
+    if (p.slashCut.length >= MAX_SWING_HITS) break; // one swing cuts at most 3 robots
     if (fo.hp <= 0 || p.slashCut.includes(fo.id)) continue;
     const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
     if (d > g.reach + fo.r || (dx * ax + dz * az) / (d * al) < .1 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2) continue;
