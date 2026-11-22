@@ -335,7 +335,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 51 · the spear</p>
+        <p class="ver">Version 52 · spear speed bonus uncapped</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -456,7 +456,7 @@ const GUNS = {
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
   railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
   hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: .6, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
-  spear:  { name: 'Spear',       price: 140, mode: 'melee',  rate: .45, mag: 0, reloadTime: 0, dmg: 2.5, reach: 7, swing: .22, guard: .4, pierce: true, desc: 'A long, narrow thrust that runs through every robot in a line, with no limit on how many. While you’re moving fast it hits whatever you’re pointing at on its own, no click needed. Each hit is weak, so speed and numbers make up for it.' },
+  spear:  { name: 'Spear',       price: 140, mode: 'melee',  rate: .45, mag: 0, reloadTime: 0, dmg: 1, reach: 7, swing: .22, guard: .4, pierce: true, desc: 'A long, narrow thrust that runs through every robot in a line, with no limit on how many. While you’re moving fast it hits whatever you’re pointing at on its own, no click needed. Each hit is very weak, but its speed bonus has no limit: the faster you go, the harder it hits.' },
   knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .5, mag: 0, reloadTime: 0, dmg: 6, reach: 5, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second. Your main weapon. Hits harder the faster you’re going, and while you’re moving fast (dashing, grappling or dropping) you can’t be hurt mid-swing.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots and bursts where it lands. In the air, click to scope in and slow time, then click again to fire.' },
 };
@@ -1295,7 +1295,8 @@ function slash() {
 // guns hit harder the faster you're going too: normal at walking pace, up to double at about 28 m/s
 function gunSpeedMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 20, 0, 1); }
 // the speed bonus for whatever's in your hands right now
-function heldSpeedMult(p) { const g = GUNS[p.gun]; return g?.mode === 'melee' ? (g.slam ? hammerSwingMult(p) : swordMult(p)) : gunSpeedMult(p); }
+function spearMult(p) { return 1 + Math.max(0, ((p.spd || 0) - 6) / 6); } /* the spear's speed bonus has no cap */
+function heldSpeedMult(p) { const g = GUNS[p.gun]; return g?.mode === 'melee' ? (g.slam ? hammerSwingMult(p) : g.pierce ? spearMult(p) : swordMult(p)) : gunSpeedMult(p); }
 let smultShown = '';
 function smultHud(p) {
   const m = heldSpeedMult(p), t = m >= 1.1 ? `×${m.toFixed(1)}` : ''; if (t === smultShown) return; smultShown = t;
@@ -1347,7 +1348,7 @@ function spearTick(dt) {
   for (const k in p.spearCd) if ((p.spearCd[k] -= dt) <= 0) delete p.spearCd[k];
   for (const fo of G.foes) {
     if (fo.hp <= 0 || p.spearCd[fo.id] || !inSpearLine(p, fo, g.reach * (p.reachMul || 1))) continue;
-    const mult = swordMult(p); p.spearCd[fo.id] = .3;
+    const mult = spearMult(p); p.spearCd[fo.id] = .3;
     fo.hp -= g.dmg * .5 * p.dmg * mult * (1 + .12 * (levels.spear || 0)) * (p.meleeMul || 1); fo.flash = .1; hit++;
     burst(fo.x, fo.y ?? fo.r, fo.z, '#3ef0ff', 6, 7, .05);
     if (fo.hp <= 0) kill(fo, true); else sfx.chop();
@@ -1362,7 +1363,7 @@ function swingTick(dt) {
     if (fo.hp <= 0 || p.slashCut.includes(fo.id)) continue;
     const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
     if (g.pierce ? !inSpearLine(p, fo, g.reach * (p.reachMul || 1)) : d > g.reach * (p.reachMul || 1) + fo.r || (dx * ax + dz * az) / (d * al) < .1 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2) continue;
-    const mult = g.slam ? hammerSwingMult(p) : swordMult(p); p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg * mult * (1 + .12 * (levels[p.swingGun] || 0)) * (p.meleeMul || 1); fo.flash = .1; fo.kx += dx / d * 14 * Math.min(mult, 2); fo.kz += dz / d * 14 * Math.min(mult, 2); hit++;
+    const mult = g.slam ? hammerSwingMult(p) : g.pierce ? spearMult(p) : swordMult(p); p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg * mult * (1 + .12 * (levels[p.swingGun] || 0)) * (p.meleeMul || 1); fo.flash = .1; fo.kx += dx / d * 14 * Math.min(mult, 2); fo.kz += dz / d * 14 * Math.min(mult, 2); hit++;
     if (mult >= 1.2) { speedPop(mult); burst(fo.x, fo.y ?? fo.r, fo.z, '#ffb020', Math.round(6 * mult), 10, .06); }
     burst(fo.x, fo.y ?? fo.r, fo.z, '#ffffff', 8, 8, .05); burst(fo.x, fo.y ?? fo.r, fo.z, ENEMIES[fo.type].glow, 6, 6, .06);
     if (fo.hp <= 0) kill(fo, true); else sfx.chop();
