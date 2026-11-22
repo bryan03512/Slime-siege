@@ -1,6 +1,6 @@
 # Slime Siege
 
-A first-person shooter in the browser. Security robots are overrunning a dark city block at night, and you hold them off with a burst rifle, wave after wave, picking an upgrade after each one. Every fifth wave the Warden shows up. Every robot you take down earns coins, which are saved between runs and spent in the shop on new guns.
+A first-person shooter in the browser. Security robots are overrunning a dark city block at night, and you hold them off mostly with your blade (guns are a backup), wave after wave, picking an upgrade after each one. Every fifth wave the Warden shows up. Every robot you take down earns coins, which are saved between runs and spent in the shop on new guns.
 
 Play it by opening `index.html` in a browser (it needs an internet connection to load three.js).
 
@@ -44,3 +44,11 @@ Everything you'd want to add lives in tables near the top of the script in `inde
 Everything saves in the browser: coins (`ss-coins`, saved the moment you earn them), owned and equipped guns (`ss-guns`, `ss-gun`), best score (`ss3-best`), sound (`ss-muted`), and the run in progress (`ss-run`, saved every 2 seconds and when you leave the page). Continue on the main menu picks a saved run back up.
 
 Built with [three.js](https://threejs.org/) r128.
+
+## Melee first (v47)
+- Every run starts with your melee weapon in hand. The long sword hits harder (6), reaches further (5 m) and swings faster.
+- Guns do 60% damage and carry limited spare ammo (2 magazines). Melee kills refill spare ammo, heal 4 health and pay 1.5x coins.
+- New upgrades: Keen edge (+30% melee damage), Long arms (+20% reach), Leech (melee kills heal more).
+- Drones lock a red laser on you for 1.8 s, then fire an instant sniper shot. Parry just before it hits, or up to 0.5 s after, to cancel the damage and fire it back.
+- Every fifth wave brings the Duelist instead of the Warden: it strafes, dashes in, dodges your swings and winds up big cuts. Parry the cut to stagger it.
+- New slash, hammer and melee-hit sounds.
