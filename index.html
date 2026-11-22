@@ -335,7 +335,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 52 · spear speed bonus uncapped</p>
+        <p class="ver">Version 53 · spear immunity frames</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -456,7 +456,7 @@ const GUNS = {
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
   railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
   hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: .6, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
-  spear:  { name: 'Spear',       price: 140, mode: 'melee',  rate: .45, mag: 0, reloadTime: 0, dmg: 1, reach: 7, swing: .22, guard: .4, pierce: true, desc: 'A long, narrow thrust that runs through every robot in a line, with no limit on how many. While you’re moving fast it hits whatever you’re pointing at on its own, no click needed. Each hit is very weak, but its speed bonus has no limit: the faster you go, the harder it hits.' },
+  spear:  { name: 'Spear',       price: 140, mode: 'melee',  rate: .45, mag: 0, reloadTime: 0, dmg: 1, reach: 7, swing: .22, guard: .4, pierce: true, desc: 'A long, narrow thrust that runs through every robot in a line, with no limit on how many. While you’re moving fast it hits whatever you’re pointing at on its own, no click needed. Each hit is very weak, but its speed bonus has no limit: the faster you go, the harder it hits. Every thrust gives a short moment where you can’t be hurt.' },
   knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .5, mag: 0, reloadTime: 0, dmg: 6, reach: 5, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second. Your main weapon. Hits harder the faster you’re going, and while you’re moving fast (dashing, grappling or dropping) you can’t be hurt mid-swing.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots and bursts where it lands. In the air, click to scope in and slow time, then click again to fire.' },
 };
@@ -477,6 +477,7 @@ const CROSSES = { cross: { name: 'Cross', price: 0 }, dot: { name: 'Dot', price:
 const MAX_RANGED = 1, MAX_MELEE = 1; // one gun and one melee weapon per run
 const FOCUS_TIME = 3, FOCUS_COOLDOWN = 4; // seconds of slow time, and how long until Focus can be used again
 const MAX_SWING_HITS = 3;
+const SPEAR_IFRAME = .2;      // seconds you can't be hurt after a spear thrust (half that on an auto-hit)
 const DRONE_AIM = 1.8;        // seconds a drone holds its red laser on you before it fires
 const PARRY_BUFFER = .5;      // you can still parry a drone shot this long after it hits you
 // Melee first: guns are a backup with limited spare ammo, refilled by melee kills
@@ -1288,6 +1289,7 @@ function slash() {
   p.slashT = g.swing; p.slashCut = []; slashSide = -slashSide;
   // the sword only protects you while you're moving fast: dashing, grappling, or dropping quickly
   const guarded = !g.slam && (p.dashT > 0 || !!p.hook || p.vy < -10 || (p.spd || 0) > 14); if (guarded) p.inv = Math.max(p.inv, g.guard);
+  if (g.pierce) p.inv = Math.max(p.inv, SPEAR_IFRAME); /* the spear always gives a short dodge window */
   p.mx = (p.mx || 0) + ax / al * 5; p.mz = (p.mz || 0) + az / al * 5; // a small lunge
   if (g.slam) sfx.swoosh(); else if (g.pierce) { sweep(.14, .28, 1500, 6000, 2.5); ring([3400], .18, .01); } else sfx.swish();
   if (guarded) { const e = $('edge'); e.classList.add('guard'); clearTimeout(slash.t); slash.t = setTimeout(() => e.classList.remove('guard'), g.guard * 1000); }
@@ -1353,7 +1355,7 @@ function spearTick(dt) {
     burst(fo.x, fo.y ?? fo.r, fo.z, '#3ef0ff', 6, 7, .05);
     if (fo.hp <= 0) kill(fo, true); else sfx.chop();
   }
-  if (hit) { marker(); spearAuto = .12; hitStop = Math.max(hitStop, .015); }
+  if (hit) { marker(); spearAuto = .12; hitStop = Math.max(hitStop, .015); p.inv = Math.max(p.inv, SPEAR_IFRAME * .5); }
 }
 function swingTick(dt) {
   const p = G.p; spearTick(dt); if (!(p.slashT > 0)) return; p.slashT -= dt;
