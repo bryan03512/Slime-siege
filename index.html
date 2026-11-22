@@ -92,11 +92,11 @@ canvas{display:block;width:100%;height:100%}
 .offs i{position:absolute;left:-9px;top:-8px;width:18px;height:16px;clip-path:polygon(50% 0,100% 100%,50% 72%,0 100%);filter:drop-shadow(0 0 4px currentColor);opacity:.6}
 .offs i.close{animation:offpulse .5s ease-in-out infinite alternate}
 @keyframes offpulse{to{filter:drop-shadow(0 0 8px #fff) brightness(1.6)}}
-.scope{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle closest-side at 50% 50%,transparent 0 88%,rgba(62,240,255,.5) 88.5%,#000 90%)}
+.scope{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 120px rgba(62,240,255,.18)}
 .scope i{position:absolute;background:rgba(0,0,0,.85);box-shadow:0 0 0 .5px rgba(62,240,255,.4)}
 .scope i:nth-child(1){left:0;right:0;top:50%;height:1.5px;margin-top:-.75px;-webkit-mask:linear-gradient(90deg,#000 0 47%,transparent 47% 53%,#000 53%);mask:linear-gradient(90deg,#000 0 47%,transparent 47% 53%,#000 53%)}
 .scope i:nth-child(2){top:0;bottom:0;left:50%;width:1.5px;margin-left:-.75px;-webkit-mask:linear-gradient(#000 0 45%,transparent 45% 55%,#000 55%);mask:linear-gradient(#000 0 45%,transparent 45% 55%,#000 55%)}
-.scope b{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);font:12px/1 'Russo One',sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--neon);text-shadow:0 0 8px var(--neon)}
+.scope b{position:absolute;left:50%;top:9%;transform:translateX(-50%);font:12px/1 'Russo One',sans-serif;letter-spacing:.3em;text-transform:uppercase;color:var(--neon);text-shadow:0 0 8px var(--neon)}
 .scoped .hp,.scoped .dashm,.scoped .desk,.scoped .mlook{opacity:.35}
 .threats{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 .threats i{position:absolute;left:-7px;top:-6px;width:14px;height:12px;background:var(--red);clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 3px var(--red));opacity:0;transition:opacity .15s}
@@ -231,7 +231,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
     <div class="hp" id="hp" role="meter" aria-label="Health" aria-valuemin="0"><span id="hpText">100</span><div><i id="hpLag"></i><b id="hpFill"></b></div></div>
     <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> / <span id="ammoMax">24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small><span class="gname" id="gunName">Burst rifle</span><span class="slots" id="slots"></span></div>
-    <div class="scope" id="scope" aria-hidden="true"><i></i><i></i><b>Slow-mo</b></div>
+    <div class="scope" id="scope" aria-hidden="true"><b>Slow-mo</b></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
     <div class="offs" id="offs" aria-hidden="true"></div>
     <div class="parryfx" id="parryFx" aria-hidden="true"></div>
@@ -268,7 +268,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 21 · click-to-scope sniper, dash up, fling control</p>
+        <p class="ver">Version 22 · box hitboxes, no scope overlay</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -666,7 +666,11 @@ const geo = { cube: new T.BoxGeometry(1, 1, 1), drop: new T.SphereGeometry(1, 8,
 const mats = { parried: glowMat('#3ef0ff'), spit: glowMat('#ff3d4a'), dark: lam('#15181f'), tracer: new T.MeshBasicMaterial({ color: '#ffe9b0', transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false }), med: glowMat('#3dff8a'), rotor: glowMat('#9fe9ff', .35) };
 const glowOf = {}; for (const [k, e] of Object.entries(ENEMIES)) glowOf[k] = glowMat(e.glow);
 // a robot built from boxes; the unit-size model is scaled by r, so it stands 2r tall
-const hitboxMat = new T.MeshBasicMaterial({ color: '#3ef0ff', wireframe: true, transparent: true, opacity: .65, depthTest: false, fog: false });
+// Hitboxes: a box around each robot, turned to face you like the robot does. Shots that enter the box hit.
+// Sizes are half-widths in metres; cy = how far the box centre sits above the robot's centre.
+function hitboxOf(fo) { const e = ENEMIES[fo.type], r = fo.r; return e.fly ? { hx: r * 1.35 + .15, hy: r * .7 + .2, cy: 0 } : { hx: r * .85 + .12, hy: r * 1.25, cy: r * .1 }; }
+const hitboxFill = new T.MeshBasicMaterial({ color: '#3ef0ff', transparent: true, opacity: .14, depthTest: false, depthWrite: false, fog: false });
+const hitboxLine = new T.LineBasicMaterial({ color: '#3ef0ff', transparent: true, opacity: .95, depthTest: false, fog: false });
 const BOT_GLOW = '#2a3040'; // a faint self-light so silver robots never sink into the dark
 const botJoint = new T.MeshPhongMaterial({ color: '#4a515e', emissive: '#14181f', specular: '#888888', shininess: 40 });
 function botMesh(type) {
@@ -692,8 +696,9 @@ function botMesh(type) {
     if (e.boss) { for (const side of [-1, 1]) add(g, glow, side * .2, 1.32, 0, .06, .38, .06); add(g, glow, 0, .6, .37, .7, .06, .02); }
   }
   // the hitbox outline (matches the shapes the gun tests against), shown in cyan while scoped
-  const hb = e.fly ? new T.Mesh(new T.SphereGeometry(1.45 + .15 / e.r, 12, 8), hitboxMat) : new T.Mesh(new T.CylinderGeometry(.85 + .12 / e.r, .85 + .12 / e.r, 2.5, 12, 3), hitboxMat);
-  if (!e.fly) hb.position.y = .1; hb.visible = false; hb.renderOrder = 999; g.add(hb); ud.hitbox = hb;
+  const hbs = hitboxOf({ type, r: e.r }), bg = new T.BoxGeometry(hbs.hx * 2 / e.r, hbs.hy * 2 / e.r, hbs.hx * 2 / e.r);
+  const hb = new T.Group(); hb.add(new T.Mesh(bg, hitboxFill)); hb.add(new T.LineSegments(new T.EdgesGeometry(bg), hitboxLine));
+  hb.children.forEach(c => c.renderOrder = 999); hb.position.y = hbs.cy / e.r; hb.visible = false; g.add(hb); ud.hitbox = hb;
   g.userData = ud; g.scale.setScalar(e.r); scene.add(g); return g;
 }
 const rope = new T.Mesh(geo.cube, new T.MeshBasicMaterial({ color: '#3ef0ff', transparent: true, opacity: .85 })); rope.visible = false; scene.add(rope);
@@ -999,15 +1004,17 @@ function fire() {
   const hits = [];
   for (const fo of G.foes) {
     if (fo.hp <= 0) continue;
-    const cx = fo.x - ox, cy = (fo.y ?? fo.r) - oy, cz = fo.z - oz;
-    if (ENEMIES[fo.type].fly) { // drones: a flat-ish ball
-      const t = cx * dx + cy * dy + cz * dz; if (t <= 0 || t > wall) continue;
-      if (Math.hypot(cx - dx * t, cy - dy * t, cz - dz * t) < fo.r * 1.45 + .15 + as) hits.push([t, fo]);
-    } else { // walkers: an upright body from the feet to the top of the head
-      const hh = dx * dx + dz * dz || 1e-9, t = (cx * dx + cz * dz) / hh; if (t <= 0 || t > wall) continue;
-      const side = Math.hypot(cx - dx * t, cz - dz * t), y = dy * t;
-      if (side < fo.r * .85 + .12 + as && y > cy - fo.r * 1.15 - as && y < cy + fo.r * 1.35 + as) hits.push([t, fo]); // assist: a near miss counts
+    // into the robot's own frame (it turns to face you), then a ray-box test; assist grows the box a little
+    const hb = hitboxOf(fo), rot = Math.atan2(p.x - fo.x, p.z - fo.z), c = Math.cos(rot), sn = Math.sin(rot);
+    const rx = ox - fo.x, ry = oy - ((fo.y ?? fo.r) + hb.cy), rz = oz - fo.z;
+    const lo = [rx * c - rz * sn, ry, rx * sn + rz * c], ld = [dx * c - dz * sn, dy, dx * sn + dz * c], half = [hb.hx + as, hb.hy + as, hb.hx + as];
+    let t0 = 0, t1 = wall;
+    for (let k = 0; k < 3 && t0 <= t1; k++) {
+      if (Math.abs(ld[k]) < 1e-9) { if (Math.abs(lo[k]) > half[k]) t1 = -1; continue; }
+      let a1 = (-half[k] - lo[k]) / ld[k], a2 = (half[k] - lo[k]) / ld[k]; if (a1 > a2) [a1, a2] = [a2, a1];
+      t0 = Math.max(t0, a1); t1 = Math.min(t1, a2);
     }
+    if (t0 <= t1 && t1 > 0) hits.push([Math.max(t0, .01), fo]);
   }
   hits.sort((a, b) => a[0] - b[0]);
   let end = wall;
@@ -1169,7 +1176,7 @@ function render(dt) {
     fovKick += (((p.dashT > 0 ? 16 : 0) + (moving ? 3 : 0) + Math.min(14, Math.hypot(p.mx || 0, p.mz || 0) * .45)) - fovKick) * Math.min(1, dt * (p.dashT > 0 ? 18 : 6));
     const fovWant = (baseFov + fovKick) * (1 - zoomK) + 44 * zoomK;
     if (Math.abs(camera.fov - fovWant) > .05) { camera.fov = fovWant; camera.updateProjectionMatrix(); }
-    $('scope').style.opacity = zoomK; $('cross').style.opacity = 1 - zoomK; gun.visible = zoomK < .5 && G.mode !== 'over'; stage.classList.toggle('scoped', zoomK > .5);
+    $('scope').style.opacity = zoomK; gun.visible = zoomK < .5 && G.mode !== 'over'; stage.classList.toggle('scoped', zoomK > .5);
     camera.position.y -= landDip;
     camera.rotation.set(p.pitch + recoil, p.yaw, roll);
     flashT -= dt; flash.intensity = flashT > 0 ? 3 : 0; muzzle.visible = flashT > 0; muzzle.rotation.z = rnd(0, 6);
