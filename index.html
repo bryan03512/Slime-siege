@@ -234,6 +234,22 @@ canvas{display:block;width:100%;height:100%}
 .gcard .btn[disabled]{opacity:.45;cursor:default;filter:none}
 .gcard .price{font-weight:inherit}
 .shopsoon{border:1px dashed #3a4562;border-radius:8px;padding:18px;margin:14px 0 18px;color:var(--muted)}
+.buddy{position:absolute;right:16px;bottom:8px;width:76px;height:62px;pointer-events:none;z-index:5}
+.buddy.side{right:10px;bottom:auto;top:34%}
+.goop{width:100%;height:100%;overflow:visible;transform-origin:50% 100%;animation:goopIdle 1.6s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(93,255,106,.35))}
+.buddy.cheer .goop{animation:goopCheer .5s ease-out 2}
+.buddy.ouch .goop{animation:goopOuch .45s ease-out;filter:drop-shadow(0 0 10px rgba(255,48,64,.8)) hue-rotate(-90deg)}
+.buddy.talk .goop{animation:goopTalk .25s ease-in-out 4}
+.buddy.ouch .mouth{d:path("M34 50 Q40 44 46 50")}
+.goop .eyes{animation:goopBlink 4s infinite;transform-origin:50% 36px}
+@keyframes goopIdle{0%,100%{transform:scale(1,1)}50%{transform:scale(1.06,.93)}}
+@keyframes goopCheer{0%{transform:translateY(0) scale(1.1,.85)}40%{transform:translateY(-22px) scale(.9,1.12)}100%{transform:translateY(0) scale(1,1)}}
+@keyframes goopOuch{0%{transform:scale(1.25,.7)}60%{transform:scale(.92,1.08)}100%{transform:scale(1,1)}}
+@keyframes goopTalk{50%{transform:scale(1.04,.95)}}
+@keyframes goopBlink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.bubble{position:absolute;right:62px;bottom:46px;max-width:230px;width:max-content;padding:8px 11px;border-radius:12px 12px 2px 12px;background:rgba(10,30,14,.92);border:1px solid #4fe85c;color:#d9ffd4;font:700 13px/1.25 Barlow,sans-serif;box-shadow:0 0 14px rgba(79,232,92,.35);opacity:0;transform:translateY(6px) scale(.95);transform-origin:100% 100%;transition:opacity .2s,transform .2s}
+.bubble.on{opacity:1;transform:none}
+.buddy.side .bubble{bottom:auto;top:-4px;right:70px;border-radius:12px 2px 12px 12px}
 .touch{position:absolute;inset:0;pointer-events:none}
 .tbtn{position:absolute;pointer-events:auto;border:1px solid rgba(255,255,255,.2);border-radius:50%;font:13px/1 'Russo One',sans-serif;text-transform:uppercase;color:#fff;background:rgba(15,19,28,.75);box-shadow:0 4px 0 rgba(0,0,0,.4);touch-action:none}
 .tfire{right:22px;bottom:26px;width:84px;height:84px;background:rgba(62,240,255,.85);color:#031016}
@@ -310,6 +326,19 @@ canvas{display:block;width:100%;height:100%}
       <button class="dbtn" id="dSwap" tabindex="-1">Swap<small>Q</small></button>
       <button class="dbtn" id="dFocus" tabindex="-1" hidden>Focus<small>C</small></button>
     </div>
+    <div class="buddy" id="buddy" hidden aria-live="polite">
+      <div class="bubble" id="buddySay"></div>
+      <svg class="goop" viewBox="0 0 80 64" aria-label="Goop, your slime helper">
+        <defs><radialGradient id="gg" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#b6ff9e"/><stop offset=".55" stop-color="#4fe85c"/><stop offset="1" stop-color="#1c9c33"/></radialGradient></defs>
+        <ellipse cx="40" cy="60" rx="30" ry="4" fill="rgba(0,0,0,.35)"/>
+        <path class="gbody" d="M8 58 C6 40 14 14 40 12 C66 14 74 40 72 58 C64 62 52 60 48 58 C44 63 36 63 32 58 C26 61 14 62 8 58 Z" fill="url(#gg)" stroke="#0f6a22" stroke-width="2"/>
+        <ellipse cx="29" cy="24" rx="7" ry="4" fill="rgba(255,255,255,.55)" transform="rotate(-25 29 24)"/>
+        <g class="eyes"><ellipse cx="31" cy="36" rx="5.5" ry="7" fill="#fff"/><ellipse cx="50" cy="36" rx="5.5" ry="7" fill="#fff"/>
+        <circle class="pupil" cx="32" cy="37" r="3" fill="#10202a"/><circle class="pupil" cx="51" cy="37" r="3" fill="#10202a"/></g>
+        <path class="mouth" d="M34 47 Q40 53 46 47" fill="none" stroke="#0f4a1a" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="62" cy="55" r="3" fill="#4fe85c" stroke="#0f6a22" stroke-width="1.5"/>
+      </svg>
+    </div>
     <div class="touch" id="touch" hidden>
       <button class="tbtn tfire" id="tFire" aria-label="Shoot">Fire</button>
       <button class="tbtn treload" id="tReload" aria-label="Reload">Reload</button>
@@ -335,7 +364,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 55 · spear scales faster, longer immunity</p>
+        <p class="ver">Version 56 · slime weapons, Goop, touch assists</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -750,24 +779,37 @@ const shinyMats = []; // blades and hammer heads: tinted by styles too
 const shinyMat = (c, sh) => { const m = new T.MeshPhongMaterial({ color: c, specular: '#ffffff', shininess: sh }); shinyMats.push({ m, def: c }); return m; };
 const accentMats = []; // { m, def }: glowing strips that take the cosmetic colour
 const accent = c => { const m = glowMat(c); accentMats.push({ m, def: c }); return m; };
+// Slime look for every weapon: glossy see-through goo, blobs and drips that wobble
+const slimeMat = new T.MeshPhongMaterial({ color: '#5dff6a', emissive: '#0e5a18', specular: '#ffffff', shininess: 140, transparent: true, opacity: .8 });
+const slimeCore = new T.MeshPhongMaterial({ color: '#1fbf3a', emissive: '#08380f', specular: '#bfffc8', shininess: 90 });
+const blobGeo = new T.SphereGeometry(1, 12, 9);
+function goo(g, x, y, z, sx, sy = sx, sz = sx, mat = slimeMat) { const m = new T.Mesh(blobGeo, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); g.add(m); (g.userData.goo ||= []).push({ m, sy, y, ph: Math.random() * 6 }); return m; }
+function drip(g, x, y, z, len) { const m = goo(g, x, y - len / 2, z, .018, len / 2, .018); m.userData.drip = true; goo(g, x, y - len, z, .026); return m; }
 function gunModelFor(id) {
   const g = new T.Group(); g.visible = false; gun.add(g);
   const part = (w, h, d, mat, x, y, z) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m; };
   const tube = (r, len, mat, z, y = .015) => { const m = new T.Mesh(new T.CylinderGeometry(r, r, len, 10), mat); m.rotation.x = Math.PI / 2; m.position.set(0, y, z); g.add(m); return m; };
   if (id === 'knife') {
-    const blade = new T.Mesh(new T.BoxGeometry(.03, .1, 1.25), shinyMat('#d9dee8', 90)); blade.position.set(0, .02, -.8); g.add(blade);
-    part(.012, .022, 1.15, accent('#3ef0ff'), .018, .055, -.8); part(.05, .2, .07, gunMetal, 0, .02, -.15); part(.06, .1, .3, gunDark, 0, -.01, .05);
     g.userData = { mag: null, magY: 0, tip: -1.4, knife: true }; g.position.set(.05, -.02, 0);
+    part(.018, .06, 1.2, slimeCore, 0, .02, -.8); /* a dark core inside a blade of goo */
+    const blade = new T.Mesh(new T.BoxGeometry(.05, .13, 1.28), slimeMat); blade.position.set(0, .02, -.8); g.add(blade);
+    goo(g, 0, .02, -1.45, .03, .065, .09); for (let k = 0; k < 4; k++) goo(g, 0, .085, -.35 - k * .3, .03, .025, .07);
+    drip(g, 0, -.045, -.55, .12); drip(g, 0, -.045, -1.05, .08);
+    part(.012, .022, 1.15, accent('#3ef0ff'), .028, .055, -.8); part(.05, .2, .07, gunMetal, 0, .02, -.15); part(.06, .1, .3, gunDark, 0, -.01, .05); goo(g, 0, .02, -.15, .045, .11, .05);
   } else if (id === 'spear') {
     part(.04, .04, 1.7, gunDark, 0, 0, -.6);
-    const tip = new T.Mesh(new T.ConeGeometry(.06, .4, 4), shinyMat('#d9dee8', 90)); tip.rotation.x = -Math.PI / 2; tip.position.set(0, 0, -1.6); g.add(tip);
-    part(.1, .03, .06, accent('#3ef0ff'), 0, 0, -1.38); part(.06, .08, .22, gunMetal, 0, 0, .05);
     g.userData = { mag: null, magY: 0, tip: -1.8, knife: true, spear: true }; g.position.set(.07, -.05, .1);
+    const tip = new T.Mesh(new T.ConeGeometry(.075, .46, 8), slimeMat); tip.rotation.x = -Math.PI / 2; tip.position.set(0, 0, -1.62); g.add(tip);
+    const core = new T.Mesh(new T.ConeGeometry(.03, .3, 6), slimeCore); core.rotation.x = -Math.PI / 2; core.position.set(0, 0, -1.6); g.add(core);
+    goo(g, 0, 0, -1.37, .07, .06, .07); drip(g, 0, -.05, -1.37, .1); goo(g, 0, .03, -.9, .03, .025, .1); goo(g, 0, -.02, -.4, .028, .022, .08);
+    part(.1, .03, .06, accent('#3ef0ff'), 0, 0, -1.3); part(.06, .08, .22, gunMetal, 0, 0, .05);
   } else if (id === 'hammer') {
     part(.05, .05, 1.0, gunDark, 0, 0, -.42);
-    const head = part(.34, .22, .22, shinyMat('#8a919f', 60), 0, .02, -.95);
-    part(.36, .04, .24, accent('#ffb020'), 0, .02, -.95); part(.07, .1, .2, gunMetal, 0, 0, .05);
-    g.userData = { mag: null, magY: 0, tip: -1.05, knife: true, head }; g.position.set(.06, -.04, 0);
+    g.userData = { mag: null, magY: 0, tip: -1.05, knife: true }; g.position.set(.06, -.04, 0);
+    const head = goo(g, 0, .02, -.95, .2, .15, .15); goo(g, 0, .02, -.95, .09, .07, .07, slimeCore); g.userData.head = head; /* a big wobbling ball of slime */
+    goo(g, -.16, .1, -.93, .07); goo(g, .15, -.05, -.98, .06); drip(g, .05, -.12, -.95, .14); drip(g, -.08, -.11, -.92, .09);
+    const band = new T.Mesh(new T.TorusGeometry(.16, .022, 6, 18), accent('#ffb020')); band.position.set(0, .02, -.95); band.rotation.y = Math.PI / 2; g.add(band);
+    part(.07, .1, .2, gunMetal, 0, 0, .05);
   } else if (id === 'railgun') {
     part(.12, .14, .55, gunMetal, 0, 0, 0); part(.03, .03, .8, gunDark, -.04, .015, -.62); part(.03, .03, .8, gunDark, .04, .015, -.62);
     const coils = []; for (let k = 0; k < 5; k++) { const c = new T.Mesh(new T.TorusGeometry(.065, .014, 6, 14), accent('#b45cff')); c.position.set(0, .015, -.3 - k * .13); g.add(c); coils.push(c); }
@@ -797,6 +839,12 @@ function gunModelFor(id) {
     part(.06, .05, .16, gunDark, 0, .1, -.02); part(.02, .02, .02, glowMat('#ff3d4a'), 0, .135, -.02); part(.115, .015, .36, accent('#3ef0ff'), 0, .03, -.05);
     g.userData = { mag, magY: -.15, tip: -.95 };
   }
+  if (!g.userData.knife) {
+    const can = new T.Mesh(new T.CylinderGeometry(.045, .045, .3, 12), slimeMat); can.rotation.x = Math.PI / 2; can.position.set(.085, .03, -.08); g.add(can);
+    const fill = new T.Mesh(new T.CylinderGeometry(.03, .03, .26, 10), slimeCore); fill.rotation.x = Math.PI / 2; fill.position.copy(can.position); g.add(fill);
+    for (const z of [.08, -.24]) { const cap = new T.Mesh(new T.CylinderGeometry(.05, .05, .025, 12), gunDark); cap.rotation.x = Math.PI / 2; cap.position.set(.085, .03, z); g.add(cap); }
+    goo(g, 0, .0, g.userData.tip + .06, .035, .03, .03); drip(g, 0, -.02, g.userData.tip + .08, .07); goo(g, -.06, .06, -.05, .03, .02, .06);
+  }
   return g;
 }
 const gunModels = { burst: gunModelFor('burst'), mg: gunModelFor('mg'), sniper: gunModelFor('sniper'), railgun: gunModelFor('railgun'), knife: gunModelFor('knife'), hammer: gunModelFor('hammer'), spear: gunModelFor('spear') };
@@ -809,7 +857,7 @@ gun.scale.setScalar(.46); gun.position.set(.22, -.22, -.5); camera.add(gun);
 // shared shapes for things that come and go
 const _v = new T.Vector3();
 const geo = { cube: new T.BoxGeometry(1, 1, 1), drop: new T.SphereGeometry(1, 8, 6), splat: new T.CircleGeometry(1, 14), disc: new T.CylinderGeometry(1, 1, 1, 14) };
-const mats = { parried: glowMat('#3ef0ff'), spit: glowMat('#ff3d4a'), dark: lam('#15181f'), tracer: new T.MeshBasicMaterial({ color: '#ffe9b0', transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false }), med: glowMat('#3dff8a'), rotor: glowMat('#9fe9ff', .35) };
+const mats = { parried: glowMat('#3ef0ff'), spit: glowMat('#ff3d4a'), dark: lam('#15181f'), tracer: new T.MeshBasicMaterial({ color: '#8dff5a', transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false }), med: glowMat('#3dff8a'), rotor: glowMat('#9fe9ff', .35) };
 const glowOf = {}; for (const [k, e] of Object.entries(ENEMIES)) glowOf[k] = glowMat(e.glow);
 // a robot built from boxes; the unit-size model is scaled by r, so it stands 2r tall
 // Hitboxes: a box around each robot, turned to face you like the robot does. Shots that enter the box hit.
@@ -865,7 +913,7 @@ function applyCosmetics() {
   gunMetal.color.copy(mix(.75, '#20252f')).multiplyScalar(col ? .75 : 1); gunMetal.emissive.copy(col ? col.clone().multiplyScalar(.1) : new T.Color(0));
   gunDark.color.copy(mix(.45, '#111419')).multiplyScalar(col ? .45 : 1); gunDark.emissive.copy(col ? col.clone().multiplyScalar(.04) : new T.Color(0));
   for (const a of shinyMats) a.m.color.copy(col ? new T.Color(a.def).lerp(col, .55) : new T.Color(a.def));
-  mats.tracer.color.set(c || '#ffe9b0'); rope.material.color.set(c || '#3ef0ff'); hookTip.material.color.set(c || '#3ef0ff');
+  mats.tracer.color.set(c || '#8dff5a'); rope.material.color.set(c || '#3ef0ff'); hookTip.material.color.set(c || '#3ef0ff');
   const x = $('cross'); x.className = `cross x-${cos.cross}`; x.style.setProperty('--xc', c || '#ffffff');
 }
 function medMesh() { const g = new T.Group(); for (const [w, h] of [[.5, .16], [.16, .5]]) { const m = new T.Mesh(geo.cube, mats.med); m.scale.set(w, h, .16); g.add(m); } scene.add(g); return g; }
@@ -987,6 +1035,7 @@ function startWave() {
   }
   if (n % 5 === 0) G.toSpawn.splice(Math.floor(G.toSpawn.length / 3), 0, 'duelist');
   G.spawnTimer = 0.8;
+  setTimeout(() => say(n % 5 === 0 ? 'Boss wave! Stay fast and keep parrying.' : n === 1 ? "Hi, I'm Goop! Slash those robots, I'll cheer you on." : `Wave ${n}, let's go!`, 'cheer', true), 900);
   const total = G.toSpawn.length, big = G.toSpawn.filter(k => ENEMIES[k].tank).map(k => ENEMIES[k].name);
   banner(n % 5 === 0 ? 'The Duelist' : `Wave ${n}`, n % 5 === 0 ? `Boss wave · ${[...new Set(big)].join(' + ')}` : big.length ? `${total} hostiles · ${[...new Set(big)].join(' + ')}` : `${total} hostiles incoming`); sfx.wave(); hud();
 }
@@ -1242,7 +1291,7 @@ function update(dt) {
   live.gels = live.gels.filter(g => (!g.got && g.life > 0) || (scene.remove(g.m), false));
   if (!G.toSpawn.length && !G.foes.length && G.wave > 0) { for (const sp of live.spit) scene.remove(sp.m); live.spit = []; for (const g of live.gels) scene.remove(g.m); live.gels = []; offerUpgrades(); }
   if (ammoFlash > 0) { ammoFlash -= dt; if (ammoFlash <= 0) ammoShown = ''; }
-  ammoHud(p); altHud(p); smultHud(p);
+  ammoHud(p); altHud(p); smultHud(p); buddyTick(dt);
   $('dashBar').style.width = `${p.dashCharges >= (p.dashMax || 2) ? 100 : clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
   $('dashPips').textContent = '●'.repeat(p.dashCharges ?? 2) + '○'.repeat(Math.max(0, (p.dashMax || 2) - (p.dashCharges ?? 2)));
   $('focusRow').hidden = !p.focus; if (p.focus) $('focusBar').style.width = `${p.focusT > 0 ? p.focusT / FOCUS_TIME * 100 : clamp(1 - p.focusCd / FOCUS_COOLDOWN, 0, 1) * 100}%`;
@@ -1253,7 +1302,7 @@ function update(dt) {
 function aimDir() { const p = G.p, cp = Math.cos(p.pitch); return [-Math.sin(p.yaw) * cp, Math.sin(p.pitch), -Math.cos(p.yaw) * cp]; }
 // one round: an instant hit along where you aim (a touch of spread that grows through the burst)
 function fire(opt = {}) {
-  const p = G.p, gd = GUNS[p.gun] || GUNS.burst, spread = p.gun === 'burst' ? p.spread + (p.burst - p.burstLeft) * .0035 : p.spread, as = p.assist || 0, pierce = opt.pierce ?? p.pierce + (p.gunPierce || 0), dmg = p.dmg * (p.dmgMul || 1) * (opt.mult || 1) * gunSpeedMult(p) * GUN_DAMAGE;
+  const p = G.p, gd = GUNS[p.gun] || GUNS.burst, spread = p.gun === 'burst' ? p.spread + (p.burst - p.burstLeft) * .0035 : p.spread, as = (p.assist || 0) + (touchMode ? 1.2 : 0), pierce = opt.pierce ?? p.pierce + (p.gunPierce || 0), dmg = p.dmg * (p.dmgMul || 1) * (opt.mult || 1) * gunSpeedMult(p) * GUN_DAMAGE;
   const yaw = p.yaw + rnd(-spread, spread), pitch = p.pitch + recoil + rnd(-spread, spread), cp = Math.cos(pitch);
   const dx = -Math.sin(yaw) * cp, dy = Math.sin(pitch), dz = -Math.cos(yaw) * cp, ox = p.x, oy = p.y + EYE, oz = p.z;
   const wall = rayCity(ox, oy, oz, dx, dy, dz, 220);
@@ -1286,11 +1335,13 @@ function fire(opt = {}) {
 // the long sword: a swing lasts half a second; anything in the arc during it gets cut (once per swing),
 // bolts in the arc are knocked out of the air, and you can't be hurt until the swing's over
 function slash() {
+  if (touchMode) meleeSnap();
   const p = G.p, g = GUNS[p.gun] || GUNS.knife; p.swingGun = GUNS[p.gun] ? p.gun : 'knife'; const _ = 0, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1;
   p.slashT = g.swing; p.slashCut = []; slashSide = -slashSide;
   // the sword only protects you while you're moving fast: dashing, grappling, or dropping quickly
   const guarded = !g.slam && (p.dashT > 0 || !!p.hook || p.vy < -10 || (p.spd || 0) > 14); if (guarded) p.inv = Math.max(p.inv, g.guard);
   if (g.pierce) p.inv = Math.max(p.inv, SPEAR_IFRAME); /* the spear always gives a short dodge window */
+  if (touchMode) p.inv = Math.max(p.inv, .3); /* touch screens: every swing gives a short safe window */
   p.mx = (p.mx || 0) + ax / al * 5; p.mz = (p.mz || 0) + az / al * 5; // a small lunge
   if (g.slam) sfx.swoosh(); else if (g.pierce) { sweep(.14, .28, 1500, 6000, 2.5); ring([3400], .18, .01); } else sfx.swish();
   if (guarded) { const e = $('edge'); e.classList.add('guard'); clearTimeout(slash.t); slash.t = setTimeout(() => e.classList.remove('guard'), g.guard * 1000); }
@@ -1358,6 +1409,18 @@ function spearTick(dt) {
   }
   if (hit) { marker(); spearAuto = .12; hitStop = Math.max(hitStop, .015); p.inv = Math.max(p.inv, SPEAR_IFRAME * .5); }
 }
+// Touch screens: swinging turns you toward the closest robot within 60 degrees and a bit beyond reach
+function meleeSnap() {
+  const p = G.p, g = GUNS[p.gun] || GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1; let best = null;
+  for (const fo of G.foes) {
+    if (fo.hp <= 0) continue; const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
+    if (d > g.reach * (p.reachMul || 1) * 1.8 + fo.r || (dx * ax + dz * az) / (d * al) < .5) continue;
+    if (!best || d < best[0]) best = [d, fo];
+  }
+  if (!best) return; const fo = best[1];
+  p.yaw = Math.atan2(-(fo.x - p.x), -(fo.z - p.z));
+  if (g.pierce) p.pitch = Math.atan2((fo.y ?? fo.r) - (p.y + EYE), best[0]);
+}
 function swingTick(dt) {
   const p = G.p; spearTick(dt); if (!(p.slashT > 0)) return; p.slashT -= dt;
   const g = GUNS[p.swingGun] || GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1; let hit = 0;
@@ -1365,10 +1428,11 @@ function swingTick(dt) {
     if (!g.pierce && p.slashCut.length >= MAX_SWING_HITS) break; // one swing cuts at most 3 robots (the spear has no limit)
     if (fo.hp <= 0 || p.slashCut.includes(fo.id)) continue;
     const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
-    if (g.pierce ? !inSpearLine(p, fo, g.reach * (p.reachMul || 1)) : d > g.reach * (p.reachMul || 1) + fo.r || (dx * ax + dz * az) / (d * al) < .1 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2) continue;
+    const reach = g.reach * (p.reachMul || 1) * (touchMode ? 1.25 : 1);
+    if (g.pierce ? !inSpearLine(p, fo, reach) : d > reach + fo.r || (dx * ax + dz * az) / (d * al) < .1 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2) continue;
     const mult = g.slam ? hammerSwingMult(p) : g.pierce ? spearMult(p) : swordMult(p); p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg * mult * (1 + .12 * (levels[p.swingGun] || 0)) * (p.meleeMul || 1); fo.flash = .1; fo.kx += dx / d * 14 * Math.min(mult, 2); fo.kz += dz / d * 14 * Math.min(mult, 2); hit++;
     if (mult >= 1.2) { speedPop(mult); burst(fo.x, fo.y ?? fo.r, fo.z, '#ffb020', Math.round(6 * mult), 10, .06); }
-    burst(fo.x, fo.y ?? fo.r, fo.z, '#ffffff', 8, 8, .05); burst(fo.x, fo.y ?? fo.r, fo.z, ENEMIES[fo.type].glow, 6, 6, .06);
+    burst(fo.x, fo.y ?? fo.r, fo.z, '#7dff5a', 9, 8, .06); burst(fo.x, fo.y ?? fo.r, fo.z, ENEMIES[fo.type].glow, 6, 6, .06);
     if (fo.hp <= 0) kill(fo, true); else sfx.chop();
   }
   for (const sp of live.spit) if (!sp.mine && !sp.dead && Math.hypot(sp.x - p.x, sp.z - p.z) < g.reach && ((sp.x - p.x) * ax + (sp.z - p.z) * az) > 0) { sp.dead = true; burst(sp.x, sp.y, sp.z, '#ff3d4a', 5, 4, .06); }
@@ -1466,7 +1530,7 @@ function dmgNumsTick(dt) {
   for (let i = dmgNums.length - 1; i >= 0; i--) if (dmgNums[i].t > .9) { dmgNums[i].el.remove(); dmgNums.splice(i, 1); }
 }
 function kill(fo, melee = false) {
-  noteDmg(fo);
+  noteDmg(fo); buddyKill(melee);
   const e = ENEMIES[fo.type]; G.score += e.score; let earn = melee ? Math.round(e.coins * MELEE_COIN_BONUS) : e.coins; if (hasGear('coins')) { G.p.coinFrac = (G.p.coinFrac || 0) + e.coins * .25; earn += Math.floor(G.p.coinFrac); G.p.coinFrac %= 1; } G.coins = (G.coins || 0) + earn; coins += earn; store.set('ss-coins', coins); hud();
   const mesh = live.foes.get(fo.id); if (mesh) { scene.remove(mesh); live.foes.delete(fo.id); }
   if (melee) { // melee kills: heal, and refill spare ammo for your gun
@@ -1556,7 +1620,7 @@ function droneShot(fo, e) {
   if (p.inv > 0 || p.dashT > 0) return;
   const lethal = p.hp - dmg <= 0;
   if (!lethal) hurt(dmg, dx, dz);
-  G.snipeBuf = { t: PARRY_BUFFER, from: fo.id, dmg, held: lethal, kx: dx, kz: dz }; /* a killing shot waits for the buffer before it lands */
+  G.snipeBuf = { t: touchMode ? PARRY_BUFFER * 1.6 : PARRY_BUFFER, from: fo.id, dmg, held: lethal, kx: dx, kz: dz }; /* a killing shot waits for the buffer before it lands */
 }
 function reflectShot(fo, dmg) {
   const p = G.p, src = G.foes.find(f => f.id === fo.id && f.hp > 0); parried(); toast('Shot parried!');
@@ -1567,11 +1631,11 @@ function reflectShot(fo, dmg) {
 }
 function hurt(n, kx, kz) {
   const p = G.p; if (p.dashT > 0) return;
-  p.hp = Math.max(0, p.hp - n); p.inv = .8; shake = .25; sfx.hurt();
+  p.hp = Math.max(0, p.hp - n); p.inv = touchMode ? 1.3 : .8; shake = .25; sfx.hurt();
   { const h = $('hurtNum'); h.textContent = `-${fmtDmg(n)}`; h.classList.remove('on'); void h.offsetWidth; h.classList.add('on'); }
   const l = Math.hypot(kx, kz) || 1; p.x += kx / l * 1.2; p.z += kz / l * 1.2; pushOut(p, p.r);
   const v = $('vign'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 60);
-  hud(); if (p.hp <= 0 && !tryRevive()) gameOver();
+  goopMood('ouch'); hud(); if (p.hp <= 0 && !tryRevive()) gameOver();
 }
 function dash() {
   const p = G?.p; if (!p || G.mode !== 'play' || (p.dashCharges ?? 2) <= 0) return;
@@ -1603,12 +1667,36 @@ function dash() {
 }
 function parry() {
   const p = G?.p; if (!p || G.mode !== 'play' || p.parryReady > 0) return;
-  p.parryT = .3; p.parryReady = p.parryCd ?? .45; p.parryHit = false;
+  p.parryT = touchMode ? .5 : .3; p.parryReady = p.parryCd ?? .45; p.parryHit = false;
   const sb = G.snipeBuf; if (sb && sb.t > 0) { G.snipeBuf = null; if (!sb.held) { p.hp = Math.min(p.maxHp, p.hp + sb.dmg); hud(); } reflectShot({ id: sb.from }, sb.dmg); }
   gunSwing = .25; beep(700, .07, 'triangle', .03, -300);
   const r = $('parryFx'); r.classList.remove('on'); void r.offsetWidth; r.classList.add('on');
 }
+// Goop, the slime helper: cheers you on and gives a tip when it matters
+let buddyCd = 0, buddyHide = 0, buddyMood = 0, buddyKills = [], buddyFlags = {};
+function say(msg, mood = 'talk', force = false) {
+  if (!G || G.mode !== 'play' || (!force && buddyCd > 0)) return;
+  const b = $('buddySay'); b.textContent = msg; b.classList.add('on'); buddyHide = 3; buddyCd = 6; goopMood(mood);
+}
+function goopMood(m) { const el = $('buddy'); el.classList.remove('cheer', 'ouch', 'talk'); void el.offsetWidth; el.classList.add(m); buddyMood = m === 'cheer' ? 1.1 : .6; }
+function buddyTick(dt) {
+  const el = $('buddy'); el.classList.toggle('side', touchMode);
+  buddyCd -= dt; if (buddyHide > 0 && (buddyHide -= dt) <= 0) $('buddySay').classList.remove('on');
+  if (buddyMood > 0 && (buddyMood -= dt) <= 0) el.classList.remove('cheer', 'ouch', 'talk');
+  const p = G.p, f = buddyFlags, now = G.t;
+  if (p.hp < p.maxHp * .3 && !(f.low > now)) { f.low = now + 15; say('Low health! Melee kills heal you, and medkits too.', 'ouch', true); }
+  else if (G.foes.some(fo => fo.aimT > 0) && !(f.laser > now)) { f.laser = now + 20; say('Red laser on you! Parry (F) when it fires.'); }
+  else if (G.foes.some(fo => ENEMIES[fo.type].duelist) && f.duel !== G.wave) { f.duel = G.wave; say('The Duelist! When its blade glows, parry it.', 'talk', true); }
+  else if (GUNS[p.gun]?.mode !== 'melee' && p.ammo === 0 && !((p.reserveBy || {})[p.gun] > 0) && !(f.ammo > now)) { f.ammo = now + 20; say('Out of ammo. Go melee, kills refill it!'); }
+}
+function buddyKill(melee) {
+  const now = G.t; buddyKills = buddyKills.filter(t => now - t < 3); buddyKills.push(now);
+  if (buddyKills.length === 3) say(melee ? 'Triple slice! So goopy!' : 'Three down!', 'cheer', true);
+  else if (buddyKills.length >= 5 && buddyKills.length % 5 === 0) say(`${buddyKills.length} in a row! Unstoppable!`, 'cheer', true);
+  else goopMood('cheer');
+}
 function parried() {
+  goopMood('cheer'); if (Math.random() < .5) say(['Nice parry!', 'Bounced it!', 'Ha, right back at them!'][Math.floor(Math.random() * 3)], 'cheer');
   const p = G.p; if (!p.parryHit) { p.parryHit = true; p.parryReady = Math.min(p.parryReady, .15); p.inv = Math.max(p.inv, .3); toast('Parry!'); }
   beep(1300, .1, 'square', .04, 500); shake = Math.max(shake, .08);
 }
@@ -1619,7 +1707,25 @@ function hookAim() {
   let best = null;
   for (const fo of G.foes) { if (fo.hp <= 0) continue; const tf = rayBot(fo, ox, oy, oz, dx, dy, dz, t, .5); if (tf > 0 && (!best || tf < best[0])) best = [tf, fo]; }
   if (best) return { x: best[1].x, y: best[1].y ?? best[1].r, z: best[1].z, foe: best[1].id };
-  return t < HOOK_RANGE && t > 2.5 ? { x: ox + dx * t, y: oy + dy * t, z: oz + dz * t } : null;
+  if (t < HOOK_RANGE && t > 2.5) return { x: ox + dx * t, y: oy + dy * t, z: oz + dz * t };
+  return touchMode ? hookAssist(ox, oy, oz, dx, dy, dz) : null;
+}
+// Touch screens: a missed grapple looks around the aim for a robot (within 15 degrees) or a wall/roof (within 12 degrees)
+function hookAssist(ox, oy, oz, dx, dy, dz) {
+  let bestFoe = null;
+  for (const fo of G.foes) {
+    if (fo.hp <= 0) continue; const vx = fo.x - ox, vy = (fo.y ?? fo.r) - oy, vz = fo.z - oz, d = Math.hypot(vx, vy, vz) || 1, c = (vx * dx + vy * dy + vz * dz) / d;
+    if (c < Math.cos(15 * Math.PI / 180) || rayCity(ox, oy, oz, vx / d, vy / d, vz / d, d) < d - fo.r - .5) continue;
+    if (!bestFoe || c > bestFoe[0]) bestFoe = [c, fo];
+  }
+  if (bestFoe) { const fo = bestFoe[1]; return { x: fo.x, y: fo.y ?? fo.r, z: fo.z, foe: fo.id }; }
+  const yaw = Math.atan2(dx, dz), pitch = Math.asin(clamp(dy, -1, 1)), range = HOOK_RANGE * 1.3;
+  for (const deg of [3, 6, 9, 12]) for (let k = 0; k < 12; k++) {
+    const a = k / 12 * Math.PI * 2, r = deg * Math.PI / 180, py = pitch + Math.sin(a) * r, yw = yaw + Math.cos(a) * r / Math.max(.3, Math.cos(pitch));
+    const ex = Math.sin(yw) * Math.cos(py), ey = Math.sin(py), ez = Math.cos(yw) * Math.cos(py), t = rayCity(ox, oy, oz, ex, ey, ez, range);
+    if (t < range && t > 2.5 && oy + ey * t > .3) return { x: ox + ex * t, y: oy + ey * t, z: oz + ez * t };
+  }
+  return null;
 }
 function hookStart() {
   const p = G?.p; input.hookHeld = true; if (!p || G.mode !== 'play' || p.hook) return;
@@ -1713,6 +1819,7 @@ function render(dt) {
     // knife slash: a fast sweep across the view; weapon swap: dip out and back
     switchT = Math.max(0, switchT - dt); const sw = Math.max(0, p.slashT || 0) / ((GUNS[p.swingGun] || GUNS.knife).swing || .5); const arc = Math.sin(sw * Math.PI);
     const ud = gunModel.userData; if (ud.coils) { const c = p.charge || 0; ud.coils.forEach((k, i) => k.scale.setScalar(1 + c * .5 * (i / 4 + .5))); flash.intensity = Math.max(flash.intensity, c * 1.5); }
+    for (const b of ud.goo || []) { const w = Math.sin(performance.now() / 200 + b.ph) * .12; b.m.scale.y = b.sy * (1 + w); if (b.m.userData.drip) b.m.position.y = b.y - b.sy * w; }
     if (ud.spear) { gunModel.rotation.set(0, 0, 0); gunModel.position.z = .1 - arc * .7 - (spearAuto > 0 ? .25 : 0); } else if (ud.head && p.slamming) gunModel.rotation.set(1.1, 0, 0); else if (gunModel.userData.knife) gunModel.rotation.set(-arc * .5, (sw * 2 - 1) * 1.3 * slashSide * (sw > 0 ? 1 : 0), arc * 1.1 * slashSide); else gunModel.rotation.set(0, 0, 0);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4 - rk * .5, gunSwing * 3 + rk * .4, gunSwing * 3.5 + rk * .5);
     drawThreats(p); drawMinimap(p); drawOffscreen(p);
@@ -1894,6 +2001,7 @@ function banner(big, small) {
 }
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1600); }
 function offerUpgrades() {
+  $('buddySay').classList.remove('on');
   G.mode = 'pick'; unlock();
   const avail = UPGRADES.filter(u => !u.when || u.when(G.p)), choice = [];
   while (choice.length < 3 && avail.length) choice.push(avail.splice(Math.floor(Math.random() * avail.length), 1)[0]);
@@ -1951,7 +2059,7 @@ function requestLock() {
 }
 function lookHud() {
   const playing = G?.mode === 'play' && !touchMode;
-  $('mlook').hidden = !playing; $('desk').hidden = !playing;
+  $('mlook').hidden = !playing; $('desk').hidden = true; $('buddy').hidden = G?.mode !== 'play';
   const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('smult').hidden = !inRun; $('alt').hidden = !inRun; $('ammo').hidden = !inRun; $('offs').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
   $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This browser can’t lock the mouse here: hold the cursor near the left or right edge to keep turning</small>'

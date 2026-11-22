@@ -57,3 +57,8 @@ Built with [three.js](https://threejs.org/) r128.
 - Spear (140 coins, melee): a long narrow thrust (7 m) that pierces every robot in the line, with no 3-hit cap. Moving faster than about 11 m/s, it hits whatever is in its line on its own (half damage, each robot every 0.3 s). Weak per hit (2 base damage), but its speed bonus has no cap and climbs fast: ×(1 + (speed − 6)/3).
 - Spear immunity: every thrust makes you immune for 0.45 s (about 0.23 s on each auto-hit that lands).
 - The grapple has no top speed: it pulls harder the longer it's attached (70 m/s² at first, +28 m/s² every second), and it never slows you down if you came in faster. This also lets the spear's uncapped speed bonus go past 6x.
+
+## Slime look, Goop and touch assists (v56)
+- Every weapon is slime-styled: a see-through goo blade on the sword, a slime spear tip, a wobbling ball of slime for the hammer head, slime canisters on the guns, drips that wobble, green bullets and green hit splashes.
+- The keyboard button bar at the bottom right is gone (controls are still in the menu). Goop, a little slime helper, sits there instead: he cheers kills and parries, flinches when you're hit, and gives tips (low health, drone lasers, the Duelist, out of ammo). On touch screens he sits on the right edge above the buttons.
+- Touch screens only, rounds unchanged: a missed grapple looks within 15 degrees for a robot and within 12 degrees for a wall or roof (30% more range); melee swings turn you toward the nearest robot in front and reach 25% further; every swing gives 0.3 s immunity; getting hit gives 1.3 s immunity instead of 0.8; the parry window is 0.5 s instead of 0.3 and the late-parry buffer for drone shots is 0.8 s; gun near misses count from 1.2 m further.
