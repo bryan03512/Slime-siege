@@ -319,7 +319,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 45 · speed boosts all damage, stronger sword scaling</p>
+        <p class="ver">Version 46 · grapple flies straight</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1007,7 +1007,7 @@ function hitsGarden(x, y, z) {
 // ===================== Update =====================
 const input = { keys: {}, fire: false, move: null, look: null, locked: false, dragLook: false, mlook: false, releasing: false };
 const EYE = 1.6;
-const HOOK_RANGE = 70;
+const HOOK_RANGE = 70, HOOK_SPEED = 36, HOOK_PULL = 70; // grapple: reach for buildings, top speed, how fast it speeds up
 const ROBOT_LEAP_MAX = 4.5; // robots can't leap higher than a small building
 const GRAV = 10; // low, moon-ish gravity: big floaty jumps (was 24)
 function update(dt) {
@@ -1035,15 +1035,16 @@ function update(dt) {
     else if (hd < 2.4) { const top = p.hook.y, up = top - p.hook.fromY > 1, v0 = p.vy; releaseHook(); if (up) { p.vy = Math.max(Math.min(v0, 14), Math.sqrt(2 * GRAV * Math.max(1, top + 3 - p.y))); shake = Math.max(shake, .06); } } // a higher anchor flings your feet about 3m above it
     else if (!input.hookHeld) releaseHook();
     else {
-      const pull = 62;
-      p.mx += hx / hd * pull * dt; p.mz += hz / hd * pull * dt; p.vy += hy / hd * pull * dt + GRAV * .7 * dt;
-      const hs = Math.hypot(p.mx, p.mz); if (hs > 34) { p.mx *= 34 / hs; p.mz *= 34 / hs; }
-      p.vy = clamp(p.vy, -16, 14);
+      // straight line to the anchor: keep whatever speed you had towards it, speed up, and drop any sideways drift
+      const ux = hx / hd, uy = hy / hd, uz = hz / hd, along = Math.max(0, p.mx * ux + p.vy * uy + p.mz * uz);
+      const sp = Math.min(HOOK_SPEED, Math.max(along, 10) + HOOK_PULL * dt);
+      p.mx = ux * sp; p.mz = uz * sp; p.vy = uy * sp;
     }
   }
   const ox = p.x, oz = p.z;
   // move in small steps so high speed can't carry you through a wall
-  const stepX = vx * p.speed * dt + p.mx * dt, stepZ = vz * p.speed * dt + p.mz * dt, n = Math.max(1, Math.ceil(Math.hypot(stepX, stepZ) / .3));
+  const walk = p.hook ? 0 : 1; // being reeled in: your keys don't push you off the line
+  const stepX = vx * p.speed * dt * walk + p.mx * dt, stepZ = vz * p.speed * dt * walk + p.mz * dt, n = Math.max(1, Math.ceil(Math.hypot(stepX, stepZ) / .3));
   const bx = p.x, bz = p.z;
   for (let i = 0; i < n; i++) { p.x += stepX / n; p.z += stepZ / n; pushOut(p, p.r); }
   if (dt > 0) p.spd = Math.hypot((p.x - bx) / dt, (p.z - bz) / dt, Math.abs(p.vy) * .6); // your real speed, used by the sword
@@ -1059,7 +1060,7 @@ function update(dt) {
   // jumping and landing (you can stand on crates, planters and, with a good jump, rooftops)
   // gravity builds the longer you fall (up to nearly 3x), so drops speed up; going up stays floaty
   if (p.vy < 0 && !p.hook) p.fallT = (p.fallT || 0) + dt; else p.fallT = 0;
-  p.vy -= GRAV * (1 + Math.min(1.8, (p.fallT || 0) * 1.6)) * dt; p.vy = Math.max(p.vy, p.slamming ? -70 : -48); p.y += p.vy * dt;
+  if (!p.hook) p.vy -= GRAV * (1 + Math.min(1.8, (p.fallT || 0) * 1.6)) * dt; p.vy = Math.max(p.vy, p.slamming ? -70 : -48); p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
   if (p.y <= floor && p.slamming) slamLand();
   if (p.y <= floor) { p.airJumps = 0; p.scoped = false; if (p.vy < -7) { landDip = Math.min(.45, -p.vy * .03); shake = Math.max(shake, -p.vy * .006); beep(110, .12, 'sine', .05, -40); } p.y = floor; p.vy = 0; }
