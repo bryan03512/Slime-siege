@@ -12,10 +12,11 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 - Reload: R, or the Reload button. It also reloads by itself when the magazine runs dry
 - Jump: Space, or the Jump button. Low, moon-style gravity: a good jump reaches the rooftops
 - Dash: Shift, or the Dash button. Two charges; both come back when the cooldown ends
+- Grapple: hold the right mouse button (or E) to reel yourself to wherever you're aiming. The speed you build up carries on after you let go
 - Parry: F. Knocks energy bolts back at whoever fired them, or shoves a robot away
 - Pause: Esc or P
 
-On a phone: drag the left half of the screen to move, the right half to look, and use the round buttons to fire, reload, jump, dash and parry.
+On a phone: drag the left half of the screen to move, the right half to look, and use the round buttons to fire, reload, grapple, jump, dash and parry.
 
 The HUD shows health (bottom centre, 100 to start), ammo (bottom right), and a minimap of the whole block (bottom left).
 
