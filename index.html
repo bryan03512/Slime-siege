@@ -301,7 +301,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 32 · sound test, loadout fix</p>
+        <p class="ver">Version 33 · no background noise, dash follows movement</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -811,24 +811,13 @@ let ac = null, master = null;
 // Sound has to be switched on by a tap or key press, and browsers can put it back to sleep (switching tabs,
 // iPhone/iPad lock). So every tap or key wakes it. On iPhone/iPad we also mark it as media playback, which
 // keeps it playing even with the ringer switch on silent.
-let unmuteEl = null;
-function silentTrack() {
-  const n = 4410, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), w = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
-  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-  v.setUint32(24, 44100, true); v.setUint32(28, 88200, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
-  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
-}
 function wakeAudio() {
   try {
-    if (!unmuteEl && /iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document) {
-      unmuteEl = document.createElement('audio'); unmuteEl.setAttribute('playsinline', ''); unmuteEl.loop = true; unmuteEl.src = silentTrack(); unmuteEl.volume = .01;
-      unmuteEl.play?.().catch?.(() => { unmuteEl = null; });
-    } else if (unmuteEl?.paused) unmuteEl.play?.().catch?.(() => {});
     if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
     if (!ac) {
       ac = new (window.AudioContext || window.webkitAudioContext)();
       const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
-      master = ac.createGain(); master.gain.value = 2.2; master.connect(comp).connect(ac.destination);
+      master = ac.createGain(); master.gain.value = 1.6; master.connect(comp).connect(ac.destination);
       const b = ac.createBuffer(1, 1, 22050), s = ac.createBufferSource(); s.buffer = b; s.connect(ac.destination); s.start(0); // silent blip that unlocks iOS
     }
     if (ac.state !== 'running') ac.resume?.();
@@ -1333,10 +1322,12 @@ function dash() {
   if (Math.hypot(hx, hz) < .1) { hx = -sn; hz = -cs; }
   const hl = Math.hypot(hx, hz); hx /= hl; hz /= hl;
   // look up (or hold Space) to dash upwards: the steeper you look, the more of the dash goes up
-  const up = input.keys.Space ? .85 : clamp((p.pitch - .15) / .9, 0, .95), down = clamp((-p.pitch - .3) / .8, 0, .95), power = 24;
+  // looking up/down angles the dash only when you're heading forward (or standing still); strafing or backing off stays level
+  const aimed = f > 0 || (f === 0 && s2 === 0);
+  const up = input.keys.Space ? .85 : aimed ? clamp((p.pitch - .15) / .9, 0, .95) : 0, down = aimed ? clamp((-p.pitch - .3) / .8, 0, .95) : 0, power = 24;
   releaseHook(); // dashing cancels a grapple and any fling: you take over
   p.mx = hx * power * (1 - Math.max(up, down) * .75); p.mz = hz * power * (1 - Math.max(up, down) * .75);
-  p.vy = down > 0 && p.y > groundAt(p.x, p.z, p.r) + .3 ? -10 - down * 26 : up > 0 ? Math.max(4, up * 14.5) : Math.min(Math.max(p.vy, p.y <= groundAt(p.x, p.z, p.r) + .02 ? 2.6 : 0), 3);
+  p.vy = down > 0 && p.y > groundAt(p.x, p.z, p.r) + .3 ? -10 - down * 26 : up > 0 ? Math.max(4, up * 14.5) : clamp(p.vy, p.y <= groundAt(p.x, p.z, p.r) + .02 ? 2.6 : 0, 12); /* a level dash keeps you rising if you were going up */
   p.dvx = hx; p.dvz = hz;
   p.dashT = .2; if (p.dashCharges === (p.dashMax || 2)) p.dashReady = p.dashCd; p.dashCharges--; sfx.dash();
   if (up > 0) burst(p.x, p.y + .1, p.z, '#3ef0ff', 12, 5, .05);
