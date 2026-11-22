@@ -335,7 +335,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 54 · grapple has no top speed</p>
+        <p class="ver">Version 55 · spear scales faster, longer immunity</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -456,7 +456,7 @@ const GUNS = {
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
   railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
   hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: .6, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
-  spear:  { name: 'Spear',       price: 140, mode: 'melee',  rate: .45, mag: 0, reloadTime: 0, dmg: 1, reach: 7, swing: .22, guard: .4, pierce: true, desc: 'A long, narrow thrust that runs through every robot in a line, with no limit on how many. While you’re moving fast it hits whatever you’re pointing at on its own, no click needed. Each hit is very weak, but its speed bonus has no limit: the faster you go, the harder it hits. Every thrust gives a short moment where you can’t be hurt.' },
+  spear:  { name: 'Spear',       price: 140, mode: 'melee',  rate: .45, mag: 0, reloadTime: 0, dmg: 2, reach: 7, swing: .22, guard: .4, pierce: true, desc: 'A long, narrow thrust that runs through every robot in a line, with no limit on how many. While you’re moving fast it hits whatever you’re pointing at on its own, no click needed. Each hit is very weak, but its speed bonus has no limit: the faster you go, the harder it hits. Every thrust gives a short moment where you can’t be hurt.' },
   knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .5, mag: 0, reloadTime: 0, dmg: 6, reach: 5, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second. Your main weapon. Hits harder the faster you’re going, and while you’re moving fast (dashing, grappling or dropping) you can’t be hurt mid-swing.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots and bursts where it lands. In the air, click to scope in and slow time, then click again to fire.' },
 };
@@ -477,7 +477,7 @@ const CROSSES = { cross: { name: 'Cross', price: 0 }, dot: { name: 'Dot', price:
 const MAX_RANGED = 1, MAX_MELEE = 1; // one gun and one melee weapon per run
 const FOCUS_TIME = 3, FOCUS_COOLDOWN = 4; // seconds of slow time, and how long until Focus can be used again
 const MAX_SWING_HITS = 3;
-const SPEAR_IFRAME = .2;      // seconds you can't be hurt after a spear thrust (half that on an auto-hit)
+const SPEAR_IFRAME = .45;     // seconds you cannot be hurt after a spear thrust (half that on an auto-hit)
 const DRONE_AIM = 1.8;        // seconds a drone holds its red laser on you before it fires
 const PARRY_BUFFER = .5;      // you can still parry a drone shot this long after it hits you
 // Melee first: guns are a backup with limited spare ammo, refilled by melee kills
@@ -1093,7 +1093,7 @@ function update(dt) {
       // straight line to the anchor: keep whatever speed you had towards it, speed up, and drop any sideways drift
       const ux = hx / hd, uy = hy / hd, uz = hz / hd, along = Math.max(0, p.mx * ux + p.vy * uy + p.mz * uz);
       p.hook.t = (p.hook.t || 0) + dt; /* the longer you hang on, the harder it pulls: no top speed */
-      const sp = Math.max(along, 10) + HOOK_PULL * (1 + p.hook.t * 1.5) * dt;
+      const sp = Math.max(along, 10) + HOOK_PULL * (1 + p.hook.t * .4) * dt;
       p.mx = ux * sp; p.mz = uz * sp; p.vy = uy * sp;
     }
   }
@@ -1298,7 +1298,7 @@ function slash() {
 // guns hit harder the faster you're going too: normal at walking pace, up to double at about 28 m/s
 function gunSpeedMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 20, 0, 1); }
 // the speed bonus for whatever's in your hands right now
-function spearMult(p) { return 1 + Math.max(0, ((p.spd || 0) - 6) / 6); } /* the spear's speed bonus has no cap */
+function spearMult(p) { return 1 + Math.max(0, ((p.spd || 0) - 6) / 3); } /* the spear's speed bonus has no cap */
 function heldSpeedMult(p) { const g = GUNS[p.gun]; return g?.mode === 'melee' ? (g.slam ? hammerSwingMult(p) : g.pierce ? spearMult(p) : swordMult(p)) : gunSpeedMult(p); }
 let smultShown = '';
 function smultHud(p) {
