@@ -50,6 +50,7 @@ Built with [three.js](https://threejs.org/) r128.
 - Guns do 60% damage and carry limited spare ammo (2 magazines). Melee kills refill spare ammo, heal 4 health and pay 1.5x coins.
 - New upgrades: Keen edge (+30% melee damage), Long arms (+20% reach), Leech (melee kills heal more).
 - Drones lock a red laser on you for 1.8 s, then fire an instant sniper shot. Parry just before it hits, or up to 0.5 s after, to cancel the damage and fire it back.
-- Every fifth wave brings the Duelist instead of the Warden (420 health): it strafes, dashes in, dodges your swings, winds up big cuts (parry to stagger it), grapples onto rooftops near you, and snipes from range with the drones' red-laser shot.
+- Every fifth wave brings the Duelist instead of the Warden (840 health): it strafes, dashes in, dodges your swings, winds up big cuts (parry to stagger it), grapples onto rooftops near you, and snipes from range with the drones' red-laser shot.
 - New slash, hammer and melee-hit sounds.
 - Damage numbers float up over robots when you hit them (white, orange for big hits, pink for the killing blow), and a red number pops over your health bar when you're hit.
+- Tanks have double health: Bulwark 90, Titan 220, Colossus 520.

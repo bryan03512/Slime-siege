@@ -335,7 +335,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 49 · damage numbers</p>
+        <p class="ver">Version 50 · tougher bosses and tanks</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -425,10 +425,10 @@ const ENEMIES = {
   drone:  { name: 'Drone',  hp: 4,   speed: 3.2, r: 0.7,  fly: 3.4,  dmg: 10, score: 25,  coins: 2,  from: 3, weight: 2,  body: '#aeb7c6', glow: '#ffb020', keepAway: 14, shootEvery: 2.2, desc: 'Hovers out of reach and locks a red laser on you, then fires an instant sniper shot. Parry (F) just before or up to half a second after it hits to send it back.' },
   heavy:  { name: 'Heavy',  hp: 14,  speed: 2.2, r: 1.4,  bob: 0.03, dmg: 20, score: 40,  coins: 3,  from: 4, weight: 2,  body: '#9aa1b0', glow: '#b45cff', desc: 'Armoured mech. Slow and tough, takes a fifth of your health per hit.' },
   // tanks: few of them, lots of health, each tier bigger than the last. tier = which tank tier (1-3)
-  bulwark:  { name: 'Bulwark',  hp: 45,  speed: 2.1, r: 1.9, bob: 0.03, dmg: 25, score: 90,  coins: 5,  from: 1, tank: 1, body: '#a7b0bf', glow: '#3dff8a', desc: 'Tank, tier 1. A walking wall of armour. Takes a lot of rounds to bring down.' },
-  titan:    { name: 'Titan',    hp: 110, speed: 1.8, r: 2.6, bob: 0.02, dmg: 32, score: 180, coins: 10, from: 5, tank: 2, body: '#b9b2a2', glow: '#ffd23f', desc: 'Tank, tier 2. Bigger and much tougher. Keep your distance; one hit takes a third of your health.' },
-  colossus: { name: 'Colossus', hp: 260, speed: 1.5, r: 3.5, bob: 0.02, dmg: 42, score: 360, coins: 18, from: 8, tank: 3, body: '#c9b9b0', glow: '#ff6a00', desc: 'Tank, tier 3. A towering machine with a huge health pool. Hit it from the air, out of reach.' },
-  duelist: { name: 'The Duelist', hp: 420, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, shotDmg: 15, shootEvery: 4.5, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, grapples onto rooftops and snipes you from range with a red laser. Watch for its blade to glow, then parry (F) to stagger it.' },
+  bulwark:  { name: 'Bulwark',  hp: 90,  speed: 2.1, r: 1.9, bob: 0.03, dmg: 25, score: 90,  coins: 5,  from: 1, tank: 1, body: '#a7b0bf', glow: '#3dff8a', desc: 'Tank, tier 1. A walking wall of armour. Takes a lot of rounds to bring down.' },
+  titan:    { name: 'Titan',    hp: 220, speed: 1.8, r: 2.6, bob: 0.02, dmg: 32, score: 180, coins: 10, from: 5, tank: 2, body: '#b9b2a2', glow: '#ffd23f', desc: 'Tank, tier 2. Bigger and much tougher. Keep your distance; one hit takes a third of your health.' },
+  colossus: { name: 'Colossus', hp: 520, speed: 1.5, r: 3.5, bob: 0.02, dmg: 42, score: 360, coins: 18, from: 8, tank: 3, body: '#c9b9b0', glow: '#ff6a00', desc: 'Tank, tier 3. A towering machine with a huge health pool. Hit it from the air, out of reach.' },
+  duelist: { name: 'The Duelist', hp: 840, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, shotDmg: 15, shootEvery: 4.5, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, grapples onto rooftops and snipes you from range with a red laser. Watch for its blade to glow, then parry (F) to stagger it.' },
   warden: { retired: true, name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#cfd3dc', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'walker', splits: 4, desc: 'Every fifth wave. Fires rings of bolts and bursts into Walkers when it goes down.' },
 };
 const UPGRADES = [
