@@ -5,155 +5,174 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Slime Siege</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=Barlow:wght@600;800&display=swap">
 <style>
-/* VOICE game: bright, bouncy, a little cheeky
-   IDEA a backyard garden under siege, seen through your own eyes, defended with a water blaster
-   PICTURE the live 3D garden fills the screen: hedges, crates, a fountain, squashy slimes hopping at you
-   COLOUR hedge green housing, sky blue, lawn greens, cream panels, sunflower yellow, berry red (one fixed palette, day and night)
-   TYPE Lilita One for the name, numbers and buttons + Nunito for text
-   LAYOUT slim top bar (hearts, wave, score) over a full-height view; crosshair centre; cards for start, upgrades, pause, game over; touch sticks and buttons on phones */
-:root{color-scheme:dark;--hedge:#24502a;--hedge2:#1a3d20;--cream:#fff6dc;--ink:#22301d;--sun:#ffd23f;--berry:#ff4d5e;--sky:#7fd3ff;--muted:#5e6b55}
+/* VOICE game: tense, punchy, neon-noir
+   IDEA a dark city block at night under attack by security robots, seen through your own eyes, held with a burst rifle
+   PICTURE the live 3D street fills the screen: wet asphalt, lit windows, neon signs, rain, robots with glowing visors
+   COLOUR near-black blues, concrete greys, neon cyan and hot pink accents, amber warnings, red danger (one fixed palette)
+   TYPE Russo One for the name, numbers and buttons + Barlow for text
+   LAYOUT slim top bar (wave, score, coins) over a full-height view; crosshair centre; health bar bottom centre; ammo bottom right; minimap bottom left; panels for menu, upgrades, pause, game over */
+:root{color-scheme:dark;--bg:#06080d;--panel:#0f131c;--panel2:#171c28;--line:#283149;--text:#e8edff;--muted:#8a94b0;--neon:#3ef0ff;--pink:#ff3d8b;--amber:#ffb020;--red:#ff3d4a;--green:#3dff8a}
 *{box-sizing:border-box;min-width:0}
 html,body{height:100%;margin:0}
-body{background:var(--hedge2);color:var(--cream);font:16px/1.5 Nunito,system-ui,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+body{background:var(--bg);color:var(--text);font:16px/1.5 Barlow,system-ui,sans-serif;font-weight:600;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
 .app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));gap:8px}
-.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:4px 6px 0}
-.name{font:28px/1 'Lilita One',sans-serif;color:var(--sun);margin:0 auto 0 0;text-shadow:0 3px 0 #0e2412}
-.hearts{display:flex;gap:3px;flex-wrap:wrap}
-.hearts svg{width:22px;height:20px}
-.stat{font:20px/1 'Lilita One',sans-serif;white-space:nowrap}
-.stat small{font:13px/1 Nunito,sans-serif;font-weight:800;color:#cfe3bf;margin-right:5px}
-.icon-btn{width:40px;height:40px;border-radius:10px;border:0;background:var(--hedge);color:var(--cream);display:grid;place-items:center;cursor:pointer}
-.icon-btn:hover{background:#2f6537}
+.bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:4px 6px 0}
+.name{font:24px/1 'Russo One',sans-serif;color:#fff;margin:0 auto 0 0;letter-spacing:.04em;text-transform:uppercase;text-shadow:0 0 12px rgba(255,61,139,.7),0 0 2px var(--pink)}
+.stat{font:20px/1 'Russo One',sans-serif;white-space:nowrap}
+.stat small{font:13px/1 Barlow,sans-serif;font-weight:800;color:var(--muted);margin-right:6px;text-transform:uppercase;letter-spacing:.08em}
+.stat.coin span{color:var(--amber)}
+.icon-btn{width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text);display:grid;place-items:center;cursor:pointer}
+.icon-btn:hover{border-color:var(--neon);color:var(--neon)}
 .icon-btn svg{width:20px;height:20px}
-.stage{position:relative;border-radius:16px;overflow:hidden;background:#9fdcff;box-shadow:0 0 0 6px var(--hedge),0 10px 0 6px #10280f;touch-action:none}
+.stage{position:relative;border-radius:10px;overflow:hidden;background:#05070f;box-shadow:0 0 0 1px var(--line),0 0 40px rgba(62,240,255,.06);touch-action:none;--mm:150px}
+@media(max-width:700px){.stage{--mm:104px}}
 canvas{display:block;width:100%;height:100%}
-.cross{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;pointer-events:none}
-.cross i{position:absolute;background:#fff;box-shadow:0 0 0 2px rgba(20,40,20,.7);border-radius:2px}
-.cross i:nth-child(1){left:12px;top:0;width:2px;height:8px}.cross i:nth-child(2){left:12px;bottom:0;width:2px;height:8px}
-.cross i:nth-child(3){top:12px;left:0;height:2px;width:8px}.cross i:nth-child(4){top:12px;right:0;height:2px;width:8px}
-.cross.hit i{background:var(--sun)}
-.cross.hit{transform:rotate(45deg) scale(1.15)}
-.vign{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px 30px rgba(255,40,60,.75);opacity:0;transition:opacity .35s}
+.cross{position:absolute;left:50%;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;pointer-events:none;transition:transform .08s}
+.cross i{position:absolute;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.8);border-radius:1px}
+.cross i:nth-child(1){left:13px;top:0;width:2px;height:8px}.cross i:nth-child(2){left:13px;bottom:0;width:2px;height:8px}
+.cross i:nth-child(3){top:13px;left:0;height:2px;width:8px}.cross i:nth-child(4){top:13px;right:0;height:2px;width:8px}
+.cross.hit i{background:var(--red)}
+.cross.hit{transform:rotate(45deg) scale(1.2)}
+.cross.spread{transform:scale(1.35)}
+.vign{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 140px 40px rgba(255,30,50,.8);opacity:0;transition:opacity .35s}
 .vign.on{opacity:1;transition:none}
-.cine{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(20,10,0,.42) 100%)}
-.speed{position:absolute;inset:-10%;pointer-events:none;opacity:0;transition:opacity .25s;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.55) 0 .6deg,transparent .6deg 7deg);-webkit-mask:radial-gradient(circle,transparent 32%,#000 70%);mask:radial-gradient(circle,transparent 32%,#000 70%)}
-.speed.on{opacity:.55;transition:opacity .05s}
-.bars i{position:absolute;left:0;right:0;height:9%;background:#0b0b08;transform:scaleY(0);pointer-events:none;z-index:2}
+.lowhp{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 160px 30px rgba(255,30,50,.55);opacity:0}
+.lowhp.on{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:1}}
+.cine{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,8,.6) 100%)}
+.speed{position:absolute;inset:-10%;pointer-events:none;opacity:0;transition:opacity .25s;background:repeating-conic-gradient(from 0deg,rgba(160,240,255,.5) 0 .6deg,transparent .6deg 7deg);-webkit-mask:radial-gradient(circle,transparent 32%,#000 70%);mask:radial-gradient(circle,transparent 32%,#000 70%)}
+.speed.on{opacity:.5;transition:opacity .05s}
+.bars i{position:absolute;left:0;right:0;height:9%;background:#000;transform:scaleY(0);pointer-events:none;z-index:2}
 .bars i:first-child{top:0;transform-origin:top}.bars i:last-child{bottom:0;transform-origin:bottom}
 .intro .bars i{animation:bars 1.7s ease forwards}
 @keyframes bars{0%{transform:scaleY(0)}18%,78%{transform:scaleY(1)}100%{transform:scaleY(0)}}
 .banner{position:absolute;left:0;right:0;top:36%;text-align:center;pointer-events:none;opacity:0;z-index:3}
-.banner b{display:block;font:clamp(44px,9vw,96px)/1 'Lilita One',sans-serif;color:var(--sun);text-shadow:0 6px 0 #3a1a00,0 0 40px rgba(255,160,40,.6);letter-spacing:.02em}
-.banner small{display:block;margin-top:10px;font:800 clamp(14px,2vw,18px)/1 Nunito,sans-serif;color:#fff;letter-spacing:.3em;text-transform:uppercase;text-shadow:0 2px 0 #000}
+.banner b{display:block;font:clamp(40px,8.5vw,92px)/1 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.04em;text-shadow:0 0 18px rgba(255,61,139,.9),0 0 3px var(--pink),0 5px 0 #000}
+.banner small{display:block;margin-top:12px;font:800 clamp(14px,2vw,18px)/1 Barlow,sans-serif;color:var(--neon);letter-spacing:.35em;text-transform:uppercase;text-shadow:0 0 10px rgba(62,240,255,.7)}
 .intro .banner{animation:slam 1.7s ease-out forwards}
 @keyframes slam{0%{opacity:0;transform:scale(2.4)}12%{opacity:1;transform:scale(.94)}20%{transform:scale(1)}80%{opacity:1;transform:scale(1.04)}100%{opacity:0;transform:scale(1.08)}}
-.combo{position:absolute;left:calc(50% + 40px);top:calc(50% - 46px);font:22px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 3px 0 #b81f30,0 0 12px rgba(255,77,94,.8);pointer-events:none;opacity:0}
+.combo{position:absolute;left:calc(50% + 40px);top:calc(50% - 46px);font:20px/1 'Russo One',sans-serif;color:#fff;text-shadow:0 0 10px var(--pink),0 2px 0 #000;pointer-events:none;opacity:0}
 .combo.on{animation:combo .9s ease-out forwards}
 @keyframes combo{0%{opacity:1;transform:scale(1.6) rotate(-6deg)}20%{transform:scale(1) rotate(-4deg)}70%{opacity:1}100%{opacity:0;transform:translateY(-14px) rotate(-4deg)}}
-.boss{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(420px,70%);pointer-events:none;text-align:center;font:18px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 2px 0 #3a0f1f}
-.boss div{height:12px;margin-top:6px;border-radius:6px;background:rgba(40,10,20,.5);overflow:hidden}
-.boss b{display:block;height:100%;background:#ff6fa8}
-.minimap{position:absolute;left:16px;bottom:16px;width:var(--mm);height:var(--mm);border-radius:12px;background:rgba(16,40,15,.55);box-shadow:0 0 0 2px rgba(255,246,220,.5);pointer-events:none}
-.stage{--mm:150px}
-@media(max-width:700px){.stage{--mm:104px}}
-.dashm{position:absolute;left:calc(var(--mm) + 28px);bottom:16px;font:15px/1 'Lilita One',sans-serif;color:#fff;text-shadow:0 2px 0 #10280f;pointer-events:none}
-.dashm div{width:90px;height:8px;border-radius:4px;background:rgba(16,40,15,.45);margin-top:5px;overflow:hidden}
-.dashm b{display:block;height:100%;background:var(--sun)}
+.boss{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(440px,70%);pointer-events:none;text-align:center;font:16px/1 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 8px var(--pink)}
+.boss div{height:10px;margin-top:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,61,139,.6);overflow:hidden}
+.boss b{display:block;height:100%;background:linear-gradient(90deg,#ff3d8b,#ff7ab0)}
+.minimap{position:absolute;left:16px;bottom:16px;width:var(--mm);height:var(--mm);border-radius:6px;background:rgba(4,6,12,.75);box-shadow:0 0 0 1px var(--line),0 0 14px rgba(62,240,255,.15);pointer-events:none}
+.dashm{position:absolute;left:calc(var(--mm) + 28px);bottom:16px;font:13px/1 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.08em;pointer-events:none;text-shadow:0 1px 0 #000}
+.dashm div{width:90px;height:6px;background:rgba(0,0,0,.55);margin-top:5px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+.dashm b{display:block;height:100%;background:var(--neon)}
 .dashm span{display:block;margin-top:8px}
-.dashm em{font-style:normal;color:var(--sun);letter-spacing:2px}
-.dashm #parryBar{background:#ff9ecb}
+.dashm em{font-style:normal;color:var(--neon);letter-spacing:2px}
+.dashm #parryBar{background:var(--pink)}
+.hp{position:absolute;left:50%;bottom:58px;transform:translateX(-50%);width:min(340px,46%);display:flex;align-items:center;gap:10px;pointer-events:none}
+.hp span{font:22px/1 'Russo One',sans-serif;color:#fff;min-width:3ch;text-align:right;text-shadow:0 2px 0 #000}
+.hp div{flex:1;height:14px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.18);transform:skewX(-18deg);overflow:hidden;position:relative}
+.hp b{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#1fd17a,var(--green));transition:width .15s}
+.hp i{position:absolute;inset:0 auto 0 0;background:rgba(255,255,255,.55);transition:width .6s ease .25s}
+.hp.low b{background:linear-gradient(90deg,#c41228,var(--red))}
+.ammo{position:absolute;right:18px;bottom:76px;text-align:right;pointer-events:none;font:15px/1 'Russo One',sans-serif;color:var(--muted);text-shadow:0 2px 0 #000}
+.ammo b{font:44px/1 'Russo One',sans-serif;color:#fff}
+.ammo.empty b{color:var(--red)}
+.ammo em{display:block;height:4px;margin:6px 0 0 auto;width:120px;background:rgba(0,0,0,.6);overflow:hidden}
+.ammo em i{display:block;height:100%;width:0;background:var(--amber)}
+.ammo small{display:block;margin-top:6px;font:800 12px/1 Barlow,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--amber)}
 .threats{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
-.threats i{position:absolute;left:-7px;top:-6px;width:14px;height:12px;background:var(--berry);clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 2px #000);opacity:0;transition:opacity .15s}
-.parryfx{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:3px solid var(--sun);opacity:0;pointer-events:none}
+.threats i{position:absolute;left:-7px;top:-6px;width:14px;height:12px;background:var(--red);clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 3px var(--red));opacity:0;transition:opacity .15s}
+.parryfx{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:2px solid var(--neon);box-shadow:0 0 14px var(--neon);opacity:0;pointer-events:none}
 .parryfx.on{animation:parry .3s ease-out}
 @keyframes parry{from{opacity:1;transform:scale(.5)}to{opacity:0;transform:scale(1.8)}}
-.toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font:clamp(28px,5vw,44px)/1 'Lilita One',sans-serif;color:var(--sun);text-shadow:0 4px 0 #0e2412;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .3s}
+.toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font:clamp(24px,4.4vw,38px)/1 'Russo One',sans-serif;color:var(--neon);text-transform:uppercase;letter-spacing:.06em;text-shadow:0 0 14px rgba(62,240,255,.7),0 3px 0 #000;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .3s}
 .toast.on{opacity:1}
-.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(18,40,16,.55)}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(3,5,10,.66)}
 .overlay[hidden],[hidden]{display:none!important}
-.menu{place-items:stretch;justify-items:start;background:linear-gradient(90deg,rgba(18,40,16,.78),rgba(18,40,16,.35) 55%,rgba(18,40,16,0));padding:clamp(16px,4vw,48px)}
-.menu-col{align-self:center;display:flex;flex-direction:column;gap:14px;max-width:420px}
-.logo{font:clamp(64px,11vw,120px)/.88 'Lilita One',sans-serif;margin:0;color:var(--sun);text-shadow:0 6px 0 #0e2412,0 0 0 #000;letter-spacing:-.01em}
-.tag{margin:0;font-size:18px;font-weight:800;color:var(--cream);text-shadow:0 2px 0 rgba(14,36,18,.6);max-width:30ch}
-.menu-btns{display:flex;flex-direction:column;gap:12px;align-items:flex-start;margin-top:6px}
-.menu-btns .btn{min-width:220px;text-align:left}
-.btn.big{font-size:30px;padding:16px 26px}
-.menu-best{color:#cfe3bf}
-.ver{margin:0;font-size:12px;font-weight:800;color:rgba(255,246,220,.6)}
-.card.wide{width:min(760px,100%)}
+.menu{place-items:stretch;justify-items:start;background:linear-gradient(90deg,rgba(3,5,10,.92),rgba(3,5,10,.5) 55%,rgba(3,5,10,0));padding:clamp(16px,4vw,48px)}
+.menu-col{align-self:center;display:flex;flex-direction:column;gap:10px;max-width:440px;max-height:100%;overflow:auto}
+.logo{font:clamp(46px,min(9vw,13vh),108px)/.9 'Russo One',sans-serif;margin:0;color:#fff;text-transform:uppercase;letter-spacing:.02em;text-shadow:0 0 22px rgba(255,61,139,.85),0 0 4px var(--pink),0 6px 0 #000}
+.logo span{display:block;color:var(--neon);text-shadow:0 0 22px rgba(62,240,255,.85),0 0 4px var(--neon),0 6px 0 #000}
+.tag{margin:0;font-size:18px;font-weight:600;color:#c9d2ee;max-width:32ch}
+.menu-btns{display:flex;flex-direction:column;gap:8px;align-items:flex-start;margin-top:6px}
+.menu-btns .btn{min-width:230px;text-align:left}
+.btn.big{font-size:26px;padding:14px 24px}
+.wallet{display:flex;align-items:center;gap:8px;font:20px/1 'Russo One',sans-serif;color:var(--amber);margin:0}
+.wallet svg{width:22px;height:22px}
+.menu-best{color:var(--muted)}
+.ver{margin:0;font-size:12px;font-weight:800;color:rgba(232,237,255,.45);letter-spacing:.05em}
+.card{width:min(580px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,var(--panel2),var(--panel));color:var(--text);border:1px solid var(--line);border-radius:10px;padding:24px 26px;box-shadow:0 0 0 1px rgba(62,240,255,.08),0 20px 60px rgba(0,0,0,.6);user-select:text}
+.card.wide{width:min(780px,100%)}
+.card h2{font:clamp(26px,4.6vw,36px)/1.05 'Russo One',sans-serif;margin:0 0 8px;color:#fff;text-transform:uppercase;letter-spacing:.03em;text-shadow:0 0 14px rgba(62,240,255,.35)}
+.card p{margin:0 0 12px;color:#c9d2ee}
 .ctrl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:14px 0 18px}
-.ctrl{background:#fff;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
-.ctrl b{font:18px/1.2 'Lilita One',sans-serif;color:#2c6b2f;margin-top:8px}
+.ctrl{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.ctrl b{font:16px/1.2 'Russo One',sans-serif;color:var(--neon);margin-top:8px;text-transform:uppercase;letter-spacing:.04em}
 .ctrl span:not(.kc){font-size:14px;color:var(--muted);line-height:1.4}
 .caps{display:grid;grid-template-columns:repeat(3,38px);gap:4px}
 .caps.one{display:flex;gap:6px;flex-wrap:wrap}
-.kc{display:grid;place-items:center;min-width:38px;height:38px;padding:0 8px;border-radius:8px;background:#f3ecd6;border:1.5px solid #cfc4a2;box-shadow:0 3px 0 #b9ad8a;font:16px/1 'Lilita One',sans-serif;color:var(--ink)}
+.kc{display:grid;place-items:center;min-width:38px;height:38px;padding:0 8px;border-radius:6px;background:#1d2333;border:1px solid #3a4562;box-shadow:0 3px 0 #0a0d15;font:15px/1 'Russo One',sans-serif;color:#fff}
 .kc.gap{visibility:hidden}
 .kc.space{min-width:150px}
 .kc.wide{min-width:72px}
 .kc.mouse{width:30px;min-width:30px;height:42px;padding:0;border-radius:15px;position:relative}
-.kc.mouse i{position:absolute;left:50%;top:6px;width:2px;height:10px;margin-left:-1px;background:#b9ad8a;border-radius:1px}
-.kc.mouse.left::before{content:"";position:absolute;left:2px;top:2px;width:12px;height:16px;border-radius:12px 0 0 0;background:var(--sun)}
-.guide{list-style:none;margin:14px 0 18px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
-.guide li{background:#fff;border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
-.guide svg{grid-row:span 3;width:52px;height:48px}
-.guide b{font:18px/1.2 'Lilita One',sans-serif;color:#2c6b2f}
-.guide span{font-size:14px;line-height:1.4}
+.kc.mouse i{position:absolute;left:50%;top:6px;width:2px;height:10px;margin-left:-1px;background:#5a6788;border-radius:1px}
+.kc.mouse.left::before{content:"";position:absolute;left:2px;top:2px;width:12px;height:16px;border-radius:12px 0 0 0;background:var(--neon);box-shadow:0 0 8px var(--neon)}
+.guide{list-style:none;margin:14px 0 18px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.guide li{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.guide svg{grid-row:span 3;width:52px;height:52px}
+.guide b{font:16px/1.2 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.04em}
+.guide span{font-size:14px;line-height:1.4;color:#c9d2ee}
 .guide i{font-style:normal;font-size:13px;color:var(--muted);font-weight:800}
-@media(max-width:600px){.menu{background:rgba(18,40,16,.6)}.menu-btns .btn{min-width:0;width:100%}.menu-col{width:100%}}
-.card{width:min(580px,100%);max-height:100%;overflow:auto;background:var(--cream);color:var(--ink);border-radius:18px;padding:24px 26px;box-shadow:0 10px 0 #0e2412;user-select:text}
-.card h1,.card h2{font:clamp(34px,6vw,50px)/1.05 'Lilita One',sans-serif;margin:0 0 6px;color:#2c6b2f}
-.card h2{font-size:clamp(28px,5vw,38px)}
-.card p{margin:0 0 12px}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0 18px;font-size:15px}
-.keys b{font:15px/1.4 'Lilita One',sans-serif;color:#2c6b2f;white-space:nowrap}
-.btn{font:22px/1 'Lilita One',sans-serif;border:0;border-radius:12px;padding:14px 22px;min-height:48px;background:var(--sun);color:var(--ink);box-shadow:0 5px 0 #b38a00;cursor:pointer}
-.btn:hover{filter:brightness(1.05)}
-.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #b38a00}
-.btn.alt{background:#e8dfc3;box-shadow:0 5px 0 #b9ad8a}
-:focus-visible{outline:3px solid var(--sky);outline-offset:3px}
+.keys b{font:14px/1.5 'Russo One',sans-serif;color:var(--neon);white-space:nowrap;text-transform:uppercase}
+.btn{font:20px/1 'Russo One',sans-serif;text-transform:uppercase;letter-spacing:.04em;border:0;border-radius:6px;padding:14px 22px;min-height:48px;background:var(--neon);color:#031016;box-shadow:0 0 18px rgba(62,240,255,.35),0 4px 0 #0f7c87;cursor:pointer}
+.btn:hover{filter:brightness(1.08)}
+.btn:active{transform:translateY(3px);box-shadow:0 0 10px rgba(62,240,255,.35),0 1px 0 #0f7c87}
+.btn.alt{background:rgba(23,28,40,.9);color:#fff;border:1px solid #3a4562;box-shadow:0 4px 0 #05070c}
+.btn.alt:hover{border-color:var(--neon);color:var(--neon)}
+:focus-visible{outline:2px solid var(--pink);outline-offset:3px}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .best{font-size:14px;color:var(--muted);font-weight:800}
 .note{font-size:14px;color:var(--muted)}
 .picks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
-.pick{text-align:left;border:0;border-radius:14px;padding:14px;background:#fff;color:var(--ink);box-shadow:0 5px 0 #d9cfae;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:150px;font:inherit}
-.pick:hover{box-shadow:0 5px 0 var(--sun),0 0 0 3px var(--sun)}
-.pick b{font:20px/1.1 'Lilita One',sans-serif;color:#2c6b2f}
-.pick span{font-size:14px;line-height:1.4}
+.pick{text-align:left;border:1px solid var(--line);border-radius:8px;padding:14px;background:rgba(255,255,255,.03);color:var(--text);cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:150px;font:inherit}
+.pick:hover{border-color:var(--neon);box-shadow:0 0 18px rgba(62,240,255,.2)}
+.pick b{font:17px/1.15 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.03em}
+.pick span{font-size:14px;line-height:1.4;color:#c9d2ee}
 .pick i{font-style:normal;font-size:13px;color:var(--muted);margin-top:auto}
 .pick svg{width:34px;height:34px}
-.figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0 18px}
-.figs div{background:#fff;border-radius:12px;padding:10px 12px}
-.figs b{display:block;font:28px/1.1 'Lilita One',sans-serif;color:#2c6b2f}
-.figs span{font-size:13px;color:var(--muted);font-weight:800}
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0 18px}
+.figs div{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.figs b{display:block;font:26px/1.1 'Russo One',sans-serif;color:#fff}
+.figs .gold b{color:var(--amber)}
+.figs span{font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.shopsoon{border:1px dashed #3a4562;border-radius:8px;padding:18px;margin:14px 0 18px;color:var(--muted)}
 .touch{position:absolute;inset:0;pointer-events:none}
-.tbtn{position:absolute;pointer-events:auto;border:0;border-radius:50%;font:16px/1 'Lilita One',sans-serif;color:var(--ink);box-shadow:0 4px 0 rgba(0,0,0,.25);touch-action:none}
-.tfire{right:22px;bottom:26px;width:84px;height:84px;background:var(--sun)}
-.tjump{right:120px;bottom:22px;width:58px;height:58px;background:#e8dfc3}
-.tdash{right:28px;bottom:126px;width:58px;height:58px;background:#7fd3ff}
-.tparry{right:120px;bottom:96px;width:58px;height:58px;background:#ffb3c8}
-.tbtn.on{transform:translateY(3px);filter:brightness(.92)}
+.tbtn{position:absolute;pointer-events:auto;border:1px solid rgba(255,255,255,.2);border-radius:50%;font:13px/1 'Russo One',sans-serif;text-transform:uppercase;color:#fff;background:rgba(15,19,28,.75);box-shadow:0 4px 0 rgba(0,0,0,.4);touch-action:none}
+.tfire{right:22px;bottom:26px;width:84px;height:84px;background:rgba(62,240,255,.85);color:#031016}
+.tjump{right:120px;bottom:22px;width:58px;height:58px}
+.tdash{right:28px;bottom:126px;width:58px;height:58px;border-color:var(--neon)}
+.tparry{right:120px;bottom:96px;width:58px;height:58px;border-color:var(--pink)}
+.treload{right:196px;bottom:22px;width:52px;height:52px;border-color:var(--amber)}
+.tbtn.on{transform:translateY(3px);filter:brightness(.9)}
 .desk{position:absolute;right:16px;bottom:16px;display:flex;gap:8px}
-.dbtn{font:16px/1 'Lilita One',sans-serif;border:0;border-radius:12px;min-height:44px;padding:8px 14px;background:rgba(255,246,220,.92);color:var(--ink);box-shadow:0 4px 0 rgba(16,40,15,.45);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
-.dbtn small{font:12px/1 Nunito,sans-serif;font-weight:800;color:var(--muted)}
-.dbtn:active,.dbtn.on{transform:translateY(3px);box-shadow:0 1px 0 rgba(16,40,15,.45)}
-.mlook{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font:14px/1.2 Nunito,sans-serif;font-weight:800;padding:8px 14px;border-radius:999px;background:rgba(16,40,15,.62);color:#fff;pointer-events:none;white-space:nowrap}
-.mlook b{color:var(--sun)}
+.dbtn{font:14px/1 'Russo One',sans-serif;text-transform:uppercase;border:1px solid #3a4562;border-radius:6px;min-height:44px;padding:8px 12px;background:rgba(15,19,28,.85);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.5);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.dbtn small{font:11px/1 Barlow,sans-serif;font-weight:800;color:var(--muted)}
+.dbtn:active,.dbtn.on{transform:translateY(3px);box-shadow:0 0 0 rgba(0,0,0,.5);border-color:var(--neon)}
+.mlook{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font:13px/1.2 Barlow,sans-serif;font-weight:800;padding:8px 14px;border-radius:999px;background:rgba(4,6,12,.75);border:1px solid var(--line);color:#c9d2ee;pointer-events:none;white-space:nowrap}
+.mlook b{color:var(--neon)}
 .stage.looking canvas{cursor:none}
-@media(max-width:700px){.mlook{bottom:72px}}
-@media(max-width:600px){.picks{grid-template-columns:1fr}.pick{min-height:0}.name{font-size:22px}.stat{font-size:17px}.hearts svg{width:18px;height:16px}.card{padding:18px}}
-@media(prefers-reduced-motion:reduce){.toast,.vign{transition:none}.intro .banner{animation:none;opacity:1}.combo.on{animation:none;opacity:1}}
+@media(max-width:700px){.mlook{bottom:72px}.hp{top:12px;bottom:auto;width:62%}.boss{top:40px}.ammo{bottom:256px;right:22px}.treload{right:30px;bottom:194px;width:52px;height:52px}}
+@media(max-width:600px){.picks{grid-template-columns:1fr}.pick{min-height:0}.name{font-size:18px}.stat{font-size:17px}.card{padding:18px}.figs{grid-template-columns:repeat(2,1fr)}.menu{background:rgba(3,5,10,.72)}.menu-btns .btn{min-width:0;width:100%}.menu-col{width:100%}}
+@media(prefers-reduced-motion:reduce){.toast,.vign{transition:none}.intro .banner{animation:none;opacity:1}.combo.on{animation:none;opacity:1}.lowhp.on{animation:none;opacity:.6}}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="bar">
     <p class="name">Slime Siege</p>
-    <div class="hearts" id="hearts" aria-label="Health"></div>
     <span class="stat"><small>Wave</small><span id="wave">1</span></span>
     <span class="stat"><small>Score</small><span id="score">0</span></span>
+    <span class="stat coin"><small>Coins</small><span id="coins">0</span></span>
     <button class="icon-btn" id="mute" aria-label="Sound on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path id="wav" d="M16.5 8.5a5 5 0 0 1 0 7"/></svg></button>
     <button class="icon-btn" id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
   </header>
@@ -163,12 +182,15 @@ canvas{display:block;width:100%;height:100%}
     <div class="cine" aria-hidden="true"></div>
     <div class="speed" id="speed" aria-hidden="true"></div>
     <div class="vign" id="vign"></div>
+    <div class="lowhp" id="lowhp"></div>
     <div class="bars" aria-hidden="true"><i></i><i></i></div>
     <div class="banner" id="banner" aria-live="polite"></div>
     <div class="combo" id="combo" aria-hidden="true"></div>
-    <div class="boss" id="boss" hidden>Slime King<div><b id="bossHp"></b></div></div>
+    <div class="boss" id="boss" hidden>The Warden<div><b id="bossHp"></b></div></div>
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
+    <div class="hp" id="hp" role="meter" aria-label="Health" aria-valuemin="0"><span id="hpText">100</span><div><i id="hpLag"></i><b id="hpFill"></b></div></div>
+    <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> / <span id="ammoMax">24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
     <div class="parryfx" id="parryFx" aria-hidden="true"></div>
     <div class="toast" id="toast"></div>
@@ -177,24 +199,28 @@ canvas{display:block;width:100%;height:100%}
       <button class="dbtn" id="dJump" tabindex="-1">Jump<small>Space</small></button>
       <button class="dbtn" id="dDash" tabindex="-1">Dash<small>Shift</small></button>
       <button class="dbtn" id="dParry" tabindex="-1">Parry<small>F</small></button>
+      <button class="dbtn" id="dReload" tabindex="-1">Reload<small>R</small></button>
     </div>
     <div class="touch" id="touch" hidden>
-      <button class="tbtn tfire" id="tFire" aria-label="Shoot">Spray</button>
+      <button class="tbtn tfire" id="tFire" aria-label="Shoot">Fire</button>
+      <button class="tbtn treload" id="tReload" aria-label="Reload">Reload</button>
       <button class="tbtn tjump" id="tJump" aria-label="Jump">Jump</button>
       <button class="tbtn tdash" id="tDash" aria-label="Dash">Dash</button>
       <button class="tbtn tparry" id="tParry" aria-label="Parry">Parry</button>
     </div>
     <section class="overlay menu" id="ovTitle">
       <div class="menu-col">
-        <h1 class="logo">Slime<br>Siege</h1>
-        <p class="tag">Hold the garden. Hose down the slimes. Pick an upgrade after every wave.</p>
+        <h1 class="logo">Slime<span>Siege</span></h1>
+        <p class="tag">Hold the block. Gun down the robots. Pick an upgrade after every wave and spend your coins between runs.</p>
         <nav class="menu-btns" aria-label="Main menu">
           <button class="btn big" id="startBtn">Play</button>
           <button class="btn alt" id="ctrlBtn">Controls</button>
-          <button class="btn alt" id="guideBtn">Slime guide</button>
+          <button class="btn alt" id="shopBtn">Shop</button>
+          <button class="btn alt" id="guideBtn">Enemy guide</button>
         </nav>
+        <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 14 · cinematic look, more buildings</p>
+        <p class="ver">Version 15 · dark city, robots, burst rifle, coins</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -204,10 +230,11 @@ canvas{display:block;width:100%;height:100%}
           <div class="ctrl-grid">
             <div class="ctrl"><div class="caps"><span class="kc gap"></span><span class="kc">W</span><span class="kc gap"></span><span class="kc">A</span><span class="kc">S</span><span class="kc">D</span></div><b>Move</b><span>Arrow keys work too</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Spray</b><span>Hold the left mouse button</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Hop onto crates and planters</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Two dashes in a row, then both recharge. Slimes can’t hurt you mid-dash</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc">F</span></div><b>Parry</b><span>Bat goo back at whoever spat it, or shove a slime away. Time it just before it hits</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Shoot</b><span>Click for a 3-round burst. Hold to keep firing bursts</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">R</span></div><b>Reload</b><span>Reloads by itself when the magazine runs dry</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Low gravity: leap onto cars, containers and rooftops</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Two dashes in a row, then both recharge. Robots can’t hurt you mid-dash</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">F</span></div><b>Parry</b><span>Knock energy bolts back at whoever fired them, or shove a robot away. Time it just before it hits</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">⌘ Cmd</span></div><b>Mouse look on / off</b><span>Locks the mouse to the middle of the screen. Ctrl on Windows</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">P</span><span class="kc">Esc</span></div><b>Pause</b><span>Esc also releases the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">1</span><span class="kc">2</span><span class="kc">3</span></div><b>Pick an upgrade</b><span>Between waves</span></div>
@@ -217,8 +244,9 @@ canvas{display:block;width:100%;height:100%}
           <div class="keys">
             <b>Move</b><span>Drag on the left half of the screen</span>
             <b>Look</b><span>Drag on the right half</span>
-            <b>Spray</b><span>Hold the big yellow button</span>
-            <b>Jump / dash / parry</b><span>The three smaller round buttons</span>
+            <b>Shoot</b><span>Hold the big Fire button</span>
+            <b>Reload</b><span>Tap Reload, or it reloads by itself when empty</span>
+            <b>Jump / dash / parry</b><span>The three round buttons above Fire</span>
           </div>
         </div>
         <div class="row"><button class="btn" data-back>Back</button></div>
@@ -226,8 +254,16 @@ canvas{display:block;width:100%;height:100%}
     </section>
     <section class="overlay" id="ovGuide" hidden>
       <div class="card wide">
-        <h2>Slime guide</h2>
+        <h2>Enemy guide</h2>
         <ul class="guide" id="guideList"></ul>
+        <div class="row"><button class="btn" data-back>Back</button></div>
+      </div>
+    </section>
+    <section class="overlay" id="ovShop" hidden>
+      <div class="card">
+        <h2>Shop</h2>
+        <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="shopCoins">0</span> coins</p>
+        <div class="shopsoon">New guns and gear will be sold here. Every robot you take down earns coins, and they’re saved between runs, so keep stacking them.</div>
         <div class="row"><button class="btn" data-back>Back</button></div>
       </div>
     </section>
@@ -243,13 +279,13 @@ canvas{display:block;width:100%;height:100%}
         <h2>Paused</h2>
         <p id="pauseInfo"></p>
         <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Quit to menu</button></div>
-        <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game; if it reaches the edge, press ⌘ Command twice or hold the left button and drag.</p>
+        <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game.</p>
       </div>
     </section>
     <section class="overlay" id="ovOver" hidden>
       <div class="card">
-        <h2>The slimes got through</h2>
-        <div class="figs"><div><b id="oScore">0</b><span>Score</span></div><div><b id="oWave">1</b><span>Wave reached</span></div><div><b id="oBest">0</b><span>Best score</span></div></div>
+        <h2>The robots broke through</h2>
+        <div class="figs"><div><b id="oScore">0</b><span>Score</span></div><div><b id="oWave">1</b><span>Wave reached</span></div><div><b id="oBest">0</b><span>Best score</span></div><div class="gold"><b id="oCoins">+0</b><span>Coins earned</span></div></div>
         <p id="oNote"></p>
         <div class="row"><button class="btn" id="againBtn">Play again</button><button class="btn alt" id="menuBtn">Main menu</button></div>
       </div>
@@ -259,75 +295,83 @@ canvas{display:block;width:100%;height:100%}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 {
-// ===================== Content: add enemies, upgrades and garden pieces here =====================
-// Sizes in metres, speeds in metres per second. hp scales up each wave. from = first wave it appears.
+// ===================== Content: add enemies, upgrades and city pieces here =====================
+// Sizes in metres, speeds in metres per second, damage in health points (you start with 100).
+// hp scales up each wave. from = first wave it appears. coins = what a kill pays into your wallet.
 const ENEMIES = {
-  slime:   { hp: 3,   speed: 3.4, r: 0.9,  hop: 0.55, dmg: 1, score: 10,  from: 1, weight: 10, body: '#7ed957' , desc: 'Hops straight at you. Easy alone, trouble in a crowd.' },
-  zippy:   { hp: 1,   speed: 6.8, r: 0.55, hop: 0.35, dmg: 1, score: 15,  from: 2, weight: 5,  body: '#6fc8ff' , desc: 'Small and fast. Hard to hit, goes down in one shot.' },
-  spitter: { hp: 4,   speed: 2.6, r: 0.9,  hop: 0.3,  dmg: 1, score: 25,  from: 3, weight: 3,  body: '#ffa24d', keepAway: 12, shootEvery: 2.4 , desc: 'Keeps its distance and spits goo. Parry it back with F.' },
-  brute:   { hp: 14,  speed: 2.1, r: 1.5,  hop: 0.4,  dmg: 2, score: 40,  from: 4, weight: 2,  body: '#b07cff' , desc: 'Big, slow and tough. Hits for two hearts.' },
-  king:    { hp: 150, speed: 1.9, r: 3.0,  hop: 0.5,  dmg: 2, score: 400, boss: true,        body: '#ff6fa8', ringEvery: 2.8, splitInto: 'slime', splits: 6 , desc: 'Every fifth wave. Fires rings of goo and splits into slimes when it falls.' },
+  walker: { name: 'Walker', hp: 3,   speed: 3.6, r: 0.8,  bob: 0.05, dmg: 10, score: 10,  coins: 1,  from: 1, weight: 10, body: '#3a4152', glow: '#ff3d4a', desc: 'Security bot. Marches straight at you and hits hard up close.' },
+  runner: { name: 'Runner', hp: 1,   speed: 7.4, r: 0.5,  bob: 0.08, dmg: 8,  score: 15,  coins: 1,  from: 2, weight: 5,  body: '#2c3445', glow: '#3ef0ff', desc: 'Small and quick. Hard to track, drops to a single round.' },
+  drone:  { name: 'Drone',  hp: 4,   speed: 3.2, r: 0.7,  fly: 3.4,  dmg: 10, score: 25,  coins: 2,  from: 3, weight: 3,  body: '#454d61', glow: '#ffb020', keepAway: 14, shootEvery: 2.2, desc: 'Hovers out of reach and fires energy bolts. Parry them back with F.' },
+  heavy:  { name: 'Heavy',  hp: 14,  speed: 2.2, r: 1.4,  bob: 0.03, dmg: 20, score: 40,  coins: 3,  from: 4, weight: 2,  body: '#4a3f5e', glow: '#b45cff', desc: 'Armoured mech. Slow and tough, takes a fifth of your health per hit.' },
+  warden: { name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#2a2f3d', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'runner', splits: 6, desc: 'Every fifth wave. Fires rings of bolts and bursts into Runners when it goes down.' },
 };
 const UPGRADES = [
-  { id: 'rapid',  name: 'Rapid pump',      text: 'Spray 20% faster.',                    icon: 'drop',   apply: p => p.fireRate *= 1.2 },
-  { id: 'power',  name: 'Pressure nozzle', text: '+1 damage per shot.',                  icon: 'burst',  apply: p => p.dmg += 1 },
-  { id: 'twin',   name: 'Split nozzle',    text: 'Fire one more stream.',                icon: 'fork',   apply: p => p.shots += 1, when: p => p.shots < 7 },
-  { id: 'pierce', name: 'Jet stream',      text: 'Shots pass through one more slime.',   icon: 'arrow',  apply: p => p.pierce += 1, when: p => p.pierce < 5 },
-  { id: 'boots',  name: 'Garden boots',    text: 'Move 12% faster.',                     icon: 'boot',   apply: p => p.speed *= 1.12, when: p => p.speed < 13 },
-  { id: 'heart',  name: 'Thick gloves',    text: '+1 max heart, and heal 1.',            icon: 'heart',  apply: p => { p.maxHp += 1; p.hp = Math.min(p.maxHp, p.hp + 1); }, when: p => p.maxHp < 12 },
-  { id: 'patch',  name: 'Lemonade',        text: 'Heal 3 hearts.',                       icon: 'cup',    apply: p => p.hp = Math.min(p.maxHp, p.hp + 3), when: p => p.hp < p.maxHp },
-  { id: 'magnet', name: 'Gel magnet',      text: 'Pull in gel drops from farther away.', icon: 'magnet', apply: p => p.magnet *= 1.5, when: p => p.magnet < 12 },
-  { id: 'dash',   name: 'Quick feet',      text: 'Dashes recharge 25% faster.',           icon: 'bolt',   apply: p => p.dashCd *= 0.75, when: p => p.dashCd > 0.4 },
-  { id: 'range',  name: 'Long hose',       text: 'Shots fly 25% faster and farther.',    icon: 'arrow',  apply: p => p.shotSpeed *= 1.25, when: p => p.shotSpeed < 90 },
-  { id: 'spring', name: 'Springy socks',   text: 'Jump higher.',                         icon: 'boot',   apply: p => p.jump *= 1.2, when: p => p.jump < 15 },
+  { id: 'rapid',  name: 'Hair trigger',   text: 'Bursts come 20% faster.',              icon: 'trigger', apply: p => { p.burstPause *= .8; p.burstGap *= .9; }, when: p => p.burstPause > .12 },
+  { id: 'power',  name: 'Hollow points',  text: '+1 damage per round.',                 icon: 'burst',   apply: p => p.dmg += 1 },
+  { id: 'burst',  name: 'Extended burst', text: 'One more round in every burst.',       icon: 'rounds',  apply: p => p.burst += 1, when: p => p.burst < 6 },
+  { id: 'pierce', name: 'AP rounds',      text: 'Rounds punch through one more robot.', icon: 'arrow',   apply: p => p.pierce += 1, when: p => p.pierce < 5 },
+  { id: 'boots',  name: 'Runner shoes',   text: 'Move 12% faster.',                     icon: 'boot',    apply: p => p.speed *= 1.12, when: p => p.speed < 13 },
+  { id: 'heart',  name: 'Armour plate',   text: '+20 max health, and heal 20.',         icon: 'shield',  apply: p => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 20); }, when: p => p.maxHp < 240 },
+  { id: 'patch',  name: 'Med kit',        text: 'Heal 40 health.',                      icon: 'cross',   apply: p => p.hp = Math.min(p.maxHp, p.hp + 40), when: p => p.hp < p.maxHp },
+  { id: 'mag',    name: 'Drum mag',       text: '+12 rounds per magazine.',             icon: 'mag',     apply: p => { p.mag += 12; p.ammo = p.mag; }, when: p => p.mag < 72 },
+  { id: 'dash',   name: 'Quick feet',     text: 'Dashes recharge 25% faster.',          icon: 'bolt',    apply: p => p.dashCd *= 0.75, when: p => p.dashCd > 0.4 },
+  { id: 'hands',  name: 'Fast hands',     text: 'Reload 30% faster.',                   icon: 'hands',   apply: p => p.reloadTime *= .7, when: p => p.reloadTime > .5 },
+  { id: 'spring', name: 'Jump jets',      text: 'Jump higher.',                         icon: 'boot',    apply: p => p.jump *= 1.2, when: p => p.jump < 15 },
 ];
-const A = 80; // the garden runs from -A to A on both axes
-// Boxes the player and slimes can't walk through: x, z = centre, w, d = size, h = height.
-// Buildings block water and goo, so use them for cover; with moon gravity you can jump onto most roofs.
-const BUILDINGS = ['house', 'barn', 'greenhouse', 'shed', 'tower'];
+const A = 80; // the city block runs from -A to A on both axes
+// Boxes the player and robots can't walk through: x, z = centre, w, d = size, h = height.
+// Buildings block bullets and bolts, so use them for cover; with low gravity you can jump onto most roofs.
+const BUILDINGS = ['block', 'warehouse', 'station', 'container', 'tower'];
+const NEON = ['#ff3d8b', '#3ef0ff', '#ffb020', '#b45cff', '#3dff8a'];
 const OBSTACLES = [
-  { x: 0, z: 0, w: 4.4, d: 4.4, h: 1.2, kind: 'fountain' },
-  { x: -44.8, z: -41.6, w: 10, d: 8, h: 5, kind: 'house', wall: '#f2d7b6', roof: '#c8553d' },
-  { x: 41.6, z: -44.8, w: 9, d: 8, h: 5, kind: 'house', wall: '#cfe3f2', roof: '#3d6fa8' },
-  { x: 60.8, z: 6.4, w: 7, d: 9, h: 4.5, kind: 'house', wall: '#fff0c2', roof: '#7a5236' },
-  { x: -48, z: 38.4, w: 12, d: 10, h: 6, kind: 'barn' },
-  { x: 44.8, z: 41.6, w: 10, d: 7, h: 3.6, kind: 'greenhouse' },
-  { x: 12.8, z: -54.4, w: 5, d: 4, h: 3, kind: 'shed' }, { x: -60.8, z: 0, w: 5, d: 5, h: 3, kind: 'shed' },
-  { x: -19.2, z: -16, w: 8, d: 2, h: 2.2, kind: 'hedge' }, { x: 20.8, z: 14.4, w: 2, d: 9, h: 2.2, kind: 'hedge' },
-  { x: -22.4, z: 57.6, w: 12, d: 2, h: 2.2, kind: 'hedge' }, { x: 25.6, z: -25.6, w: 2, d: 10, h: 2.2, kind: 'hedge' },
-  { x: -12.8, z: -60.8, w: 10, d: 2, h: 2.2, kind: 'hedge' },
+  { x: 0, z: 0, w: 4.4, d: 4.4, h: 1.2, kind: 'plaza' },
+  { x: -44.8, z: -41.6, w: 10, d: 8, h: 5, kind: 'block' },
+  { x: 41.6, z: -44.8, w: 9, d: 8, h: 5, kind: 'block' },
+  { x: 60.8, z: 6.4, w: 7, d: 9, h: 4.5, kind: 'block' },
+  { x: -48, z: 38.4, w: 12, d: 10, h: 6, kind: 'warehouse' },
+  { x: 44.8, z: 41.6, w: 10, d: 7, h: 3.6, kind: 'station' },
+  { x: 12.8, z: -54.4, w: 5, d: 4, h: 3, kind: 'container' }, { x: -60.8, z: 0, w: 5, d: 5, h: 3, kind: 'container' },
+  { x: -19.2, z: -16, w: 8, d: 2, h: 2.2, kind: 'wall' }, { x: 20.8, z: 14.4, w: 2, d: 9, h: 2.2, kind: 'wall' },
+  { x: -22.4, z: 57.6, w: 12, d: 2, h: 2.2, kind: 'wall' }, { x: 25.6, z: -25.6, w: 2, d: 10, h: 2.2, kind: 'wall' },
+  { x: -12.8, z: -60.8, w: 10, d: 2, h: 2.2, kind: 'wall' },
   { x: 22.4, z: -9.6, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 26.2, z: -8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
   { x: -24, z: 20.8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 32, z: 64, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
   { x: 35.8, z: 65.3, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: -64, z: -60.8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
   { x: 60.8, z: -19.2, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
-  { x: -4.8, z: 32, w: 7, d: 2, h: 1.1, kind: 'planter' }, { x: -32, z: -3.2, w: 2, d: 6, h: 1.1, kind: 'planter' },
-  { x: 0, z: -35.2, w: 8, d: 2, h: 1.1, kind: 'planter' }, { x: 54.4, z: 22.4, w: 2, d: 6, h: 1.1, kind: 'planter' },
-  { x: 0, z: 62, w: 10, d: 8, h: 5, kind: 'house', wall: '#efd3ea', roof: '#7d4a8c' },
-  { x: 20, z: 30, w: 8, d: 7, h: 4.5, kind: 'house', wall: '#ffe6b0', roof: '#c0582f' },
-  { x: -12, z: 46, w: 8, d: 7, h: 4.5, kind: 'house', wall: '#d6e6f5', roof: '#40618f' },
-  { x: 50, z: -62, w: 9, d: 7, h: 5, kind: 'house', wall: '#f5d0c0', roof: '#7a3a2a' },
-  { x: -50, z: -62, w: 8, d: 8, h: 5, kind: 'house', wall: '#e8e0c8', roof: '#56663a' },
-  { x: 66, z: 30, w: 8, d: 9, h: 5, kind: 'house', wall: '#f0e2ff', roof: '#5a3d8a' },
-  { x: -66, z: 40, w: 7, d: 8, h: 4.5, kind: 'house', wall: '#fff3d6', roof: '#b0472c' },
-  { x: 0, z: -45, w: 14, d: 6, h: 4, kind: 'barn' },
+  { x: -4.8, z: 32, w: 7, d: 2, h: 1.1, kind: 'barrier' }, { x: -32, z: -3.2, w: 2, d: 6, h: 1.1, kind: 'barrier' },
+  { x: 0, z: -35.2, w: 8, d: 2, h: 1.1, kind: 'barrier' }, { x: 54.4, z: 22.4, w: 2, d: 6, h: 1.1, kind: 'barrier' },
+  { x: 0, z: 62, w: 10, d: 8, h: 5, kind: 'block' },
+  { x: 20, z: 30, w: 8, d: 7, h: 4.5, kind: 'block' },
+  { x: -12, z: 46, w: 8, d: 7, h: 4.5, kind: 'block' },
+  { x: 50, z: -62, w: 9, d: 7, h: 5, kind: 'block' },
+  { x: -50, z: -62, w: 8, d: 8, h: 5, kind: 'block' },
+  { x: 66, z: 30, w: 8, d: 9, h: 5, kind: 'block' },
+  { x: -66, z: 40, w: 7, d: 8, h: 4.5, kind: 'block' },
+  { x: 0, z: -45, w: 14, d: 6, h: 4, kind: 'warehouse' },
   { x: 36, z: -36, w: 5, d: 5, h: 11, kind: 'tower' }, { x: -36, z: 56, w: 5, d: 5, h: 11, kind: 'tower' },
-  { x: -20, z: -67, w: 9, d: 8, h: 5, kind: 'house', wall: '#d8ecc9', roof: '#3f7a45' },
-  { x: 66, z: -30, w: 12, d: 10, h: 6, kind: 'barn' }, { x: -66, z: -30, w: 5, d: 5, h: 3, kind: 'shed' },
-  { x: 62, z: 62, w: 7, d: 7, h: 4.5, kind: 'house', wall: '#fbe3c4', roof: '#a8432f' },
-  { x: -64, z: 64, w: 5, d: 4, h: 3, kind: 'shed' }, { x: 30, z: 12, w: 2, d: 12, h: 2.2, kind: 'hedge' },
-  { x: -40, z: -14, w: 12, d: 2, h: 2.2, kind: 'hedge' }, { x: 20, z: -64, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
-  { x: -48, z: 8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 48, z: -8, w: 7, d: 2, h: 1.1, kind: 'planter' },
+  { x: -20, z: -67, w: 9, d: 8, h: 5, kind: 'block' },
+  { x: 66, z: -30, w: 12, d: 10, h: 6, kind: 'warehouse' }, { x: -66, z: -30, w: 5, d: 5, h: 3, kind: 'container' },
+  { x: 62, z: 62, w: 7, d: 7, h: 4.5, kind: 'block' },
+  { x: -64, z: 64, w: 5, d: 4, h: 3, kind: 'container' }, { x: 30, z: 12, w: 2, d: 12, h: 2.2, kind: 'wall' },
+  { x: -40, z: -14, w: 12, d: 2, h: 2.2, kind: 'wall' }, { x: 20, z: -64, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
+  { x: -48, z: 8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 48, z: -8, w: 7, d: 2, h: 1.1, kind: 'barrier' },
+  // parked cars (you can jump on them)
+  { x: 3, z: 24, w: 2, d: 4.4, h: 1.5, kind: 'car' }, { x: -3, z: -28, w: 2, d: 4.4, h: 1.5, kind: 'car' },
+  { x: 26, z: 3, w: 4.4, d: 2, h: 1.5, kind: 'car' }, { x: -24, z: -3, w: 4.4, d: 2, h: 1.5, kind: 'car' },
+  { x: 40, z: 2, w: 4.4, d: 2, h: 1.5, kind: 'car' }, { x: -3, z: 50, w: 2, d: 4.4, h: 1.5, kind: 'car' },
+  { x: -54, z: 20, w: 2, d: 4.4, h: 1.5, kind: 'car' }, { x: 54, z: -30, w: 2, d: 4.4, h: 1.5, kind: 'car' },
 ];
 const ICONS = {
-  drop: '<path d="M17 4c5 7 8 11 8 15a8 8 0 0 1-16 0c0-4 3-8 8-15z" fill="#7fd3ff" stroke="#2a83c7" stroke-width="2"/>',
-  burst: '<path d="M17 3l3 8 8-2-5 7 6 6-8 1-1 8-5-6-6 5 1-8-8-3 7-4-3-7 8 3z" fill="#ffd23f" stroke="#b38a00" stroke-width="2"/>',
-  fork: '<path d="M17 30V18M17 18L7 6M17 18l10-12M17 18V5" stroke="#2c6b2f" stroke-width="3.5" stroke-linecap="round" fill="none"/>',
-  arrow: '<path d="M4 17h22M19 9l8 8-8 8" stroke="#2c6b2f" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
-  boot: '<path d="M9 5h9v13l9 4v6H7z" fill="#a0632b" stroke="#5c3814" stroke-width="2" stroke-linejoin="round"/>',
-  heart: '<path d="M17 29S4 21 4 12a6.5 6.5 0 0 1 13-2 6.5 6.5 0 0 1 13 2c0 9-13 17-13 17z" fill="#ff4d5e" stroke="#b81f30" stroke-width="2"/>',
-  cup: '<path d="M8 8h18l-3 21H11z" fill="#fff07a" stroke="#b38a00" stroke-width="2" stroke-linejoin="round"/><path d="M20 3l-3 9" stroke="#2c6b2f" stroke-width="2.5" stroke-linecap="round"/>',
-  magnet: '<path d="M7 5v11a10 10 0 0 0 20 0V5h-6v11a4 4 0 0 1-8 0V5z" fill="#ff4d5e" stroke="#b81f30" stroke-width="2" stroke-linejoin="round"/><path d="M7 5h6v5H7zM21 5h6v5h-6z" fill="#e8dfc3"/>',
-  bolt: '<path d="M19 3L7 19h8l-2 12 12-17h-8z" fill="#ffd23f" stroke="#b38a00" stroke-width="2" stroke-linejoin="round"/>',
+  trigger: '<path d="M6 10h20v6H16l-2 10H8l2-10H6z" fill="#3ef0ff"/><path d="M17 16c0 4 2 6 4 6" stroke="#3ef0ff" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
+  burst: '<path d="M17 3l3 8 8-2-5 7 6 6-8 1-1 8-5-6-6 5 1-8-8-3 7-4-3-7 8 3z" fill="#ffb020"/>',
+  rounds: '<g fill="#ffb020"><rect x="6" y="10" width="5" height="18" rx="2"/><rect x="14.5" y="7" width="5" height="21" rx="2"/><rect x="23" y="10" width="5" height="18" rx="2"/></g>',
+  arrow: '<path d="M4 17h22M19 9l8 8-8 8" stroke="#3ef0ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  boot: '<path d="M9 5h9v13l9 4v6H7z" fill="#8a94b0"/><path d="M7 25h20" stroke="#3ef0ff" stroke-width="2.5"/>',
+  shield: '<path d="M17 3l11 4v9c0 7-5 12-11 15C11 28 6 23 6 16V7z" fill="#3dff8a"/>',
+  cross: '<path d="M13 5h8v8h8v8h-8v8h-8v-8H5v-8h8z" fill="#3dff8a"/>',
+  mag: '<path d="M11 4h11l-2 26h-9z" fill="#8a94b0"/><path d="M12 9h9M12 14h8M12 19h8" stroke="#06080d" stroke-width="2"/>',
+  bolt: '<path d="M19 3L7 19h8l-2 12 12-17h-8z" fill="#3ef0ff"/>',
+  hands: '<path d="M8 22c0-6 4-12 9-12s9 6 9 12" stroke="#ffb020" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M22 6l5 4-5 4" stroke="#ffb020" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
 };
 
 // ===================== Helpers =====================
@@ -354,102 +398,203 @@ const T = window.THREE;
 if (!T) { stage.innerHTML = '<p style="padding:24px;color:#22301d">The 3D engine didn’t load. Check your connection and reload the page.</p>'; throw new Error('three.js missing'); }
 const renderer = new T.WebGLRenderer({ canvas: cv, antialias: true });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
-renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.35; // filmic contrast
+renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.5; // filmic contrast
 const scene = new T.Scene();
-scene.background = new T.Color('#f2c99a'); scene.fog = new T.Fog('#f0c9a0', 60, 220); // warm late-afternoon haze
-// a gradient sky dome: deep blue overhead fading to a warm horizon
+scene.background = new T.Color('#0b0d1a'); scene.fog = new T.Fog('#0d1022', 25, 170); // night haze
+// night sky: near-black overhead, a purple city glow on the horizon, stars and a moon
 const sky = new T.Mesh(new T.SphereGeometry(300, 24, 12), new T.ShaderMaterial({ side: T.BackSide, depthWrite: false, fog: false,
-  uniforms: { top: { value: new T.Color('#3a78c9') }, mid: { value: new T.Color('#9cc7ec') }, low: { value: new T.Color('#ffcf9a') } },
+  uniforms: { top: { value: new T.Color('#02030a') }, mid: { value: new T.Color('#0b0f24') }, low: { value: new T.Color('#3a1747') } },
   vertexShader: 'varying float h; void main(){ h = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 low; varying float h; void main(){ vec3 c = h > 0.15 ? mix(mid, top, smoothstep(0.15, 0.7, h)) : mix(low, mid, smoothstep(-0.05, 0.15, h)); gl_FragColor = vec4(c, 1.0); }' }));
+  fragmentShader: 'uniform vec3 top; uniform vec3 mid; uniform vec3 low; varying float h; void main(){ vec3 c = h > 0.12 ? mix(mid, top, smoothstep(0.12, 0.6, h)) : mix(low, mid, smoothstep(-0.05, 0.12, h)); gl_FragColor = vec4(c, 1.0); }' }));
 scene.add(sky);
+{ const n = 700, pos = new Float32Array(n * 3); for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, y = rnd(.15, 1), r = Math.sqrt(1 - y * y); pos.set([Math.cos(a) * r * 280, y * 280, Math.sin(a) * r * 280], i * 3); }
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(pos, 3));
+  sky.add(new T.Points(g, new T.PointsMaterial({ color: '#cfd8ff', size: 1.3, sizeAttenuation: false, fog: false })));
+  const moon = new T.Mesh(new T.SphereGeometry(9, 20, 14), new T.MeshBasicMaterial({ color: '#e6ebff', fog: false })); moon.position.set(-120, 140, -190); sky.add(moon); }
 const camera = new T.PerspectiveCamera(75, 1, 0.05, 340); camera.rotation.order = 'YXZ';
 scene.add(camera);
-scene.add(new T.HemisphereLight('#cfe3ff', '#4a5a2a', 0.62));
-const sun = new T.DirectionalLight('#ffcf8f', 1.15); sun.position.set(25, 45, 15); sun.castShadow = true;
+scene.add(new T.HemisphereLight('#6a7bd0', '#140f1c', 0.75));
+const sun = new T.DirectionalLight('#9fb4ff', 0.6); sun.position.set(25, 45, 15); sun.castShadow = true; // moonlight
 sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 180 });
-scene.add(sun); scene.add(sun.target); // the shadow area follows you round the big garden
+scene.add(sun); scene.add(sun.target); // the shadow area follows you round the city
 const lam = c => new T.MeshLambertMaterial({ color: c });
-function grassTexture() {
-  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
-  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { g.fillStyle = (x + y) % 2 ? '#56a84b' : '#4f9e45'; g.fillRect(x * 64, y * 64, 64, 64); }
-  let s = 5; const sr = () => (s = s * 16807 % 2147483647) / 2147483647;
-  g.strokeStyle = '#3f8a37'; g.lineWidth = 2;
-  for (let i = 0; i < 260; i++) { const x = sr() * 256, y = sr() * 256; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 2, y - 6); g.stroke(); }
-  const fl = ['#fff6dc', '#ffd23f', '#ff9ecb'];
-  for (let i = 0; i < 14; i++) { const x = sr() * 256, y = sr() * 256; g.fillStyle = fl[i % 3]; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(x + Math.cos(k * 1.26) * 3, y + Math.sin(k * 1.26) * 3, 2.4, 0, 7); g.fill(); } }
-  const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(48, 48); t.anisotropy = 4; return t;
-}
-const ground = new T.Mesh(new T.PlaneGeometry(A * 2 + 40, A * 2 + 40), new T.MeshLambertMaterial({ map: grassTexture(), color: '#c4f28e' }));
+const glowMat = (c, o = 1) => new T.MeshBasicMaterial({ color: c, transparent: o < 1, opacity: o });
+let seed = 7; const sr = () => (seed = seed * 16807 % 2147483647) / 2147483647;
+function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 4; return t; }
+// wet asphalt with grit and the odd puddle sheen
+const asphalt = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#1b1d24'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2400; i++) { const v = 20 + sr() * 26 | 0; g.fillStyle = `rgb(${v},${v + 1},${v + 6})`; g.fillRect(sr() * w, sr() * h, 2, 2); }
+  for (let i = 0; i < 6; i++) { const gr = g.createRadialGradient(0, 0, 0, 0, 0, 40); gr.addColorStop(0, 'rgba(90,110,160,.22)'); gr.addColorStop(1, 'rgba(90,110,160,0)'); g.save(); g.translate(sr() * w, sr() * h); g.scale(1.8, 1); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 40, 0, 7); g.fill(); g.restore(); }
+  g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = 1.5; for (let i = 0; i < 5; i++) { g.beginPath(); let x = sr() * w, y = sr() * h; g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += sr() * 30 - 15; y += sr() * 30 - 15; g.lineTo(x, y); } g.stroke(); }
+});
+asphalt.repeat.set(40, 40);
+const ground = new T.Mesh(new T.PlaneGeometry(A * 2 + 40, A * 2 + 40), new T.MeshLambertMaterial({ map: asphalt }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-function box(w, h, d, color, x, y, z) { const m = new T.Mesh(new T.BoxGeometry(w, h, d), lam(color)); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; }
-// a building: walls, a pyramid roof, a door and windows (the roof is just for looks)
-function building(o) {
-  const glass = o.kind === 'greenhouse';
-  const wall = glass ? new T.MeshLambertMaterial({ color: '#cfefff', transparent: true, opacity: .55 }) : lam(o.wall || (o.kind === 'barn' ? '#b8413a' : o.kind === 'tower' ? '#c9c2b0' : '#9c7a54'));
-  const m = new T.Mesh(new T.BoxGeometry(o.w, o.h, o.d), wall); m.position.set(o.x, o.h / 2, o.z); m.castShadow = m.receiveShadow = !glass; scene.add(m);
-  if (glass) for (let i = -1; i <= 1; i += 2) for (const [w, d, dx, dz] of [[o.w + .1, .15, 0, o.d / 2 * i], [.15, o.d + .1, o.w / 2 * i, 0]]) box(w, .15, d, '#ffffff', o.x + dx, o.h, o.z + dz);
-  const rh = o.kind === 'shed' ? 1.4 : o.kind === 'greenhouse' ? 1.6 : o.kind === 'tower' ? 5 : 3;
-  const roof = new T.Mesh(new T.ConeGeometry(Math.SQRT1_2, 1, 4), glass ? wall : lam(o.roof || (o.kind === 'barn' ? '#6b2a24' : o.kind === 'tower' ? '#ff4d5e' : '#5a4632')));
-  roof.rotation.y = Math.PI / 4; roof.scale.set(o.w + .8, rh, o.d + .8); roof.position.set(o.x, o.h + rh / 2, o.z); roof.castShadow = !glass; scene.add(roof);
-  if (glass) return;
-  // door on the side facing the fountain, windows on every side
+// two crossing roads with lane markings
+for (const along of ['x', 'z']) {
+  const road = new T.Mesh(new T.PlaneGeometry(along === 'x' ? A * 2 : 10, along === 'x' ? 10 : A * 2), lam('#111319')); road.rotation.x = -Math.PI / 2; road.position.y = .01; road.receiveShadow = true; scene.add(road);
+  for (let t = -A + 3; t < A; t += 7) { if (Math.abs(t) < 7) continue; const m = new T.Mesh(new T.PlaneGeometry(along === 'x' ? 3 : .25, along === 'x' ? .25 : 3), glowMat('#e0b23a')); m.rotation.x = -Math.PI / 2; m.position.set(along === 'x' ? t : 0, .02, along === 'x' ? 0 : t); scene.add(m); }
+  for (const side of [-1, 1]) { const m = new T.Mesh(new T.PlaneGeometry(along === 'x' ? A * 2 : .18, along === 'x' ? .18 : A * 2), glowMat('#8a8f9c')); m.rotation.x = -Math.PI / 2; m.position.set(along === 'x' ? 0 : side * 4.7, .02, along === 'x' ? side * 4.7 : 0); scene.add(m); }
+}
+// glowing pool of light on the ground (cheap fake light)
+const poolTex = canvasTex(64, 64, (g, w) => { const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.4, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, w); });
+function pool(x, z, r, color, o = .5) { const m = new T.Mesh(new T.PlaneGeometry(r * 2, r * 2), new T.MeshBasicMaterial({ map: poolTex, color, transparent: true, opacity: o, blending: T.AdditiveBlending, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(x, .03, z); scene.add(m); return m; }
+// window grids: a wall texture and a matching glow texture where only the lit windows shine
+function windowTex(lit) {
+  const cols = 8, rows = 8, wall = document.createElement('canvas'), glow = document.createElement('canvas'); wall.width = glow.width = wall.height = glow.height = 256;
+  const gw = wall.getContext('2d'), gg = glow.getContext('2d'); gw.fillStyle = '#272c38'; gw.fillRect(0, 0, 256, 256); gg.fillStyle = '#000'; gg.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 900; i++) { const v = 30 + sr() * 14 | 0; gw.fillStyle = `rgb(${v},${v + 3},${v + 10})`; gw.fillRect(sr() * 256, sr() * 256, 3, 3); }
+  const warm = ['#ffd38a', '#ffe9b8', '#9fe9ff', '#ff9fd0', '#ffcf6a'];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const x = c * 32 + 7, y = r * 32 + 8; gw.fillStyle = '#10131b'; gw.fillRect(x, y, 18, 16);
+    if (sr() < lit) { const col = warm[sr() * warm.length | 0]; gw.fillStyle = col; gw.fillRect(x, y, 18, 16); gg.fillStyle = col; gg.globalAlpha = .55 + sr() * .45; gg.fillRect(x, y, 18, 16); gg.globalAlpha = 1; }
+  }
+  const tw = new T.CanvasTexture(wall), tg = new T.CanvasTexture(glow); for (const t of [tw, tg]) { t.wrapS = t.wrapT = T.RepeatWrapping; t.anisotropy = 4; } return [tw, tg];
+}
+const WIN = [windowTex(.35), windowTex(.2), windowTex(.5)];
+function windowMat(w, h, k, tint = '#ffffff') {
+  const [tw, tg] = WIN[k % WIN.length], a = tw.clone(), b = tg.clone(); a.needsUpdate = b.needsUpdate = true; a.repeat.set(w / 10, h / 10); b.repeat.copy(a.repeat);
+  return new T.MeshLambertMaterial({ map: a, color: tint, emissive: '#ffffff', emissiveMap: b, emissiveIntensity: 1 });
+}
+function box(w, h, d, color, x, y, z) { const m = new T.Mesh(new T.BoxGeometry(w, h, d), typeof color === 'string' ? lam(color) : color); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; scene.add(m); return m; }
+const spin = []; // things that turn by themselves (holograms, rooftop fans)
+// a city building: lit window walls, a flat roof with a parapet and rooftop kit, and a neon sign facing the street
+function building(o, i) {
+  const sign = NEON[i % NEON.length];
+  if (o.kind === 'container') {
+    const c = ['#7a2f2f', '#2f4f7a', '#7a5a2f', '#2f6a5a'][i % 4];
+    box(o.w, o.h, o.d, c, o.x, o.h / 2, o.z);
+    const long = o.w > o.d; for (let k = -3; k <= 3; k++) box(long ? .08 : o.w + .04, o.h - .2, long ? o.d + .04 : .08, '#1a1d24', o.x + (long ? k * o.w / 7 : 0), o.h / 2, o.z + (long ? 0 : k * o.d / 7)).castShadow = false;
+    return;
+  }
+  if (o.kind === 'station') {
+    // a glass-fronted all-night shop
+    box(o.w, o.h, o.d, new T.MeshLambertMaterial({ color: '#9fd8ff', emissive: '#244a6a', transparent: true, opacity: .45 }), o.x, o.h / 2, o.z).castShadow = false;
+    box(o.w + .4, .35, o.d + .4, '#20242e', o.x, o.h + .17, o.z);
+    box(o.w * .7, .55, .12, glowMat('#3ef0ff'), o.x, o.h + .65, o.z + o.d / 2 + .1);
+    pool(o.x, o.z + o.d / 2 + 3, 6, '#3ef0ff', .45); return;
+  }
+  const m = box(o.w, o.h, o.d, windowMat(o.w, o.h, i, o.kind === 'warehouse' ? '#9a8f80' : '#ffffff'), o.x, o.h / 2, o.z);
+  box(o.w + .3, .4, o.d + .3, '#1b1f29', o.x, o.h + .2, o.z); // parapet
+  box(o.w - .4, .05, o.d - .4, '#14171e', o.x, o.h + .03, o.z);
+  if (o.kind !== 'tower') { const ac = box(1.3, .8, 1.1, '#3a404d', o.x - o.w / 5, o.h + .4, o.z + o.d / 6); const fan = new T.Mesh(new T.CylinderGeometry(.42, .42, .06, 10), lam('#20242c')); fan.position.set(ac.position.x, o.h + .83, ac.position.z); scene.add(fan); spin.push([fan, 3]); }
+  else { box(.12, 4, .12, '#3a404d', o.x, o.h + 2, o.z); const blink = new T.Mesh(new T.SphereGeometry(.25, 8, 6), glowMat('#ff2030')); blink.position.set(o.x, o.h + 4.1, o.z); scene.add(blink); spin.push([blink, 'blink']); }
+  // sign and door on the side facing the middle of the block
   const fx = Math.abs(o.x) > Math.abs(o.z), sgn = -Math.sign(fx ? o.x : o.z) || 1;
-  const door = fx ? box(.12, 2.1, 1.2, '#5c3814', o.x + sgn * (o.w / 2 + .05), 1.05, o.z) : box(1.2, 2.1, .12, '#5c3814', o.x, 1.05, o.z + sgn * (o.d / 2 + .05));
-  door.castShadow = false;
-  if (o.kind === 'shed') return;
-  if (o.kind === 'tower') { for (let y = 3; y < o.h; y += 3.2) for (const side of [-1, 1]) { box(.9, 1.2, .1, '#3d5a6e', o.x, y, o.z + side * (o.d / 2 + .04)).castShadow = false; box(.1, 1.2, .9, '#3d5a6e', o.x + side * (o.w / 2 + .04), y, o.z).castShadow = false; } return; }
-  for (const side of [-1, 1]) for (const k of [-1, 1]) {
-    box(1.1, 1, .1, '#3d5a6e', o.x + k * o.w / 4, o.h * .62, o.z + side * (o.d / 2 + .04)).castShadow = false;
-    box(.1, 1, 1.1, '#3d5a6e', o.x + side * (o.w / 2 + .04), o.h * .62, o.z + k * o.d / 4).castShadow = false;
-  }
-  if (o.kind === 'barn') { box(o.w + .1, .25, .3, '#fff6dc', o.x, o.h * .45, o.z + o.d / 2); box(o.w + .1, .25, .3, '#fff6dc', o.x, o.h * .45, o.z - o.d / 2); }
+  const sw = Math.min(fx ? o.d : o.w, 6) * .8, sy = Math.min(o.h - 1, 3.6);
+  const sm = fx ? box(.15, .9, sw, glowMat(sign), o.x + sgn * (o.w / 2 + .12), sy, o.z) : box(sw, .9, .15, glowMat(sign), o.x, sy, o.z + sgn * (o.d / 2 + .12));
+  sm.castShadow = false;
+  const door = fx ? box(.1, 2.2, 1.4, '#0c0e13', o.x + sgn * (o.w / 2 + .05), 1.1, o.z) : box(1.4, 2.2, .1, '#0c0e13', o.x, 1.1, o.z + sgn * (o.d / 2 + .05)); door.castShadow = false;
+  pool(o.x + (fx ? sgn * (o.w / 2 + 3) : 0), o.z + (fx ? 0 : sgn * (o.d / 2 + 3)), 6.5, sign, .4);
+  if (o.kind === 'warehouse') { const rd = fx ? box(.1, 3, o.d * .5, '#3d434f', o.x - sgn * (o.w / 2 + .05), 1.5, o.z) : box(o.w * .5, 3, .1, '#3d434f', o.x, 1.5, o.z - sgn * (o.d / 2 + .05)); rd.castShadow = false; }
 }
-// garden walls: tall hedges all around, with a fence-post rhythm on top
+function car(o, i) {
+  const along = o.d > o.w, L = along ? o.d : o.w, W = along ? o.w : o.d, c = ['#8a1f2b', '#1f3d8a', '#c9c9c9', '#1c1c1c', '#c47a12'][i % 5];
+  const g = new T.Group(); g.position.set(o.x, 0, o.z); g.rotation.y = along ? 0 : Math.PI / 2; scene.add(g);
+  const part = (w, h, d, mat, x, y, z) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  part(W, .75, L, lam(c), 0, .65, 0); part(W * .9, .6, L * .5, new T.MeshLambertMaterial({ color: '#0d1018', emissive: '#0a1530' }), 0, 1.25, -.1);
+  for (const sx of [-1, 1]) { part(.35, .18, .05, glowMat('#fff6d8'), sx * W * .32, .75, L / 2 + .01); part(.35, .15, .05, glowMat('#ff1f3a'), sx * W * .32, .78, -L / 2 - .01); for (const sz of [-1, 1]) { const w = new T.Mesh(new T.CylinderGeometry(.34, .34, .25, 12), lam('#0a0a0c')); w.rotation.z = Math.PI / 2; w.position.set(sx * W / 2, .34, sz * L * .32); g.add(w); } }
+  const hp = pool(0, 0, 3.2, '#fff6d8', .35); g.add(hp); hp.position.set(0, .03, L / 2 + 2.6); hp.rotation.x = -Math.PI / 2;
+}
+// the edge of the block: a concrete wall topped with a neon strip
 for (const [w, d, x, z] of [[A * 2 + 2, 2, 0, -A - 1], [A * 2 + 2, 2, 0, A + 1], [2, A * 2 + 2, -A - 1, 0], [2, A * 2 + 2, A + 1, 0]]) {
-  box(w, 3.2, d, '#2f6b31', x, 1.6, z);
-  box(w + 0.2, 0.5, d + 0.2, '#3a7d3a', x, 3.3, z);
+  box(w, 4.2, d, '#2a2e38', x, 2.1, z);
+  box(w + .05, .12, d + .05, glowMat('#3ef0ff'), x, 4.25, z).castShadow = false;
 }
-for (const o of OBSTACLES) {
-  if (o.kind === 'hedge') { box(o.w, o.h, o.d, '#2f6b31', o.x, o.h / 2, o.z); box(o.w + .2, .35, o.d + .2, '#3c823c', o.x, o.h + .1, o.z); }
-  else if (o.kind === 'crate') { box(o.w, o.h, o.d, '#c98a4b', o.x, o.h / 2, o.z); box(o.w + .04, .18, o.d + .04, '#8a5527', o.x, o.h * .25, o.z); box(o.w + .04, .18, o.d + .04, '#8a5527', o.x, o.h * .75, o.z); }
-  else if (o.kind === 'planter') { box(o.w, o.h, o.d, '#b5643a', o.x, o.h / 2, o.z); for (let i = 0; i < Math.max(o.w, o.d) / 1.2; i++) { const t = i / (Math.max(o.w, o.d) / 1.2 - 1 || 1) - .5; const fx = o.x + (o.w > o.d ? t * (o.w - 1) : 0), fz = o.z + (o.d > o.w ? t * (o.d - 1) : 0); const f = new T.Mesh(new T.SphereGeometry(.38, 10, 8), lam(['#ff7ab6', '#ffd23f', '#fff6dc'][i % 3])); f.position.set(fx, o.h + .35, fz); scene.add(f); } }
-  else if (BUILDINGS.includes(o.kind)) building(o);
-  else if (o.kind === 'fountain') {
-    const b = new T.Mesh(new T.CylinderGeometry(2.2, 2.4, o.h, 24), lam('#d9d2c0')); b.position.set(o.x, o.h / 2, o.z); b.castShadow = b.receiveShadow = true; scene.add(b);
-    const w = new T.Mesh(new T.CylinderGeometry(1.9, 1.9, .1, 24), new T.MeshLambertMaterial({ color: '#6fc8ff' })); w.position.set(o.x, o.h - .02, o.z); scene.add(w);
-    const p = new T.Mesh(new T.CylinderGeometry(.3, .45, 1.6, 12), lam('#d9d2c0')); p.position.set(o.x, o.h + .8, o.z); p.castShadow = true; scene.add(p);
+OBSTACLES.forEach((o, i) => {
+  if (o.kind === 'wall') { box(o.w, o.h, o.d, '#3a3f4a', o.x, o.h / 2, o.z); box(o.w + .06, .18, o.d + .06, glowMat(NEON[i % NEON.length]), o.x, o.h * .55, o.z).castShadow = false; }
+  else if (o.kind === 'crate') { box(o.w, o.h, o.d, '#4a5060', o.x, o.h / 2, o.z); box(o.w + .04, .2, o.d + .04, '#d9a21a', o.x, o.h * .8, o.z); box(o.w + .04, .2, o.d + .04, '#d9a21a', o.x, o.h * .2, o.z); }
+  else if (o.kind === 'barrier') { box(o.w, o.h, o.d, '#8a8d94', o.x, o.h / 2, o.z); const long = o.w > o.d; for (let k = 0; k < Math.max(o.w, o.d); k += 1.2) box(long ? .5 : o.w + .03, .25, long ? o.d + .03 : .5, '#d9a21a', o.x + (long ? -o.w / 2 + k + .6 : 0), o.h * .7, o.z + (long ? 0 : -o.d / 2 + k + .6)).castShadow = false; }
+  else if (o.kind === 'car') car(o, i);
+  else if (BUILDINGS.includes(o.kind)) building(o, i);
+  else if (o.kind === 'plaza') {
+    // a round plinth with a slowly turning hologram
+    const b = new T.Mesh(new T.CylinderGeometry(2.2, 2.4, o.h, 24), lam('#2a2e38')); b.position.set(o.x, o.h / 2, o.z); b.castShadow = b.receiveShadow = true; scene.add(b);
+    const ring = new T.Mesh(new T.CylinderGeometry(2.26, 2.26, .1, 32, 1, true), glowMat('#ff3d8b')); ring.position.set(o.x, o.h - .05, o.z); scene.add(ring);
+    const holo = new T.Mesh(new T.OctahedronGeometry(1.1, 0), new T.MeshBasicMaterial({ color: '#3ef0ff', wireframe: true, transparent: true, opacity: .8 })); holo.position.set(o.x, o.h + 2.2, o.z); scene.add(holo); spin.push([holo, 1]);
+    pool(o.x, o.z, 7, '#ff3d8b', .35);
   }
+});
+// streetlights along the roads, each throwing a warm pool on the asphalt
+for (const along of ['x', 'z']) for (let t = -A + 10; t < A - 4; t += 22) for (const side of [-1, 1]) {
+  if (Math.abs(t) < 10) continue;
+  const x = along === 'x' ? t : side * 6.2, z = along === 'x' ? side * 6.2 : t;
+  if (OBSTACLES.some(b => Math.abs(x - b.x) < b.w / 2 + 1 && Math.abs(z - b.z) < b.d / 2 + 1)) continue;
+  const pole = new T.Mesh(new T.CylinderGeometry(.09, .12, 6, 8), lam('#2b2f38')); pole.position.set(x, 3, z); scene.add(pole);
+  const ax = along === 'x' ? 0 : -side * 1.2, az = along === 'x' ? -side * 1.2 : 0;
+  const arm = new T.Mesh(new T.BoxGeometry(along === 'x' ? .1 : 1.4, .1, along === 'x' ? 1.4 : .1), lam('#2b2f38')); arm.position.set(x + ax / 2, 6, z + az / 2); scene.add(arm);
+  const head = new T.Mesh(new T.BoxGeometry(.6, .15, .35), glowMat('#ffe2a8')); head.position.set(x + ax, 5.92, z + az); scene.add(head);
+  pool(x + ax, z + az, 5.5, '#ffc77a', .55);
 }
-// trees outside the walls, for a sense of place
-for (let i = 0; i < 72; i++) {
-  const a = i / 72 * Math.PI * 2, d = A + rnd(6, 16), x = Math.cos(a) * d, z = Math.sin(a) * d, s = rnd(1.4, 2.4);
-  const tr = new T.Mesh(new T.CylinderGeometry(.35 * s, .45 * s, 3 * s, 8), lam('#7a4b26')); tr.position.set(x, 1.5 * s, z); scene.add(tr);
-  const top = new T.Mesh(new T.IcosahedronGeometry(2.2 * s, 0), lam(['#2f7a35', '#3b8a3a', '#2a6a30'][i % 3])); top.position.set(x, 3.6 * s, z); scene.add(top);
+// the skyline beyond the wall: dark towers full of windows
+for (let i = 0; i < 80; i++) {
+  const a = i / 80 * Math.PI * 2 + rnd(-.03, .03), d = A + rnd(12, 46), x = Math.cos(a) * d, z = Math.sin(a) * d, w = rnd(10, 22), h = rnd(18, 85);
+  const m = new T.Mesh(new T.BoxGeometry(w, h, w), windowMat(w, h, i + 1, '#8f96aa')); m.position.set(x, h / 2, z); m.rotation.y = -a; scene.add(m);
+  if (i % 5 === 0) { const s = new T.Mesh(new T.BoxGeometry(w * .6, 2.2, .3), glowMat(NEON[i % NEON.length])); s.position.set(x - Math.cos(a) * (w / 2 + .3), h * rnd(.4, .8), z - Math.sin(a) * (w / 2 + .3)); s.rotation.y = -a + Math.PI / 2; scene.add(s); }
 }
-// the water blaster, held in view
+// rain: short streaks that fall around the camera
+const RAIN = 1400, rainPos = new Float32Array(RAIN * 6);
+for (let i = 0; i < RAIN; i++) { const x = rnd(-40, 40), y = rnd(0, 30), z = rnd(-40, 40); rainPos.set([x, y, z, x + .05, y + .7, z], i * 6); }
+const rainGeo = new T.BufferGeometry(); rainGeo.setAttribute('position', new T.BufferAttribute(rainPos, 3));
+const rain = new T.LineSegments(rainGeo, new T.LineBasicMaterial({ color: '#9fb4dd', transparent: true, opacity: .35 })); rain.frustumCulled = false; scene.add(rain);
+function stepRain(dt, cx, cz) {
+  for (let i = 0; i < RAIN; i++) {
+    const k = i * 6; let y = rainPos[k + 1] - 26 * dt;
+    if (y < 0) { y = 30; rainPos[k] = cx + rnd(-40, 40); rainPos[k + 2] = cz + rnd(-40, 40); }
+    else if (Math.abs(rainPos[k] - cx) > 40 || Math.abs(rainPos[k + 2] - cz) > 40) { rainPos[k] = cx + rnd(-40, 40); rainPos[k + 2] = cz + rnd(-40, 40); }
+    rainPos[k + 1] = y; rainPos[k + 3] = rainPos[k] + .05; rainPos[k + 4] = y + .7; rainPos[k + 5] = rainPos[k + 2];
+  }
+  rainGeo.attributes.position.needsUpdate = true;
+}
+// the burst rifle, held in view
 const gun = new T.Group();
-const gBody = new T.Mesh(new T.BoxGeometry(.16, .16, .62), lam('#ffd23f')); gun.add(gBody);
-const gTank = new T.Mesh(new T.SphereGeometry(.14, 14, 10), new T.MeshLambertMaterial({ color: '#7fd3ff', transparent: true, opacity: .9 })); gTank.position.set(0, .15, .05); gun.add(gTank);
-const gTip = new T.Mesh(new T.CylinderGeometry(.04, .05, .14, 10), lam('#ff4d5e')); gTip.rotation.x = Math.PI / 2; gTip.position.set(0, .02, -.36); gun.add(gTip);
-const gGrip = new T.Mesh(new T.BoxGeometry(.1, .22, .12), lam('#2f6fd0')); gGrip.position.set(0, -.15, .16); gGrip.rotation.x = .3; gun.add(gGrip);
-const flash = new T.PointLight('#bfeaff', 0, 9); flash.position.set(0, .05, -.5); gun.add(flash);
-gun.scale.setScalar(.42); gun.position.set(.2, -.19, -.55); camera.add(gun);
+const gunMetal = lam('#20252f'), gunDark = lam('#111419'), gunAccent = glowMat('#3ef0ff');
+const gpart = (w, h, d, mat, x, y, z) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); gun.add(m); return m; };
+gpart(.11, .13, .5, gunMetal, 0, 0, 0);                    // receiver
+gpart(.09, .1, .3, gunDark, 0, -.01, -.38);                // handguard
+const barrel = new T.Mesh(new T.CylinderGeometry(.022, .022, .34, 10), gunDark); barrel.rotation.x = Math.PI / 2; barrel.position.set(0, .015, -.66); gun.add(barrel);
+gpart(.05, .05, .08, gunDark, 0, .015, -.85);               // muzzle brake
+const gMag = gpart(.07, .2, .09, gunDark, 0, -.15, -.06); gMag.rotation.x = .2;
+gpart(.07, .16, .08, gunDark, 0, -.13, .13).rotation.x = -.35; // grip
+gpart(.08, .11, .26, gunMetal, 0, -.01, .36);              // stock
+gpart(.06, .05, .16, gunDark, 0, .1, -.02);                 // sight
+gpart(.02, .02, .02, glowMat('#ff3d4a'), 0, .135, -.02);    // red dot
+gpart(.115, .015, .36, gunAccent, 0, .03, -.05);            // neon strip
+const flash = new T.PointLight('#ffd08a', 0, 10); flash.position.set(0, .05, -.95); gun.add(flash);
+const muzzle = new T.Mesh(new T.SphereGeometry(.07, 8, 6), new T.MeshBasicMaterial({ color: '#ffe6a0', transparent: true, opacity: .95 })); muzzle.position.set(0, .015, -.92); muzzle.scale.set(1, 1, 2.2); muzzle.visible = false; gun.add(muzzle);
+gun.scale.setScalar(.46); gun.position.set(.22, -.22, -.5); camera.add(gun);
 
 // shared shapes for things that come and go
-const geo = { sphere: new T.SphereGeometry(1, 20, 14), eye: new T.SphereGeometry(1, 10, 8), drop: new T.SphereGeometry(1, 8, 6), splat: new T.CircleGeometry(1, 14), cone: new T.ConeGeometry(1, 1, 5) };
-const mats = { parried: new T.MeshBasicMaterial({ color: '#ffd23f' }), white: lam('#ffffff'), pupil: lam('#1c2618'), shot: new T.MeshBasicMaterial({ color: '#8fdcff' }), spit: new T.MeshBasicMaterial({ color: '#ff8a2b' }), gel: new T.MeshBasicMaterial({ color: '#d6ff8a' }), heart: new T.MeshBasicMaterial({ color: '#ff4d5e' }), crown: lam('#ffd23f') };
-const bodyMat = {}; for (const [k, e] of Object.entries(ENEMIES)) bodyMat[k] = new T.MeshLambertMaterial({ color: e.body, emissive: '#000000' });
-function slimeMesh(type) {
-  const e = ENEMIES[type], g = new T.Group();
-  const body = new T.Mesh(geo.sphere, bodyMat[type].clone()); body.castShadow = true; g.add(body); g.userData.body = body;
-  for (const side of [-1, 1]) {
-    const eye = new T.Mesh(geo.eye, mats.white); eye.scale.setScalar(.22); eye.position.set(side * .36, .2, .82); body.add(eye);
-    const pu = new T.Mesh(geo.eye, mats.pupil); pu.scale.setScalar(.12); pu.position.set(side * .36, .2, .98); body.add(pu);
+const geo = { cube: new T.BoxGeometry(1, 1, 1), drop: new T.SphereGeometry(1, 8, 6), splat: new T.CircleGeometry(1, 14), disc: new T.CylinderGeometry(1, 1, 1, 14) };
+const mats = { parried: glowMat('#3ef0ff'), spit: glowMat('#ff3d4a'), dark: lam('#15181f'), tracer: new T.MeshBasicMaterial({ color: '#ffe9b0', transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false }), med: glowMat('#3dff8a'), rotor: glowMat('#9fe9ff', .35) };
+const glowOf = {}; for (const [k, e] of Object.entries(ENEMIES)) glowOf[k] = glowMat(e.glow);
+// a robot built from boxes; the unit-size model is scaled by r, so it stands 2r tall
+function botMesh(type) {
+  const e = ENEMIES[type], g = new T.Group(), metal = new T.MeshLambertMaterial({ color: e.body, emissive: '#000000' }), glow = glowOf[type];
+  const add = (parent, mat, x, y, z, sx, sy, sz) => { const m = new T.Mesh(geo.cube, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; parent.add(m); return m; };
+  const ud = { metal, legs: [], arms: [], rotors: [] };
+  if (e.fly) {
+    add(g, metal, 0, 0, 0, 1.3, .45, 1.3); add(g, mats.dark, 0, -.32, 0, .8, .25, .8);
+    add(g, glow, 0, 0, .66, .8, .14, .04); add(g, glow, 0, -.46, 0, .3, .06, .3);
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { add(g, mats.dark, sx * .75, .1, sz * .75, .6, .08, .1).rotation.y = sx * sz * Math.PI / 4; const r = new T.Mesh(geo.disc, mats.rotor); r.position.set(sx * 1.05, .18, sz * 1.05); r.scale.set(.5, .03, .5); g.add(r); ud.rotors.push(r); }
+  } else {
+    for (const side of [-1, 1]) {
+      const leg = new T.Group(); leg.position.set(side * .3, -.1, 0); g.add(leg); ud.legs.push(leg);
+      add(leg, mats.dark, 0, -.42, 0, .26, .84, .3); add(leg, metal, 0, -.86, .06, .32, .12, .46);
+      const arm = new T.Group(); arm.position.set(side * .66, .6, 0); g.add(arm); ud.arms.push(arm);
+      add(arm, mats.dark, 0, -.32, 0, .22, .7, .26); add(arm, metal, 0, .02, 0, .36, .26, .4);
+    }
+    add(g, metal, 0, .3, 0, 1.0, .8, .72);
+    add(g, glow, 0, .36, .37, .46, .08, .02);
+    add(g, metal, 0, .92, 0, .58, .42, .54);
+    add(g, glow, 0, .95, .28, .46, .1, .02);
+    if (type === 'heavy' || e.boss) { for (const side of [-1, 1]) add(g, metal, side * .7, .78, 0, .5, .3, .7); }
+    if (e.boss) { for (const side of [-1, 1]) add(g, glow, side * .2, 1.32, 0, .06, .38, .06); add(g, glow, 0, .6, .37, .7, .06, .02); }
   }
-  if (e.boss) for (let i = 0; i < 5; i++) { const c = new T.Mesh(geo.cone, mats.crown); const a = i / 5 * Math.PI * 2; c.scale.set(.18, .4, .18); c.position.set(Math.cos(a) * .35, 1.05, Math.sin(a) * .35); body.add(c); }
-  g.scale.setScalar(e.r); scene.add(g); return g;
+  g.userData = ud; g.scale.setScalar(e.r); scene.add(g); return g;
 }
+function medMesh() { const g = new T.Group(); for (const [w, h] of [[.5, .16], [.16, .5]]) { const m = new T.Mesh(geo.cube, mats.med); m.scale.set(w, h, .16); g.add(m); } scene.add(g); return g; }
 
 // ===================== Sound =====================
 let ac = null;
@@ -457,22 +602,37 @@ function beep(freq, dur, type = 'square', vol = 0.05, slide = 0) {
   if (muted || !ac) return;
   try { const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime; o.type = type; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur); } catch {}
 }
+let noiseBuf = null;
+function noise(dur, vol, freq, q = .8) {
+  if (muted || !ac) return;
+  try {
+    if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate * .5, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), t = ac.currentTime;
+    src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(ac.destination); src.start(t); src.stop(t + dur);
+  } catch {}
+}
 const sfx = {
-  shoot: () => beep(900, 0.05, 'triangle', 0.02, -320), hit: () => beep(300, 0.06, 'square', 0.03, -120),
-  splat: () => beep(170, 0.18, 'sawtooth', 0.05, -110), hurt: () => beep(140, 0.3, 'square', 0.07, -80),
-  pick: () => beep(1200, 0.06, 'sine', 0.03, 400), dash: () => beep(500, 0.1, 'sine', 0.04, 600), jump: () => beep(420, 0.1, 'sine', 0.03, 300),
+  shoot: () => { noise(.12, .16, 1400, .6); beep(140, .09, 'sine', .07, -90); }, hit: () => beep(1800, 0.03, 'square', 0.02, -600),
+  splat: () => { noise(.35, .12, 500, .5); beep(90, .3, 'sawtooth', .05, -50); },
+  reload: () => { noise(.05, .1, 2500, 2); setTimeout(() => noise(.06, .12, 1800, 2), 260); },
+  ready: () => noise(.05, .12, 3000, 3), empty: () => beep(2400, .03, 'square', .02), hurt: () => beep(140, 0.3, 'square', 0.07, -80),
+  pick: () => beep(1200, 0.06, 'sine', 0.03, 400), dash: () => noise(.18, .08, 900, .4), jump: () => beep(420, 0.1, 'sine', 0.03, 300),
   wave: () => { beep(523, 0.12, 'triangle', 0.05); setTimeout(() => beep(784, 0.18, 'triangle', 0.05), 110); },
 };
 
 // ===================== Run state (plain data, so a run survives page updates) =====================
 let G = null;
-const live = { foes: new Map(), shots: [], spit: [], gels: [], parts: [], splats: [] }; // meshes, keyed to the data
+const live = { foes: new Map(), shots: [], spit: [], gels: [], parts: [], splats: [] }; // meshes, keyed to the data (shots = bullet tracers, gels = med kits)
 let nextId = 1;
 function newRun() {
   return { mode: 'play', wave: 0, score: 0, t: 0, toSpawn: [], spawnTimer: 0, offer: [],
-    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: 2, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 5, maxHp: 5, speed: 7.5, fireRate: 4.5, dmg: 1, shots: 1, pierce: 0, shotSpeed: 42, magnet: 3.2, dashCd: 1.2, jump: 11,
+    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: 2, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 100, maxHp: 100, speed: 7.5, dmg: 1, pierce: 0, magnet: 3.2, dashCd: 1.2, jump: 11,
+         // the starting gun: a burst rifle. 3 quick rounds, a short pause, again. 24-round magazine.
+         gun: 'burst', burst: 3, burstGap: .075, burstPause: .34, mag: 24, ammo: 24, reloadTime: 1.5, reloadT: 0, burstLeft: 0,
          cool: 0, dashT: 0, dashReady: 0, dvx: 0, dvz: 0, inv: 0, upgrades: [] },
-    foes: [], threats: [] };
+    foes: [], threats: [], coins: 0 };
 }
 function clearLive() {
   for (const m of live.foes.values()) scene.remove(m);
@@ -485,14 +645,14 @@ function startWave() {
   const sum = pool.reduce((s, [, e]) => s + e.weight, 0);
   G.toSpawn = [];
   for (let i = 0; i < total; i++) { let r = Math.random() * sum; for (const [k, e] of pool) { r -= e.weight; if (r <= 0) { G.toSpawn.push(k); break; } } }
-  if (n % 5 === 0) G.toSpawn.splice(Math.floor(total / 3), 0, 'king');
+  if (n % 5 === 0) G.toSpawn.splice(Math.floor(total / 3), 0, 'warden');
   G.spawnTimer = 0.8;
-  banner(n % 5 === 0 ? 'The Slime King' : `Wave ${n}`, n % 5 === 0 ? 'Boss wave' : `${total} slimes incoming`); sfx.wave(); hud();
+  banner(n % 5 === 0 ? 'The Warden' : `Wave ${n}`, n % 5 === 0 ? 'Boss wave' : `${total} hostiles incoming`); sfx.wave(); hud();
 }
 function spawn(type, x, z) {
   const e = ENEMIES[type];
   if (x === undefined) {
-    // somewhere 20 to 34 steps from you, on open grass
+    // somewhere 20 to 34 steps from you, on open street
     const m = A - e.r - 1;
     for (let tries = 0; tries < 30; tries++) {
       const a = rnd(0, Math.PI * 2), d = rnd(20, 34);
@@ -502,10 +662,10 @@ function spawn(type, x, z) {
   }
   const hp = Math.ceil(e.hp * (e.boss ? 1 + 0.35 * (G.wave / 5 - 1) : 1 + 0.13 * (G.wave - 1)));
   const f = { id: nextId++, type, x, z, hp, maxHp: hp, r: e.r, speed: e.speed * (1 + 0.02 * G.wave) * rnd(0.9, 1.1), cd: rnd(0.8, e.shootEvery || e.ringEvery || 1), flash: 0, kx: 0, kz: 0, ph: rnd(0, 6) };
-  G.foes.push(f); live.foes.set(f.id, slimeMesh(type));
+  G.foes.push(f); live.foes.set(f.id, botMesh(type));
 }
 
-// ===================== Collision with the garden =====================
+// ===================== Collision with the city =====================
 function pushOut(o, r) {
   o.x = clamp(o.x, -A + r, A - r); o.z = clamp(o.z, -A + r, A - r);
   for (const b of OBSTACLES) {
@@ -516,6 +676,22 @@ function pushOut(o, r) {
   }
 }
 function groundAt(x, z, r) { let h = 0; for (const b of OBSTACLES) if (Math.abs(x - b.x) < b.w / 2 + r * .6 && Math.abs(z - b.z) < b.d / 2 + r * .6) h = Math.max(h, b.h); return h; }
+// how far along a ray (origin o, unit direction d) it first hits the city: buildings, cover, the ground or the outer wall
+function rayCity(ox, oy, oz, dx, dy, dz, max) {
+  let best = max;
+  if (dy < 0) best = Math.min(best, -oy / dy);
+  for (const b of OBSTACLES) {
+    let t0 = 0, t1 = best;
+    for (const [o, d, lo, hi] of [[ox, dx, b.x - b.w / 2, b.x + b.w / 2], [oy, dy, 0, b.h], [oz, dz, b.z - b.d / 2, b.z + b.d / 2]]) {
+      if (Math.abs(d) < 1e-9) { if (o < lo || o > hi) { t0 = 1; t1 = 0; break; } continue; }
+      let a = (lo - o) / d, c = (hi - o) / d; if (a > c) [a, c] = [c, a];
+      t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) break;
+    }
+    if (t0 <= t1 && t0 > 0) best = Math.min(best, t0);
+  }
+  for (const [o, d] of [[ox, dx], [oz, dz]]) if (Math.abs(d) > 1e-9) { const t = ((d > 0 ? A : -A) - o) / d; if (t > 0) best = Math.min(best, t); }
+  return best;
+}
 function hitsGarden(x, y, z) {
   if (Math.abs(x) > A || Math.abs(z) > A || y < 0) return true;
   for (const b of OBSTACLES) if (y < b.h && Math.abs(x - b.x) < b.w / 2 && Math.abs(z - b.z) < b.d / 2) return true;
@@ -556,35 +732,22 @@ function update(dt) {
     p.pitch += (clamp((.5 - c.y) * 2.6, -1.3, 1.3) - p.pitch) * Math.min(1, dt * 12);
   }
   if (input.look) { p.yaw -= input.look.dx * 2.6 * dt; p.pitch = clamp(p.pitch - input.look.dy * 1.6 * dt, -1.3, 1.3); }
-  if (input.fire && p.cool <= 0) fire();
-  // your water
-  for (const sh of live.shots) {
-    const nx = sh.x + sh.vx * dt, ny = sh.y + sh.vy * dt, nz = sh.z + sh.vz * dt;
-    for (const fo of G.foes) {
-      if (fo.hp <= 0 || sh.hit.includes(fo.id)) continue;
-      const cy = fo.y ?? fo.r;
-      // closest point on this frame's path to the slime's centre
-      const dx = nx - sh.x, dy = ny - sh.y, dz = nz - sh.z, L = dx * dx + dy * dy + dz * dz || 1;
-      const t = clamp(((fo.x - sh.x) * dx + (cy - sh.y) * dy + (fo.z - sh.z) * dz) / L, 0, 1);
-      if (Math.hypot(sh.x + dx * t - fo.x, sh.y + dy * t - cy, sh.z + dz * t - fo.z) < fo.r + 0.15) {
-        sh.hit.push(fo.id); fo.hp -= p.dmg; fo.flash = 0.09; fo.kx += sh.vx * 0.12; fo.kz += sh.vz * 0.12;
-        burst(sh.x + dx * t, sh.y + dy * t, sh.z + dz * t, '#bfeaff', 4, 4, 0.12); marker();
-        if (fo.hp <= 0) kill(fo); else sfx.hit();
-        if (sh.hit.length > p.pierce) { sh.life = 0; break; }
-      }
-    }
-    sh.x = nx; sh.y = ny; sh.z = nz; sh.vy -= 0.8 * dt; sh.life -= dt;
-    if (hitsGarden(sh.x, sh.y, sh.z)) { sh.life = 0; burst(sh.x, Math.max(.05, sh.y), sh.z, '#bfeaff', 5, 3, 0.1); }
-    sh.m.position.set(sh.x, sh.y, sh.z);
+  // the burst rifle: a pull of the trigger fires a whole burst; holding keeps bursting; empty = reload
+  if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) { p.ammo = p.mag; sfx.ready(); } }
+  else if (p.cool <= 0) {
+    if (!p.burstLeft && (input.fire || input.pull)) { input.pull = false; if (p.ammo > 0) p.burstLeft = p.burst; else { reload(); if (!p.reloadT) sfx.empty(); } }
+    if (p.burstLeft > 0) { fire(); p.ammo--; p.burstLeft--; p.cool = p.burstLeft > 0 && p.ammo > 0 ? p.burstGap : p.burstPause; if (p.ammo <= 0) { p.burstLeft = 0; reload(); } }
   }
-  live.shots = live.shots.filter(sh => sh.life > 0 || (scene.remove(sh.m), false));
-  // slime spit
+  // bullet tracers fade fast
+  for (const tr of live.shots) { tr.life -= dt; tr.m.material.opacity = Math.max(0, tr.life / .06) * .9; }
+  live.shots = live.shots.filter(tr => tr.life > 0 || (scene.remove(tr.m), false));
+  // enemy energy bolts
   for (const sp of live.spit) {
-    sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.z += sp.vz * dt; sp.m.position.set(sp.x, sp.y, sp.z);
+    sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.z += sp.vz * dt; sp.m.position.set(sp.x, sp.y, sp.z); sp.m.lookAt(sp.x + sp.vx, sp.y + sp.vy, sp.z + sp.vz);
     const near = Math.hypot(sp.x - p.x, sp.y - (p.y + 1.1), sp.z - p.z);
     if (sp.mine) {
       for (const fo of G.foes) if (fo.hp > 0 && Math.hypot(sp.x - fo.x, sp.y - (fo.y ?? fo.r), sp.z - fo.z) < fo.r + .35) {
-        sp.dead = true; fo.hp -= 3 * p.dmg; fo.flash = .12; fo.kx += sp.vx * .25; fo.kz += sp.vz * .25; burst(sp.x, sp.y, sp.z, '#ffd23f', 8, 5, .14); marker();
+        sp.dead = true; fo.hp -= 3 * p.dmg; fo.flash = .12; fo.kx += sp.vx * .25; fo.kz += sp.vz * .25; burst(sp.x, sp.y, sp.z, '#3ef0ff', 8, 5, .1); marker();
         if (fo.hp <= 0) kill(fo); else sfx.hit(); break;
       }
     } else if (p.parryT > 0 && near < 2.6) {
@@ -592,13 +755,13 @@ function update(dt) {
       const src = G.foes.find(f => f.id === sp.from && f.hp > 0);
       let [ax, ay, az] = aimDir();
       if (src) { const tx = src.x - sp.x, ty = (src.y ?? src.r) - sp.y, tz = src.z - sp.z, tl = Math.hypot(tx, ty, tz) || 1; ax = tx / tl; ay = ty / tl; az = tz / tl; }
-      sp.vx = ax * 28; sp.vy = ay * 28; sp.vz = az * 28; sp.mine = true; sp.m.material = mats.parried; sp.m.scale.setScalar(.34);
+      sp.vx = ax * 28; sp.vy = ay * 28; sp.vz = az * 28; sp.mine = true; sp.m.material = mats.parried; sp.m.scale.set(.2, .2, .9);
       parried();
-    } else if (p.inv <= 0 && near < 0.75) { sp.dead = true; hurt(1, sp.vx, sp.vz); }
-    if (hitsGarden(sp.x, sp.y, sp.z)) { sp.dead = true; burst(sp.x, sp.y, sp.z, '#ff8a2b', 5, 3, .12); }
+    } else if (p.inv <= 0 && near < 0.75) { sp.dead = true; hurt(sp.dmg || 10, sp.vx, sp.vz); }
+    if (hitsGarden(sp.x, sp.y, sp.z)) { sp.dead = true; burst(sp.x, sp.y, sp.z, '#ff3d4a', 5, 3, .08); }
   }
   live.spit = live.spit.filter(sp => !sp.dead || (scene.remove(sp.m), false));
-  // slimes
+  // robots
   for (const fo of G.foes) {
     const e = ENEMIES[fo.type], dx = p.x - fo.x, dz = p.z - fo.z, d = Math.hypot(dx, dz) || 1;
     let dir = 1; if (e.keepAway && d < e.keepAway) dir = d < e.keepAway - 4 ? -0.7 : 0;
@@ -611,7 +774,7 @@ function update(dt) {
     // walking into a wall: slide along it for a moment
     if (dir && !(fo.stuck > 0) && Math.hypot(fo.x - ox, fo.z - oz) < fo.speed * dt * .35) { fo.stuck = .9; fo.side = fo.side || (Math.random() < .5 ? 1 : -1); }
     fo.ph += dt * (3 + fo.speed); fo.flash -= dt;
-    if (!e.boss && p.y > 1.8 && d < 9 && !(fo.ly > 0)) { fo.leapCd = (fo.leapCd ?? rnd(.5, 2)) - dt; if (fo.leapCd <= 0) { fo.lvy = Math.sqrt(2 * GRAV * (p.y + .6)); fo.ly = (fo.gy || 0) + .01; fo.leapCd = rnd(2, 4); } }
+    if (!e.boss && !e.fly && p.y > 1.8 && d < 9 && !(fo.ly > 0)) { fo.leapCd = (fo.leapCd ?? rnd(.5, 2)) - dt; if (fo.leapCd <= 0) { fo.lvy = Math.sqrt(2 * GRAV * (p.y + .6)); fo.ly = (fo.gy || 0) + .01; fo.leapCd = rnd(2, 4); } }
     // fo.gy: the top they're standing on (0 = grass); fo.ly: height while mid-leap
     const under = groundAt(fo.x, fo.z, fo.r * .3);
     if (fo.ly > 0) {
@@ -619,17 +782,17 @@ function update(dt) {
       fo.lvy -= GRAV * dt; fo.ly += fo.lvy * dt;
       if (fo.lvy < 0 && fo.ly <= under) { fo.gy = under; fo.ly = 0; fo.lvy = 0; }
     } else if ((fo.gy || 0) > under + .01) fo.gy = under; // walked off the edge
-    fo.y = fo.r + Math.abs(Math.sin(fo.ph)) * e.hop * fo.r + Math.max(fo.gy || 0, fo.ly || 0);
+    fo.y = e.fly ? e.fly + Math.sin(fo.ph * .5) * .3 : fo.r + Math.abs(Math.sin(fo.ph)) * (e.bob || 0) * fo.r + Math.max(fo.gy || 0, fo.ly || 0);
     if (e.shootEvery || e.ringEvery) {
       fo.cd -= dt;
       if (fo.cd <= 0) {
-        if (e.ringEvery) { fo.cd = e.ringEvery; const off = rnd(0, 1); for (let i = 0; i < 16; i++) { const a = (i + off) / 16 * Math.PI * 2; addSpit(fo.x, 1.1, fo.z, Math.cos(a) * 9, 0, Math.sin(a) * 9, fo.id); } }
-        else if (d < 40) { fo.cd = e.shootEvery * rnd(0.8, 1.2); const ty = p.y + 1.2, dy = ty - fo.y, dd = Math.hypot(dx, dy, dz) || 1; addSpit(fo.x, fo.y, fo.z, dx / dd * 13, dy / dd * 13, dz / dd * 13, fo.id); }
-        beep(240, 0.08, 'sine', 0.03, -80);
+        if (e.ringEvery) { fo.cd = e.ringEvery; const off = rnd(0, 1); for (let i = 0; i < 16; i++) { const a = (i + off) / 16 * Math.PI * 2; addSpit(fo.x, 1.3, fo.z, Math.cos(a) * 10, 0, Math.sin(a) * 10, fo.id, 10); } }
+        else if (d < 40) { fo.cd = e.shootEvery * rnd(0.8, 1.2); const ty = p.y + 1.2, dy = ty - fo.y, dd = Math.hypot(dx, dy, dz) || 1; addSpit(fo.x, fo.y, fo.z, dx / dd * 16, dy / dd * 16, dz / dd * 16, fo.id, e.dmg); }
+        beep(520, 0.09, 'sawtooth', 0.025, -300);
         if (d < 60) { G.threats = (G.threats || []).filter(t => t.id !== fo.id); G.threats.push({ id: fo.id, x: fo.x, z: fo.z, t: 1.4 }); }
       }
     }
-    if (d < p.r + fo.r * 0.95 + (p.parryT > 0 ? .6 : 0) && p.y < fo.y + fo.r) {
+    if (d < p.r + fo.r * 0.95 + (p.parryT > 0 ? .6 : 0) && Math.abs(p.y + .9 - fo.y) < fo.r + .9) {
       if (p.parryT > 0) { if (!fo.shoved) { fo.shoved = true; fo.kx = -dx / d * 22; fo.kz = -dz / d * 22; fo.hp -= p.dmg; fo.flash = .12; if (fo.hp <= 0) kill(fo); parried(); } }
       else if (p.inv <= 0) hurt(e.dmg, -dx, -dz);
     } else fo.shoved = false;
@@ -639,15 +802,16 @@ function update(dt) {
     if (d > 0 && d < m) { const k = (m - d) / 2 / d; a.x -= dx * k; a.z -= dz * k; b.x += dx * k; b.z += dz * k; }
   }
   G.foes = G.foes.filter(fo => fo.hp > 0);
-  // gel drops
+  // med kits dropped by robots
   for (const g of live.gels) {
     const dx = p.x - g.x, dz = p.z - g.z, d = Math.hypot(dx, dz) || 1;
     if (d < p.magnet) { g.x += dx / d * 14 * dt; g.z += dz / d * 14 * dt; }
-    g.life -= dt; g.m.position.set(g.x, .35 + Math.sin(G.t * 5 + g.x) * .1, g.z);
-    if (d < 1) { g.got = true; G.score += g.v; if (g.heart) { p.hp = Math.min(p.maxHp, p.hp + 1); toast('+1 heart'); } sfx.pick(); hud(); }
+    g.life -= dt; g.m.position.set(g.x, .6 + Math.sin(G.t * 4 + g.x) * .12, g.z); g.m.rotation.y += dt * 2;
+    if (d < 1.1 && Math.abs(p.y - (g.gy || 0)) < 2) { g.got = true; p.hp = Math.min(p.maxHp, p.hp + g.heal); toast(`+${g.heal} health`); sfx.pick(); hud(); }
   }
   live.gels = live.gels.filter(g => (!g.got && g.life > 0) || (scene.remove(g.m), false));
-  if (!G.toSpawn.length && !G.foes.length && G.wave > 0) { for (const sp of live.spit) scene.remove(sp.m); live.spit = []; for (const g of live.gels) { G.score += g.v; scene.remove(g.m); } live.gels = []; offerUpgrades(); }
+  if (!G.toSpawn.length && !G.foes.length && G.wave > 0) { for (const sp of live.spit) scene.remove(sp.m); live.spit = []; for (const g of live.gels) scene.remove(g.m); live.gels = []; offerUpgrades(); }
+  ammoHud(p);
   $('dashBar').style.width = `${p.dashCharges >= 2 ? 100 : clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
   $('dashPips').textContent = '●'.repeat(p.dashCharges ?? 2) + '○'.repeat(2 - (p.dashCharges ?? 2));
   $('parryBar').style.width = `${clamp(1 - p.parryReady / p.parryCd, 0, 1) * 100}%`;
@@ -655,36 +819,64 @@ function update(dt) {
   $('boss').hidden = !king; if (king) $('bossHp').style.width = `${king.hp / king.maxHp * 100}%`;
 }
 function aimDir() { const p = G.p, cp = Math.cos(p.pitch); return [-Math.sin(p.yaw) * cp, Math.sin(p.pitch), -Math.cos(p.yaw) * cp]; }
+// one round: an instant hit along where you aim (a touch of spread that grows through the burst)
+const _v = new T.Vector3();
 function fire() {
-  const p = G.p; p.cool = 1 / p.fireRate;
-  for (let i = 0; i < p.shots; i++) {
-    const yaw = p.yaw + (i - (p.shots - 1) / 2) * 0.06 + rnd(-.012, .012), pitch = p.pitch + rnd(-.012, .012), cp = Math.cos(pitch);
-    const dx = -Math.sin(yaw) * cp, dy = Math.sin(pitch), dz = -Math.cos(yaw) * cp;
-    const m = new T.Mesh(geo.drop, mats.shot); m.scale.setScalar(.13); scene.add(m);
-    // start just in front of the nozzle, but aim along the view so the crosshair is true
-    live.shots.push({ m, x: p.x + dx * .7 + Math.cos(p.yaw) * .18, y: p.y + EYE - .16 + dy * .7, z: p.z + dz * .7 - Math.sin(p.yaw) * .18, vx: dx * p.shotSpeed, vy: dy * p.shotSpeed, vz: dz * p.shotSpeed, life: 1.1, hit: [] });
+  const p = G.p, spread = .004 + (p.burst - p.burstLeft) * .0035;
+  const yaw = p.yaw + rnd(-spread, spread), pitch = p.pitch + recoil + rnd(-spread, spread), cp = Math.cos(pitch);
+  const dx = -Math.sin(yaw) * cp, dy = Math.sin(pitch), dz = -Math.cos(yaw) * cp, ox = p.x, oy = p.y + EYE, oz = p.z;
+  const wall = rayCity(ox, oy, oz, dx, dy, dz, 220);
+  // robots along the ray, nearest first, stopping at the first wall
+  const hits = [];
+  for (const fo of G.foes) {
+    if (fo.hp <= 0) continue;
+    const cx = fo.x - ox, cy = (fo.y ?? fo.r) - oy, cz = fo.z - oz;
+    if (ENEMIES[fo.type].fly) { // drones: a flat-ish ball
+      const t = cx * dx + cy * dy + cz * dz; if (t <= 0 || t > wall) continue;
+      if (Math.hypot(cx - dx * t, cy - dy * t, cz - dz * t) < fo.r * 1.1) hits.push([t, fo]);
+    } else { // walkers: an upright body from the feet to the top of the head
+      const hh = dx * dx + dz * dz || 1e-9, t = (cx * dx + cz * dz) / hh; if (t <= 0 || t > wall) continue;
+      const side = Math.hypot(cx - dx * t, cz - dz * t), y = dy * t;
+      if (side < fo.r * .62 && y > cy - fo.r * 1.05 && y < cy + fo.r * 1.15) hits.push([t, fo]);
+    }
   }
-  gun.position.z = -.47; recoil = Math.min(.05, recoil + .012); flashT = .05; sfx.shoot();
+  hits.sort((a, b) => a[0] - b[0]);
+  let end = wall;
+  for (let i = 0; i < hits.length && i <= p.pierce; i++) {
+    const [t, fo] = hits[i]; end = i === p.pierce ? t : end;
+    fo.hp -= p.dmg; fo.flash = .07; fo.kx += dx * 2.2; fo.kz += dz * 2.2;
+    burst(ox + dx * t, oy + dy * t, oz + dz * t, ENEMIES[fo.type].glow, 5, 6, .06); marker();
+    if (fo.hp <= 0) kill(fo); else sfx.hit();
+  }
+  if (end === wall && end < 220) burst(ox + dx * end, Math.max(.05, oy + dy * end), oz + dz * end, '#ffcf7a', 4, 5, .045);
+  // tracer from the muzzle to whatever it hit
+  gun.updateMatrixWorld(true); _v.set(0, .015, -.95); gun.localToWorld(_v);
+  const ex = ox + dx * Math.min(end, 220), ey = oy + dy * Math.min(end, 220), ez = oz + dz * Math.min(end, 220), len = Math.hypot(ex - _v.x, ey - _v.y, ez - _v.z);
+  const tr = new T.Mesh(geo.cube, mats.tracer.clone()); tr.scale.set(.025, .025, len); tr.position.set((_v.x + ex) / 2, (_v.y + ey) / 2, (_v.z + ez) / 2); tr.lookAt(ex, ey, ez); scene.add(tr);
+  live.shots.push({ m: tr, life: .06 });
+  gun.position.z = -.44; recoil = Math.min(.06, recoil + .014); flashT = .045; sfx.shoot();
 }
-function addSpit(x, y, z, vx, vy, vz, from) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.setScalar(.28); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz, from }); }
+function reload() { const p = G?.p; if (!p || G.mode !== 'play' || p.reloadT > 0 || p.ammo >= p.mag) return; p.reloadT = p.reloadTime; p.burstLeft = 0; sfx.reload(); }
+function addSpit(x, y, z, vx, vy, vz, from, dmg = 10) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.set(.14, .14, .7); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz, from, dmg }); }
 function kill(fo) {
-  const e = ENEMIES[fo.type]; G.score += e.score; hud();
+  const e = ENEMIES[fo.type]; G.score += e.score; G.coins = (G.coins || 0) + e.coins; hud();
   const mesh = live.foes.get(fo.id); if (mesh) { scene.remove(mesh); live.foes.delete(fo.id); }
-  burst(fo.x, fo.y, fo.z, e.body, e.boss ? 60 : 16, e.boss ? 14 : 7, e.boss ? .3 : .16);
-  const sp = new T.Mesh(geo.splat, new T.MeshBasicMaterial({ color: e.body, transparent: true, opacity: .55 }));
-  sp.rotation.x = -Math.PI / 2; sp.position.set(fo.x, .02 + live.splats.length * .0004, fo.z); sp.scale.setScalar(fo.r * rnd(1.1, 1.5)); scene.add(sp);
+  burst(fo.x, fo.y, fo.z, e.glow, e.boss ? 50 : 14, e.boss ? 16 : 9, e.boss ? .18 : .08);
+  burst(fo.x, fo.y, fo.z, '#ffcf7a', e.boss ? 30 : 10, e.boss ? 20 : 12, .05);
+  burst(fo.x, fo.y, fo.z, '#2a2d35', e.boss ? 30 : 8, e.boss ? 10 : 5, e.boss ? .5 : .22);
+  const sp = new T.Mesh(geo.splat, new T.MeshBasicMaterial({ color: '#050608', transparent: true, opacity: .6 }));
+  sp.rotation.x = -Math.PI / 2; sp.position.set(fo.x, .035 + live.splats.length * .0004, fo.z); sp.scale.setScalar(fo.r * rnd(1.1, 1.5)); scene.add(sp);
   live.splats.push({ m: sp }); if (live.splats.length > 60) scene.remove(live.splats.shift().m);
-  const n = e.boss ? 14 : 1 + (Math.random() < .3 ? 1 : 0);
-  for (let i = 0; i < n; i++) { const heart = !e.boss && Math.random() < .035, m = new T.Mesh(geo.drop, heart ? mats.heart : mats.gel); m.scale.setScalar(heart ? .25 : .18); scene.add(m); live.gels.push({ m, x: fo.x + rnd(-1, 1), z: fo.z + rnd(-1, 1), v: 2, life: 14, heart }); }
+  const n = e.boss ? 3 : Math.random() < .06 ? 1 : 0;
+  for (let i = 0; i < n; i++) live.gels.push({ m: medMesh(), x: fo.x + rnd(-1.5, 1.5), z: fo.z + rnd(-1.5, 1.5), heal: 20, life: 20 });
   if (e.splitInto) for (let i = 0; i < e.splits; i++) { const a = i / e.splits * Math.PI * 2; spawn(e.splitInto, fo.x + Math.cos(a) * 3.5, fo.z + Math.sin(a) * 3.5); }
   shake = Math.max(shake, e.boss ? .5 : .14); hitStop = Math.max(hitStop, e.boss ? .25 : .05); sfx.splat();
-  burst(fo.x, fo.y, fo.z, '#ffffff', e.boss ? 20 : 6, e.boss ? 18 : 10, .1);
   combo = comboT > 0 ? combo + 1 : 1; comboT = 1.6;
   if (combo > 1) { const c = $('combo'); c.textContent = `${combo}× combo`; c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
 }
 function hurt(n, kx, kz) {
   const p = G.p; if (p.dashT > 0) return;
-  p.hp -= n; p.inv = 1.1; shake = .25; sfx.hurt();
+  p.hp = Math.max(0, p.hp - n); p.inv = .8; shake = .25; sfx.hurt();
   const l = Math.hypot(kx, kz) || 1; p.x += kx / l * 1.2; p.z += kz / l * 1.2; pushOut(p, p.r);
   const v = $('vign'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 60);
   hud(); if (p.hp <= 0) gameOver();
@@ -733,26 +925,34 @@ function render(dt) {
     if (Math.abs(camera.fov - (baseFov + fovKick)) > .05) { camera.fov = baseFov + fovKick; camera.updateProjectionMatrix(); }
     camera.position.y -= landDip;
     camera.rotation.set(p.pitch + recoil, p.yaw, roll);
-    flashT -= dt; flash.intensity = flashT > 0 ? 2.2 : 0;
+    flashT -= dt; flash.intensity = flashT > 0 ? 3 : 0; muzzle.visible = flashT > 0; muzzle.rotation.z = rnd(0, 6);
     $('speed').classList.toggle('on', p.dashT > 0);
     sun.position.set(p.x - 45, 32, p.z - 30); sun.target.position.set(p.x, 0, p.z); sky.position.copy(camera.position);
-    gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4, gunSwing * 3, gunSwing * 3.5);
+    // reload: tip the rifle down and to the side, drop the magazine and slot a new one
+    const rl = p.reloadT > 0 ? 1 - p.reloadT / p.reloadTime : 0, rk = Math.sin(rl * Math.PI);
+    gMag.position.y = -.15 - (rl > .2 && rl < .6 ? .3 : 0);
+    gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4 - rk * .5, gunSwing * 3 + rk * .4, gunSwing * 3.5 + rk * .5);
     drawThreats(p); drawMinimap(p);
-    gun.position.x = .2 + Math.sin(bob) * .012; gun.position.y = -.19 + Math.abs(Math.cos(bob)) * .012; gun.position.z += (-.55 - gun.position.z) * Math.min(1, dt * 14);
+    gun.position.x = .22 + Math.sin(bob) * .012; gun.position.y = -.22 + Math.abs(Math.cos(bob)) * .012 - rk * .08; gun.position.z += (-.5 - gun.position.z) * Math.min(1, dt * 16);
+    stepRain(dt, p.x, p.z);
     for (const fo of G.foes) {
-      let m = live.foes.get(fo.id); if (!m) { m = slimeMesh(fo.type); live.foes.set(fo.id, m); }
-      const sq = Math.sin(fo.ph * 2) * .1;
-      m.position.set(fo.x, fo.y ?? fo.r, fo.z); m.scale.set(fo.r * (1 + sq), fo.r * (1 - sq), fo.r * (1 + sq));
-      m.rotation.y = Math.atan2(p.x - fo.x, p.z - fo.z);
-      m.userData.body.material.emissive.set(fo.flash > 0 ? '#ffffff' : '#000000');
+      let m = live.foes.get(fo.id); if (!m) { m = botMesh(fo.type); live.foes.set(fo.id, m); }
+      const u = m.userData, sw = Math.sin(fo.ph);
+      m.position.set(fo.x, fo.y ?? fo.r, fo.z);
+      m.rotation.y = Math.atan2(p.x - fo.x, p.z - fo.z); m.rotation.x = ENEMIES[fo.type].fly ? .15 : 0;
+      u.legs.forEach((l, i) => l.rotation.x = sw * .7 * (i ? -1 : 1)); u.arms.forEach((a, i) => a.rotation.x = sw * .5 * (i ? 1 : -1) - .2);
+      for (const r of u.rotors) r.rotation.y += dt * 40;
+      u.metal.emissive.set(fo.flash > 0 ? '#ffffff' : '#000000');
     }
   } else {
-    // title screen: a slow look around the garden with slimes posed in it
-    camera.position.set(Math.sin(t * .1) * 16, 6, Math.cos(t * .1) * 16); camera.lookAt(0, 1, 0); sky.position.copy(camera.position);
+    // title screen: a slow look around the block with robots posed in it
+    camera.position.set(Math.sin(t * .1) * 16, 5, Math.cos(t * .1) * 16); camera.lookAt(0, 2, 0); sky.position.copy(camera.position); stepRain(dt, camera.position.x, camera.position.z);
+    for (const m of demo) { const u = m.userData; for (const r of u.rotors) r.rotation.y += dt * 40; }
   }
+  for (const [m, k] of spin) { if (k === 'blink') m.visible = (t % 1.6) < .2; else m.rotation.y += dt * k; }
   renderer.render(scene, camera);
 }
-// the whole garden from above, north up: buildings, every slime, and you as an arrow
+// the whole block from above, north up: buildings, every robot, and you as an arrow
 const mm = $('minimap'), mmx = mm.getContext('2d');
 function drawMinimap(p) {
   const size = mm.clientWidth; if (!size) return;
@@ -760,20 +960,21 @@ function drawMinimap(p) {
   if (mm.width !== Math.round(size * dpr)) { mm.width = mm.height = Math.round(size * dpr); }
   const c = mmx, pad = 8, k = (size - pad * 2) / (A * 2), X = x => pad + (x + A) * k, Z = z => pad + (z + A) * k;
   c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size);
-  c.fillStyle = 'rgba(126,200,90,.35)'; c.fillRect(pad, pad, size - pad * 2, size - pad * 2);
+  c.fillStyle = 'rgba(30,34,46,.8)'; c.fillRect(pad, pad, size - pad * 2, size - pad * 2);
+  c.fillStyle = 'rgba(10,11,16,.9)'; c.fillRect(X(-5), pad, 10 * k, size - pad * 2); c.fillRect(pad, Z(-5), size - pad * 2, 10 * k);
   for (const b of OBSTACLES) {
     const big = BUILDINGS.includes(b.kind);
-    c.fillStyle = big ? 'rgba(255,246,220,.85)' : b.kind === 'hedge' ? 'rgba(20,60,22,.9)' : 'rgba(201,138,75,.8)';
+    c.fillStyle = big ? 'rgba(120,135,170,.9)' : b.kind === 'car' ? 'rgba(180,60,70,.8)' : 'rgba(90,96,112,.9)';
     c.fillRect(X(b.x - b.w / 2), Z(b.z - b.d / 2), Math.max(1.5, b.w * k), Math.max(1.5, b.d * k));
   }
   for (const fo of G.foes) {
     const e = ENEMIES[fo.type]; if (fo.hp <= 0) continue;
-    c.fillStyle = e.body; c.strokeStyle = '#10280f'; c.lineWidth = 1;
-    c.beginPath(); c.arc(X(fo.x), Z(fo.z), e.boss ? 6 : fo.type === 'brute' ? 4 : 3.2, 0, 7); c.fill(); c.stroke();
+    c.fillStyle = e.glow; c.strokeStyle = '#000'; c.lineWidth = 1;
+    c.beginPath(); c.arc(X(fo.x), Z(fo.z), e.boss ? 6 : fo.type === 'heavy' ? 4 : 3.2, 0, 7); c.fill(); c.stroke();
   }
-  // you: a yellow arrow pointing where you look
+  // you: a white arrow pointing where you look
   c.save(); c.translate(X(p.x), Z(p.z)); c.rotate(-p.yaw);
-  c.fillStyle = '#ffd23f'; c.strokeStyle = '#10280f'; c.lineWidth = 1.5;
+  c.fillStyle = '#ffffff'; c.strokeStyle = '#000'; c.lineWidth = 1.5;
   c.beginPath(); c.moveTo(0, -7); c.lineTo(5, 5); c.lineTo(0, 2.5); c.lineTo(-5, 5); c.closePath(); c.fill(); c.stroke();
   c.restore();
 }
@@ -792,20 +993,35 @@ let demo = [];
 function showDemo(on) {
   for (const m of demo) scene.remove(m); demo = [];
   if (!on) return;
-  for (const [k, x, z] of [['slime', 5, 4], ['slime', -6, 6], ['zippy', 2, -7], ['brute', -9, -4], ['spitter', 8, -6], ['king', 0, 9]]) {
-    const m = slimeMesh(k); m.position.set(x, ENEMIES[k].r, z); m.rotation.y = Math.atan2(-x, -z); demo.push(m);
+  for (const [k, x, z] of [['walker', 5, 4], ['walker', -6, 6], ['runner', 2, -7], ['heavy', -9, -4], ['drone', 8, -6], ['warden', 0, 9]]) {
+    const m = botMesh(k); m.position.set(x, ENEMIES[k].fly || ENEMIES[k].r, z); m.rotation.y = Math.atan2(-x, -z); demo.push(m);
   }
 }
 
 // ===================== Screens and HUD =====================
-const heartSvg = full => `<svg viewBox="0 0 34 32"><path d="M17 29S4 21 4 12a6.5 6.5 0 0 1 13-2 6.5 6.5 0 0 1 13 2c0 9-13 17-13 17z" fill="${full ? '#ff4d5e' : 'rgba(255,255,255,.18)'}" stroke="${full ? '#b81f30' : 'rgba(255,255,255,.35)'}" stroke-width="2.5"/></svg>`;
+let coins = store.get('ss-coins', 0);
 function hud() {
   const p = G?.p;
-  $('hearts').innerHTML = p ? Array.from({ length: p.maxHp }, (_, i) => heartSvg(i < p.hp)).join('') : '';
-  $('hearts').setAttribute('aria-label', p ? `Health ${p.hp} of ${p.maxHp}` : 'Health');
+  if (p) {
+    const f = clamp(p.hp / p.maxHp, 0, 1);
+    $('hpFill').style.width = `${f * 100}%`; $('hpLag').style.width = `${f * 100}%`; $('hpText').textContent = Math.ceil(p.hp);
+    $('hp').setAttribute('aria-valuenow', Math.ceil(p.hp)); $('hp').setAttribute('aria-valuemax', p.maxHp);
+    $('hp').classList.toggle('low', f <= .3); $('lowhp').classList.toggle('on', f <= .3 && G.mode === 'play');
+  } else $('lowhp').classList.remove('on');
   $('wave').textContent = G ? Math.max(1, G.wave) : 1; $('score').textContent = G ? G.score : 0;
+  $('coins').textContent = G ? coins + (G.banked ? 0 : G.coins || 0) : coins;
+  $('walletCoins').textContent = coins; $('shopCoins').textContent = coins;
 }
-function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver', 'ovControls', 'ovGuide']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
+let ammoShown = '';
+function ammoHud(p) {
+  const key = `${p.ammo}/${p.mag}/${p.reloadT > 0 ? Math.round(p.reloadT * 20) : 0}`; if (key === ammoShown) return; ammoShown = key;
+  $('ammoNow').textContent = p.ammo; $('ammoMax').textContent = p.mag; $('ammo').classList.toggle('empty', p.ammo === 0);
+  $('reloadBar').style.width = p.reloadT > 0 ? `${(1 - p.reloadT / p.reloadTime) * 100}%` : '0';
+  $('ammoNote').textContent = p.reloadT > 0 ? 'Reloading' : p.ammo === 0 ? 'Empty' : p.ammo <= p.burst * 2 ? (touchMode ? 'Low ammo' : 'R to reload') : '';
+}
+// coins earned in a run go into the wallet when the run ends (or you quit)
+function bankCoins() { if (G && !G.banked) { coins += G.coins || 0; G.banked = true; store.set('ss-coins', coins); hud(); } }
+function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver', 'ovControls', 'ovGuide', 'ovShop']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
 let toastT = 0;
 function banner(big, small) {
   const b = $('banner'); b.innerHTML = `<b>${big}</b><small>${small}</small>`; stage.classList.remove('intro'); void stage.offsetWidth; stage.classList.add('intro');
@@ -823,15 +1039,15 @@ function offerUpgrades() {
 }
 function takeUpgrade(id) {
   const u = UPGRADES.find(x => x.id === id); if (!u || G?.mode !== 'pick') return;
-  u.apply(G.p); G.p.upgrades.push(id); sfx.pick(); G.mode = 'play'; show(null); lock(); hud(); startWave();
+  u.apply(G.p); G.p.upgrades.push(id); G.p.ammo = G.p.mag; G.p.reloadT = 0; G.p.burstLeft = 0; sfx.pick(); G.mode = 'play'; show(null); lock(); hud(); startWave();
 }
 function gameOver() {
-  G.mode = 'over'; unlock(); input.fire = false;
+  G.mode = 'over'; unlock(); input.fire = false; const earned = G.coins || 0; bankCoins();
   const newBest = G.score > best.score;
   if (newBest || G.wave > best.wave) { best = { score: Math.max(best.score, G.score), wave: Math.max(best.wave, G.wave) }; store.set('ss3-best', best); }
-  $('oScore').textContent = G.score; $('oWave').textContent = G.wave; $('oBest').textContent = best.score;
-  $('oNote').textContent = newBest ? 'New best score!' : `Your best is wave ${best.wave}. ${G.wave < 5 ? 'The Slime King waits at wave 5.' : 'Try a different mix of upgrades.'}`;
-  $('boss').hidden = true; bestLine(); show('ovOver');
+  $('oScore').textContent = G.score; $('oWave').textContent = G.wave; $('oBest').textContent = best.score; $('oCoins').textContent = `+${earned}`;
+  $('oNote').textContent = newBest ? 'New best score!' : `Your best is wave ${best.wave}. ${G.wave < 5 ? 'The Warden waits at wave 5.' : 'Try a different mix of upgrades.'}`;
+  $('boss').hidden = true; $('lowhp').classList.remove('on'); bestLine(); show('ovOver');
 }
 function bestLine() { $('bestTitle').textContent = best.score ? `Best: ${best.score} points, wave ${best.wave}` : ''; }
 function start() {
@@ -872,7 +1088,7 @@ function requestLock() {
 function lookHud() {
   const playing = G?.mode === 'play' && !touchMode;
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
-  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
+  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('ammo').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
   $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This browser can’t lock the mouse here: hold the cursor near the left or right edge to keep turning</small>'
     : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';
@@ -896,6 +1112,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Space') jump();
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') dash();
   if (e.code === 'KeyF') parry();
+  if (e.code === 'KeyR') reload();
   if (['MetaLeft', 'MetaRight', 'ControlLeft', 'ControlRight'].includes(e.code) && G?.mode === 'play') setLook(!(input.mlook || input.lockWait));
   if (e.code === 'KeyP' || e.code === 'Escape') { if (G?.mode === 'play') pause(true); else if (G?.mode === 'paused' && e.code === 'KeyP') pause(false); }
   if (G?.mode === 'pick' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) takeUpgrade(G.offer[+e.code.slice(5) - 1]);
@@ -908,7 +1125,7 @@ cv.addEventListener('mousedown', e => {
   if (e.button !== 0 || G?.mode !== 'play') return;
   if (input.lockWait) { input.lockWait = false; input.mlook = true; input.fromClick = true; requestLock(); lookHud(); return; } // this click captures the mouse
   if (!input.mlook && !touchMode) input.dragLook = true; // cursor free: hold and drag to look
-  input.fire = true;
+  input.fire = true; input.pull = true; // a quick click still fires a whole burst
 });
 addEventListener('mouseup', e => { if (e.button === 0) { input.fire = false; input.dragLook = false; } });
 addEventListener('mousemove', e => {
@@ -923,7 +1140,7 @@ addEventListener('mousemove', e => {
   }
 });
 stage.addEventListener('mouseleave', () => { input.cur = null; });
-for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()], ['dParry', () => parry()]]) {
+for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()], ['dParry', () => parry()], ['dReload', () => reload()]]) {
   const b = $(id);
   b.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); fn(); });
   for (const ev of ['mouseup', 'mouseleave']) b.addEventListener(ev, () => b.classList.remove('on'));
@@ -946,21 +1163,23 @@ stage.addEventListener('pointermove', e => {
 const endTouch = e => { const k = sticks.get(e.pointerId); if (k) { input[k] = null; sticks.delete(e.pointerId); } };
 stage.addEventListener('pointerup', endTouch); stage.addEventListener('pointercancel', endTouch);
 const hold = (id, on, off) => { const b = $(id); b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); on(); }); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { b.classList.remove('on'); off?.(); }); };
-hold('tFire', () => { input.fire = true; }, () => { input.fire = false; });
-hold('tJump', jump); hold('tDash', dash); hold('tParry', parry);
+hold('tFire', () => { input.fire = true; input.pull = true; }, () => { input.fire = false; });
+hold('tJump', jump); hold('tDash', dash); hold('tParry', parry); hold('tReload', reload);
 $('startBtn').onclick = start; $('againBtn').onclick = start;
-// Controls and the slime guide open from the menu or the pause screen, and Back returns there.
+// Controls, the shop and the enemy guide open from the menu or the pause screen, and Back returns there.
 let backTo = 'ovTitle';
 const openPanel = id => { backTo = G?.mode === 'paused' ? 'ovPause' : 'ovTitle'; show(id); };
 $('ctrlBtn').onclick = () => openPanel('ovControls');
 $('pauseCtrl').onclick = () => openPanel('ovControls');
 $('guideBtn').onclick = () => openPanel('ovGuide');
+$('shopBtn').onclick = () => { hud(); openPanel('ovShop'); };
 for (const b of document.querySelectorAll('[data-back]')) b.onclick = () => show(backTo);
-function toMenu() { unlock(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); show('ovTitle'); }
+function toMenu() { unlock(); bankCoins(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); show('ovTitle'); }
 $('menuBtn').onclick = toMenu;
-const slimeIcon = (c, crown) => `<svg viewBox="0 0 52 48" aria-hidden="true"><ellipse cx="26" cy="44" rx="20" ry="3.5" fill="rgba(0,0,0,.15)"/><path d="M6 40c0-16 9-30 20-30s20 14 20 30c0 2-2 3-4 3H10c-2 0-4-1-4-3z" fill="${c}"/><ellipse cx="17" cy="20" rx="5" ry="3" fill="rgba(255,255,255,.5)" transform="rotate(-30 17 20)"/><circle cx="20" cy="28" r="4" fill="#fff"/><circle cx="32" cy="28" r="4" fill="#fff"/><circle cx="21" cy="29" r="2" fill="#1c2618"/><circle cx="33" cy="29" r="2" fill="#1c2618"/>${crown ? '<path d="M16 12l3-9 4 6 3-8 3 8 4-6 3 9z" fill="#ffd23f" stroke="#b38a00" stroke-width="1.5"/>' : ''}</svg>`;
-const names = { slime: 'Slime', zippy: 'Zippy', spitter: 'Spitter', brute: 'Brute', king: 'Slime King' };
-$('guideList').innerHTML = Object.entries(ENEMIES).map(([k, e]) => `<li>${slimeIcon(e.body, e.boss)}<b>${names[k] ?? k}</b><span>${e.desc ?? ''}</span><i>${e.boss ? 'Waves 5, 10, 15…' : `From wave ${e.from}`} · ${e.score} points</i></li>`).join('');
+const botIcon = e => e.fly
+  ? `<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="12" y="20" width="28" height="11" rx="3" fill="${e.body}"/><rect x="16" y="24" width="20" height="3" fill="${e.glow}"/><g fill="${e.glow}" opacity=".5"><ellipse cx="9" cy="16" rx="8" ry="2"/><ellipse cx="43" cy="16" rx="8" ry="2"/></g><path d="M12 22L9 17M40 22l3-5" stroke="${e.body}" stroke-width="2"/></svg>`
+  : `<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="17" y="6" width="18" height="12" rx="2" fill="${e.body}"/><rect x="19" y="10" width="14" height="3" fill="${e.glow}"/><rect x="13" y="19" width="26" height="15" rx="2" fill="${e.body}"/><rect x="21" y="24" width="10" height="2" fill="${e.glow}"/><rect x="7" y="19" width="5" height="14" rx="2" fill="#15181f"/><rect x="40" y="19" width="5" height="14" rx="2" fill="#15181f"/><rect x="17" y="34" width="6" height="14" fill="#15181f"/><rect x="29" y="34" width="6" height="14" fill="#15181f"/>${e.boss ? `<rect x="20" y="1" width="2" height="6" fill="${e.glow}"/><rect x="30" y="1" width="2" height="6" fill="${e.glow}"/>` : ''}</svg>`;
+$('guideList').innerHTML = Object.values(ENEMIES).map(e => `<li>${botIcon(e)}<b>${e.name}</b><span>${e.desc ?? ''}</span><i>${e.boss ? 'Waves 5, 10, 15…' : `From wave ${e.from}`} · ${e.coins} coin${e.coins > 1 ? 's' : ''}</i></li>`).join('');
 $('ctrlDesk').hidden = touchMode; $('ctrlTouch').hidden = !touchMode;
 $('resumeBtn').onclick = () => pause(false);
 $('quitBtn').onclick = () => toMenu();
