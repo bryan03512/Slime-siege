@@ -46,6 +46,7 @@ canvas{display:block;width:100%;height:100%}
 .speed.on{opacity:.5;transition:opacity .05s}
 .edge{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s;box-shadow:inset 0 0 0 2px rgba(62,240,255,.8),inset 0 0 50px rgba(62,240,255,.35)}
 .edge.on{opacity:1;transition:opacity .05s}
+.edge.guard{opacity:1;box-shadow:inset 0 0 0 2px rgba(255,255,255,.85),inset 0 0 40px rgba(255,255,255,.3);transition:none}
 .edge.hook{box-shadow:inset 0 0 0 2px rgba(255,61,139,.8),inset 0 0 50px rgba(255,61,139,.3)}
 .bars i{position:absolute;left:0;right:0;height:9%;background:#000;transform:scaleY(0);pointer-events:none;z-index:2}
 .bars i:first-child{top:0;transform-origin:top}.bars i:last-child{bottom:0;transform-origin:bottom}
@@ -81,6 +82,11 @@ canvas{display:block;width:100%;height:100%}
 .ammo em{display:block;height:4px;margin:6px 0 0 auto;width:120px;background:rgba(0,0,0,.6);overflow:hidden}
 .ammo em i{display:block;height:100%;width:0;background:var(--amber)}
 .ammo .gname{display:block;margin-top:4px;font:800 11px/1 Barlow,sans-serif;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+.ammo.melee b{font-size:30px}
+.slots{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px;max-width:260px;margin-left:auto}
+.slots span{font:800 10px/1 Barlow,sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:4px 6px;border:1px solid rgba(255,255,255,.15);color:var(--muted);background:rgba(0,0,0,.4)}
+.slots span.on{color:#031016;background:var(--neon);border-color:var(--neon)}
+.slots kbd{font:800 10px/1 Barlow,sans-serif;padding:4px 6px;color:#fff;border:1px solid #3a4562;background:#1d2333}
 .ammo small{display:block;margin-top:6px;font:800 12px/1 Barlow,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--amber)}
 .offs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .offs i{position:absolute;left:-9px;top:-8px;width:18px;height:16px;clip-path:polygon(50% 0,100% 100%,50% 72%,0 100%);filter:drop-shadow(0 0 4px currentColor);opacity:.6}
@@ -181,6 +187,7 @@ canvas{display:block;width:100%;height:100%}
 .tparry{right:120px;bottom:96px;width:58px;height:58px;border-color:var(--pink)}
 .treload{right:196px;bottom:22px;width:52px;height:52px;border-color:var(--amber)}
 .thook{right:120px;bottom:170px;width:58px;height:58px;border-color:var(--pink)}
+.tswap{right:190px;bottom:100px;width:52px;height:52px;border-color:#fff}
 .tbtn.on{transform:translateY(3px);filter:brightness(.9)}
 .desk{position:absolute;right:16px;bottom:16px;display:flex;gap:8px}
 .dbtn{font:14px/1 'Russo One',sans-serif;text-transform:uppercase;border:1px solid #3a4562;border-radius:6px;min-height:44px;padding:8px 12px;background:rgba(15,19,28,.85);color:#fff;box-shadow:0 3px 0 rgba(0,0,0,.5);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -219,7 +226,7 @@ canvas{display:block;width:100%;height:100%}
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
     <div class="hp" id="hp" role="meter" aria-label="Health" aria-valuemin="0"><span id="hpText">100</span><div><i id="hpLag"></i><b id="hpFill"></b></div></div>
-    <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> / <span id="ammoMax">24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small><span class="gname" id="gunName">Burst rifle</span></div>
+    <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> / <span id="ammoMax">24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small><span class="gname" id="gunName">Burst rifle</span><span class="slots" id="slots"></span></div>
     <div class="scope" id="scope" aria-hidden="true"><i></i><i></i><b>Slow-mo</b></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
     <div class="offs" id="offs" aria-hidden="true"></div>
@@ -232,11 +239,13 @@ canvas{display:block;width:100%;height:100%}
       <button class="dbtn" id="dParry" tabindex="-1">Parry<small>F</small></button>
       <button class="dbtn" id="dReload" tabindex="-1">Reload<small>R</small></button>
       <button class="dbtn" id="dHook" tabindex="-1">Grapple<small>Right click</small></button>
+      <button class="dbtn" id="dSwap" tabindex="-1">Swap<small>Q</small></button>
     </div>
     <div class="touch" id="touch" hidden>
       <button class="tbtn tfire" id="tFire" aria-label="Shoot">Fire</button>
       <button class="tbtn treload" id="tReload" aria-label="Reload">Reload</button>
       <button class="tbtn thook" id="tHook" aria-label="Grapple">Hook</button>
+      <button class="tbtn tswap" id="tSwap" aria-label="Swap weapon">Swap</button>
       <button class="tbtn tjump" id="tJump" aria-label="Jump">Jump</button>
       <button class="tbtn tdash" id="tDash" aria-label="Dash">Dash</button>
       <button class="tbtn tparry" id="tParry" aria-label="Parry">Parry</button>
@@ -254,7 +263,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 18 · shop: machine gun and sniper</p>
+        <p class="ver">Version 19 · double jump, knife, weapon swap, dash fling</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -266,9 +275,10 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Shoot</b><span>Click for a 3-round burst. Hold to keep firing bursts</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse right" aria-label="Right mouse button"><i></i></span><span class="kc">E</span></div><b>Grapple</b><span>Hold to reel yourself to where you aim. You keep the speed when you let go</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Cycle through every gun you own, plus your knife. The knife makes you untouchable while it swings</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">R</span></div><b>Reload</b><span>Reloads by itself when the magazine runs dry</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Low gravity: leap onto cars, containers and rooftops</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Two dashes in a row, then both recharge. Robots can’t hurt you mid-dash</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump / double jump</b><span>Press again in the air for a second jump. Low gravity: reach cars, containers and rooftops</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Flings you the way you’re moving, and the speed carries. Two in a row, then both recharge</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">F</span></div><b>Parry</b><span>Knock energy bolts back at whoever fired them, or shove a robot away. Time it just before it hits</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">⌘ Cmd</span></div><b>Mouse look on / off</b><span>Locks the mouse to the middle of the screen. Ctrl on Windows</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">P</span><span class="kc">Esc</span></div><b>Pause</b><span>Esc also releases the mouse</span></div>
@@ -283,6 +293,7 @@ canvas{display:block;width:100%;height:100%}
             <b>Reload</b><span>Tap Reload, or it reloads by itself when empty</span>
             <b>Jump / dash / parry</b><span>The round buttons around Fire</span>
             <b>Grapple</b><span>Hold Hook while aiming at a building</span>
+            <b>Swap weapon</b><span>Tap Swap to cycle your guns and knife</span>
           </div>
         </div>
         <div class="row"><button class="btn" data-back>Back</button></div>
@@ -299,7 +310,7 @@ canvas{display:block;width:100%;height:100%}
       <div class="card">
         <h2>Shop</h2>
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="shopCoins">0</span> coins</p>
-        <p>Buy guns with the coins you earn from robots, then equip the one you want to take into your next run.</p>
+        <p>Buy guns with the coins you earn from robots. You carry every gun you own (swap with Q); the one you equip is in your hands when a run starts.</p>
         <div class="shop" id="shopList"></div>
         <div class="row"><button class="btn" data-back>Back</button></div>
       </div>
@@ -343,16 +354,16 @@ const ENEMIES = {
   warden: { name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#cfd3dc', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'runner', splits: 6, desc: 'Every fifth wave. Fires rings of bolts and bursts into Runners when it goes down.' },
 };
 const UPGRADES = [
-  { id: 'rapid',  name: 'Hair trigger',   text: 'Fire 20% faster.',                     icon: 'trigger', apply: p => { if (p.gun === 'burst') { p.burstPause *= .8; p.burstGap *= .9; } else p.rate *= .8; }, when: p => p.gun === 'burst' ? p.burstPause > .12 : p.gun === 'mg' ? p.rate > .035 : false },
+  { id: 'rapid',  name: 'Hair trigger',   text: 'All guns fire 20% faster.',            icon: 'trigger', apply: p => p.fireMul *= .8, when: p => p.fireMul > .45 },
   { id: 'power',  name: 'Hollow points',  text: '+1 damage per round.',                 icon: 'burst',   apply: p => p.dmg += 1 },
-  { id: 'burst',  name: 'Extended burst', text: 'One more round in every burst.',       icon: 'rounds',  apply: p => p.burst += 1, when: p => p.gun === 'burst' && p.burst < 6 },
+  { id: 'burst',  name: 'Extended burst', text: 'Burst rifle: one more round per burst.', icon: 'rounds', apply: p => p.burstAdd += 1, when: p => p.burstAdd < 3 },
   { id: 'pierce', name: 'AP rounds',      text: 'Rounds punch through one more robot.', icon: 'arrow',   apply: p => p.pierce += 1, when: p => p.pierce < 5 },
   { id: 'boots',  name: 'Runner shoes',   text: 'Move 12% faster.',                     icon: 'boot',    apply: p => p.speed *= 1.12, when: p => p.speed < 13 },
   { id: 'heart',  name: 'Armour plate',   text: '+20 max health, and heal 20.',         icon: 'shield',  apply: p => { p.maxHp += 20; p.hp = Math.min(p.maxHp, p.hp + 20); }, when: p => p.maxHp < 240 },
   { id: 'patch',  name: 'Med kit',        text: 'Heal 40 health.',                      icon: 'cross',   apply: p => p.hp = Math.min(p.maxHp, p.hp + 40), when: p => p.hp < p.maxHp },
-  { id: 'mag',    name: 'Drum mag',       text: 'Half again as many rounds per magazine.', icon: 'mag',  apply: p => { p.mag = Math.round(p.mag * 1.5); p.ammo = p.mag; }, when: p => p.gun !== 'sniper' && p.mag < 150 },
+  { id: 'mag',    name: 'Drum mag',       text: 'Half again as many rounds per magazine.', icon: 'mag',  apply: p => p.magMul *= 1.5, when: p => p.magMul < 2.5 },
   { id: 'dash',   name: 'Quick feet',     text: 'Dashes recharge 25% faster.',          icon: 'bolt',    apply: p => p.dashCd *= 0.75, when: p => p.dashCd > 0.4 },
-  { id: 'hands',  name: 'Fast hands',     text: 'Reload 30% faster.',                   icon: 'hands',   apply: p => p.reloadTime *= .7, when: p => p.reloadTime > .5 },
+  { id: 'hands',  name: 'Fast hands',     text: 'Reload 30% faster.',                   icon: 'hands',   apply: p => p.reloadMul *= .7, when: p => p.reloadMul > .35 },
   { id: 'spring', name: 'Jump jets',      text: 'Jump higher.',                         icon: 'boot',    apply: p => p.jump *= 1.2, when: p => p.jump < 15 },
 ];
 // Guns: the burst rifle is free; the rest are bought in the shop with coins.
@@ -362,6 +373,7 @@ const UPGRADES = [
 const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
+  knife:  { name: 'Knife',       price: 0,   mode: 'melee',  rate: .42, mag: 0, reloadTime: 0, dmg: 4, reach: 3.4, free: true, desc: 'Always carried. A wide slash that hits everything in front of you, and you can’t be hurt for a moment while you swing.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots. Jump or grapple to slow time and scope in.' },
 };
 const A = 80; // the city block runs from -A to A on both axes
@@ -607,7 +619,11 @@ function gunModelFor(id) {
   const g = new T.Group(); g.visible = false; gun.add(g);
   const part = (w, h, d, mat, x, y, z) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m; };
   const tube = (r, len, mat, z, y = .015) => { const m = new T.Mesh(new T.CylinderGeometry(r, r, len, 10), mat); m.rotation.x = Math.PI / 2; m.position.set(0, y, z); g.add(m); return m; };
-  if (id === 'mg') {
+  if (id === 'knife') {
+    const blade = new T.Mesh(new T.BoxGeometry(.03, .09, .55), new T.MeshPhongMaterial({ color: '#d9dee8', specular: '#ffffff', shininess: 90 })); blade.position.set(0, .02, -.42); g.add(blade);
+    part(.012, .02, .5, glowMat('#3ef0ff'), .018, .05, -.42); part(.05, .16, .06, gunMetal, 0, .02, -.12); part(.06, .1, .26, gunDark, 0, -.01, .03);
+    g.userData = { mag: null, magY: 0, tip: -.7, knife: true }; g.position.set(.05, -.02, 0);
+  } else if (id === 'mg') {
     part(.13, .15, .58, gunMetal, 0, 0, 0); part(.11, .12, .32, gunDark, 0, -.01, -.42);
     tube(.03, .42, gunDark, -.74); for (let k = 0; k < 4; k++) tube(.036, .03, gunMetal, -.62 - k * .07);
     const drum = new T.Mesh(new T.CylinderGeometry(.13, .13, .1, 16), gunDark); drum.rotation.z = Math.PI / 2; drum.position.set(0, -.17, -.04); g.add(drum);
@@ -632,7 +648,7 @@ function gunModelFor(id) {
   }
   return g;
 }
-const gunModels = { burst: gunModelFor('burst'), mg: gunModelFor('mg'), sniper: gunModelFor('sniper') };
+const gunModels = { burst: gunModelFor('burst'), mg: gunModelFor('mg'), sniper: gunModelFor('sniper'), knife: gunModelFor('knife') };
 let gunModel = gunModels.burst, gMag = gunModel.userData.mag;
 function showGun(id) { for (const [k, m] of Object.entries(gunModels)) m.visible = k === id; gunModel = gunModels[id] || gunModels.burst; gMag = gunModel.userData.mag; flash.position.z = gunModel.userData.tip; muzzle.position.z = gunModel.userData.tip + .03; }
 const flash = new T.PointLight('#ffd08a', 0, 10); flash.position.set(0, .05, -.95); gun.add(flash);
@@ -712,12 +728,28 @@ const sfx = {
 let G = null;
 const live = { foes: new Map(), shots: [], spit: [], gels: [], parts: [], splats: [] }; // meshes, keyed to the data (shots = bullet tracers, gels = med kits)
 let nextId = 1;
+// put a weapon in your hands: its numbers come from GUNS, adjusted by your upgrades; each keeps its own ammo
+function applyGun(p, id) {
+  if (p.gun && p.gun !== id) p.ammoBy[p.gun] = p.ammo;
+  const g = GUNS[id] || GUNS.burst; p.gun = GUNS[id] ? id : 'burst';
+  p.burst = (g.burst || 1) + (p.gun === 'burst' ? p.burstAdd : 0); p.burstGap = (g.burstGap || 0) * p.fireMul; p.burstPause = (g.burstPause || 0) * p.fireMul;
+  p.rate = (g.rate || 0) * (p.gun === 'sniper' || p.gun === 'knife' ? 1 : p.fireMul);
+  p.mag = p.gun === 'sniper' || p.gun === 'knife' ? g.mag : Math.round(g.mag * p.magMul); p.reloadTime = g.reloadTime * p.reloadMul;
+  p.dmgMul = g.dmg; p.spread = g.spread || 0; p.assist = g.assist || 0; p.gunPierce = g.pierce || 0;
+  p.ammo = Math.min(p.mag, p.ammoBy[p.gun] ?? p.mag); p.reloadT = 0; p.burstLeft = 0;
+}
+function switchGun(dir = 1) {
+  const p = G?.p; if (!p || G.mode !== 'play' || p.loadout.length < 2) return;
+  p.wi = (p.wi + dir + p.loadout.length) % p.loadout.length; applyGun(p, p.loadout[p.wi]); p.cool = .22; switchT = .22;
+  showGun(p.gun); ammoShown = ''; slotsHud(p); beep(700, .05, 'triangle', .03, 200); noise(.05, .06, 2600, 2);
+}
 function gunStats(id) { const g = GUNS[id] || GUNS.burst; return { gun: GUNS[id] ? id : 'burst', burst: g.burst || 1, burstGap: g.burstGap || 0, burstPause: g.burstPause || 0, rate: g.rate || 0, mag: g.mag, ammo: g.mag, reloadTime: g.reloadTime, dmgMul: g.dmg, spread: g.spread, assist: g.assist || 0, gunPierce: g.pierce || 0 }; }
 function newRun() {
   return { mode: 'play', wave: 0, score: 0, t: 0, toSpawn: [], spawnTimer: 0, offer: [],
     p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: 2, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: 100, maxHp: 100, speed: 7.5, dmg: 1, pierce: 0, magnet: 3.2, dashCd: 1.2, jump: 11,
          // the starting gun: a burst rifle. 3 quick rounds, a short pause, again. 24-round magazine.
-         ...gunStats(equipped), reloadT: 0, burstLeft: 0,
+         fireMul: 1, magMul: 1, reloadMul: 1, burstAdd: 0, ammoBy: {}, airJumps: 0,
+         loadout: [...Object.keys(GUNS).filter(k => owned.includes(k) && !GUNS[k].free), 'knife'], wi: 0, reloadT: 0, burstLeft: 0,
          cool: 0, dashT: 0, dashReady: 0, dvx: 0, dvz: 0, inv: 0, upgrades: [] },
     foes: [], threats: [], coins: 0 };
 }
@@ -809,7 +841,7 @@ function update(dt) {
   const l = Math.hypot(f, s); if (l > 1) { f /= l; s /= l; }
   const sin = Math.sin(p.yaw), cos = Math.cos(p.yaw);
   let vx = (-sin * f + cos * s), vz = (-cos * f - sin * s);
-  if (p.dashT > 0) { p.dashT -= dt; vx = p.dvx * 3; vz = p.dvz * 3; } else if (l > .1) { p.dvx = vx; p.dvz = vz; }
+  if (p.dashT > 0) p.dashT -= dt; if (l > .1) { p.dvx = vx; p.dvz = vz; }
   // grappling hook: hold to be reeled towards the anchor; the speed you build up carries on after you let go
   p.mx ??= 0; p.mz ??= 0;
   if (p.hook) {
@@ -830,11 +862,11 @@ function update(dt) {
   // hitting a wall soaks up momentum; the ground slows you quickly, the air hardly at all
   if (Math.hypot(p.mx, p.mz) > .5) { const want = Math.hypot(vx * p.speed + p.mx, vz * p.speed + p.mz) * dt, got = Math.hypot(p.x - ox, p.z - oz); if (want > 0 && got < want * .4) { p.mx *= .5; p.mz *= .5; } }
   const grounded = p.y <= groundAt(p.x, p.z, p.r) + .02;
-  if (!p.hook) { const k = Math.pow(grounded ? .12 : .75, dt); p.mx *= k; p.mz *= k; }
+  if (!p.hook) { const k = Math.pow(grounded ? .22 : .75, dt); p.mx *= k; p.mz *= k; } // momentum (from dashes and the grapple) fades: slowly in the air, faster on the ground
   // jumping and landing (you can stand on crates, planters and, with a good jump, rooftops)
   p.vy -= GRAV * dt; p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
-  if (p.y <= floor) { if (p.vy < -7) { landDip = Math.min(.45, -p.vy * .03); shake = Math.max(shake, -p.vy * .006); beep(110, .12, 'sine', .05, -40); } p.y = floor; p.vy = 0; }
+  if (p.y <= floor) { p.airJumps = 0; if (p.vy < -7) { landDip = Math.min(.45, -p.vy * .03); shake = Math.max(shake, -p.vy * .006); beep(110, .12, 'sine', .05, -40); } p.y = floor; p.vy = 0; }
   p.dashCharges ??= 2; if (p.dashCharges < 2) { p.dashReady -= dt; if (p.dashReady <= 0) p.dashCharges = 2; }
   p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
   for (const t of (G.threats ||= [])) { t.t -= dt; const f = G.foes.find(f => f.id === t.id); if (f) { t.x = f.x; t.z = f.z; } }
@@ -849,7 +881,8 @@ function update(dt) {
   if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) { p.ammo = p.mag; sfx.ready(); } }
   else if (p.cool <= 0) {
     const want = input.fire || input.pull;
-    if (p.gun === 'burst') {
+    if (p.gun === 'knife') { if (want) { input.pull = false; slash(); p.cool = p.rate; } }
+    else if (p.gun === 'burst') {
       if (!p.burstLeft && want) { input.pull = false; if (p.ammo > 0) p.burstLeft = p.burst; else { reload(); if (!p.reloadT) sfx.empty(); } }
       if (p.burstLeft > 0) { fire(); p.ammo--; p.burstLeft--; p.cool = p.burstLeft > 0 && p.ammo > 0 ? p.burstGap : p.burstPause; if (p.ammo <= 0) { p.burstLeft = 0; reload(); } }
     } else if (want) {
@@ -893,7 +926,7 @@ function update(dt) {
     // walking into a wall: slide along it for a moment
     if (dir && !(fo.stuck > 0) && Math.hypot(fo.x - ox, fo.z - oz) < fo.speed * dt * .35) { fo.stuck = .9; fo.side = fo.side || (Math.random() < .5 ? 1 : -1); }
     fo.ph += dt * (3 + fo.speed); fo.flash -= dt;
-    if (!e.boss && !e.fly && p.y > 1.8 && d < 9 && !(fo.ly > 0)) { fo.leapCd = (fo.leapCd ?? rnd(.5, 2)) - dt; if (fo.leapCd <= 0) { fo.lvy = Math.sqrt(2 * GRAV * (p.y + .6)); fo.ly = (fo.gy || 0) + .01; fo.leapCd = rnd(2, 4); } }
+    if (!e.boss && !e.fly && p.y > 1.8 && d < 9 && !(fo.ly > 0)) { fo.leapCd = (fo.leapCd ?? rnd(.5, 2)) - dt; if (fo.leapCd <= 0) { fo.lvy = Math.sqrt(2 * GRAV * Math.max(.6, p.y * .5)); /* robots only leap about half as high as you're standing */ fo.ly = (fo.gy || 0) + .01; fo.leapCd = rnd(2, 4); } }
     // fo.gy: the top they're standing on (0 = grass); fo.ly: height while mid-leap
     const under = groundAt(fo.x, fo.z, fo.r * .3);
     if (fo.ly > 0) {
@@ -975,7 +1008,26 @@ function fire() {
   gun.position.z = gd.scope ? -.36 : -.44; recoil = Math.min(gd.scope ? .12 : .06, recoil + (gd.scope ? .09 : p.gun === 'mg' ? .006 : .014)); flashT = .045;
   if (gd.scope) { sfx.snipe(); shake = Math.max(shake, .05); } else if (p.gun === 'mg') sfx.mg(); else sfx.shoot();
 }
-function reload() { const p = G?.p; if (!p || G.mode !== 'play' || p.reloadT > 0 || p.ammo >= p.mag) return; p.reloadT = p.reloadTime; p.burstLeft = 0; sfx.reload(); }
+// the knife: a wide slash in front of you; you can't be hurt while it swings
+function slash() {
+  const p = G.p, g = GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1; let hit = 0;
+  p.inv = Math.max(p.inv, .38); slashT = .3; slashSide = -slashSide;
+  p.mx = (p.mx || 0) + ax / al * 5; p.mz = (p.mz || 0) + az / al * 5; // a small lunge
+  for (const fo of G.foes) {
+    if (fo.hp <= 0) continue;
+    const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
+    if (d > g.reach + fo.r || (dx * ax + dz * az) / (d * al) < .2 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 1.6) continue;
+    fo.hp -= g.dmg * p.dmg; fo.flash = .1; fo.kx += dx / d * 14; fo.kz += dz / d * 14; hit++;
+    burst(fo.x, fo.y ?? fo.r, fo.z, '#ffffff', 8, 8, .05); burst(fo.x, fo.y ?? fo.r, fo.z, ENEMIES[fo.type].glow, 6, 6, .06);
+    if (fo.hp <= 0) kill(fo); else sfx.hit();
+  }
+  // knock bolts out of the air too
+  for (const sp of live.spit) if (!sp.mine && Math.hypot(sp.x - p.x, sp.z - p.z) < g.reach && ((sp.x - p.x) * ax + (sp.z - p.z) * az) > 0) { sp.dead = true; burst(sp.x, sp.y, sp.z, '#ff3d4a', 5, 4, .06); }
+  if (hit) { marker(); shake = Math.max(shake, .08); hitStop = Math.max(hitStop, .03); }
+  noise(.16, .12, hit ? 1800 : 4200, hit ? 1 : 3); beep(hit ? 500 : 900, .08, 'sawtooth', .025, -400);
+  const e = $('edge'); e.classList.add('guard'); clearTimeout(slash.t); slash.t = setTimeout(() => e.classList.remove('guard'), 380);
+}
+function reload() { const p = G?.p; if (!p || G.mode !== 'play' || p.gun === 'knife' || p.reloadT > 0 || p.ammo >= p.mag) return; p.reloadT = p.reloadTime; p.burstLeft = 0; sfx.reload(); }
 function addSpit(x, y, z, vx, vy, vz, from, dmg = 10) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.set(.14, .14, .7); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz, from, dmg }); }
 function kill(fo) {
   const e = ENEMIES[fo.type]; G.score += e.score; G.coins = (G.coins || 0) + e.coins; hud();
@@ -1000,7 +1052,16 @@ function hurt(n, kx, kz) {
   const v = $('vign'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 60);
   hud(); if (p.hp <= 0) gameOver();
 }
-function dash() { const p = G?.p; if (!p || G.mode !== 'play' || (p.dashCharges ?? 2) <= 0) return; if (Math.hypot(p.dvx, p.dvz) < .1) { const [dx, , dz] = aimDir(); p.dvx = dx; p.dvz = dz; } p.dashT = .18; if (p.dashCharges === 2) p.dashReady = p.dashCd; p.dashCharges--; sfx.dash(); }
+function dash() {
+  const p = G?.p; if (!p || G.mode !== 'play' || (p.dashCharges ?? 2) <= 0) return;
+  if (Math.hypot(p.dvx, p.dvz) < .1) { const [dx, , dz] = aimDir(); const l = Math.hypot(dx, dz) || 1; p.dvx = dx / l; p.dvz = dz / l; }
+  // fling: throw momentum in the direction you're moving; it carries on and fades instead of stopping dead
+  const l = Math.hypot(p.dvx, p.dvz) || 1, power = 24;
+  p.mx = (p.mx || 0) * .4 + p.dvx / l * power; p.mz = (p.mz || 0) * .4 + p.dvz / l * power;
+  const sp = Math.hypot(p.mx, p.mz); if (sp > 36) { p.mx *= 36 / sp; p.mz *= 36 / sp; }
+  if (p.y <= groundAt(p.x, p.z, p.r) + .02) p.vy = Math.max(p.vy, 2.6); // a little hop so it reads as a fling
+  p.dashT = .2; if (p.dashCharges === 2) p.dashReady = p.dashCd; p.dashCharges--; sfx.dash();
+}
 function parry() {
   const p = G?.p; if (!p || G.mode !== 'play' || p.parryReady > 0) return;
   p.parryT = .3; p.parryReady = p.parryCd ?? .45; p.parryHit = false;
@@ -1024,8 +1085,14 @@ function hookStart() {
 }
 function hookEnd() { input.hookHeld = false; }
 function releaseHookIfAny() { if (G?.p?.hook) G.p.hook = null; input.hookHeld = false; }
-function releaseHook() { const p = G?.p; if (!p?.hook) return; p.hook = null; p.vy = Math.min(p.vy, 7); /* a small hop at the end, enough to mantle onto a roof */ beep(500, .06, 'triangle', .02, -200); }
-function jump() { const p = G?.p; if (!p || G.mode !== 'play' || p.y > groundAt(p.x, p.z, p.r) + .01) return; p.vy = p.jump; sfx.jump(); }
+function releaseHook() { const p = G?.p; if (!p?.hook) return; p.hook = null; p.airJumps = 0; p.vy = Math.min(p.vy, 7); /* a small hop at the end, enough to mantle onto a roof */ beep(500, .06, 'triangle', .02, -200); }
+function jump() {
+  const p = G?.p; if (!p || G.mode !== 'play') return;
+  if (p.y <= groundAt(p.x, p.z, p.r) + .01) { p.vy = p.jump; p.airJumps = 0; sfx.jump(); return; }
+  if ((p.airJumps || 0) < 1) { // double jump: one more boost in the air
+    p.airJumps = 1; p.vy = Math.max(p.vy, p.jump * .9); burst(p.x, p.y + .1, p.z, '#3ef0ff', 14, 5, .05); beep(620, .12, 'sine', .035, 500); noise(.15, .06, 1200, .6);
+  }
+}
 
 // ===================== Effects =====================
 let shake = 0, markT = 0;
@@ -1043,6 +1110,7 @@ function marker() { markT = .12; }
 function tickCombo(dt) { comboT -= dt; if (comboT <= 0 && combo) { combo = 0; } }
 
 // ===================== Drawing =====================
+let slashT = 0, slashSide = 1, switchT = 0;
 let bob = 0, gunSwing = 0, recoil = 0, roll = 0, landDip = 0, fovKick = 0, hitStop = 0, combo = 0, comboT = 0, flashT = 0, baseFov = 75;
 function render(dt) {
   const t = performance.now() / 1000;
@@ -1071,10 +1139,13 @@ function render(dt) {
     sun.position.set(p.x - 45, 32, p.z - 30); sun.target.position.set(p.x, 0, p.z); sky.position.copy(camera.position);
     // reload: tip the rifle down and to the side, drop the magazine and slot a new one
     const rl = p.reloadT > 0 ? 1 - p.reloadT / p.reloadTime : 0, rk = Math.sin(rl * Math.PI);
-    gMag.position.y = gunModel.userData.magY - (rl > .2 && rl < .6 ? .3 : 0);
+    if (gMag) gMag.position.y = gunModel.userData.magY - (rl > .2 && rl < .6 ? .3 : 0);
+    // knife slash: a fast sweep across the view; weapon swap: dip out and back
+    slashT = Math.max(0, slashT - dt); switchT = Math.max(0, switchT - dt); const sw = slashT / .3;
+    if (gunModel.userData.knife) gunModel.rotation.set(-sw * .6, sw * 1.6 * slashSide, sw * 1.2 * slashSide); else gunModel.rotation.set(0, 0, 0);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4 - rk * .5, gunSwing * 3 + rk * .4, gunSwing * 3.5 + rk * .5);
     drawThreats(p); drawMinimap(p); drawOffscreen(p);
-    gun.position.x = .22 + Math.sin(bob) * .012; gun.position.y = -.22 + Math.abs(Math.cos(bob)) * .012 - rk * .08; gun.position.z += (-.5 - gun.position.z) * Math.min(1, dt * 16);
+    gun.position.x = .22 + Math.sin(bob) * .012; gun.position.y = -.22 + Math.abs(Math.cos(bob)) * .012 - rk * .08 - switchT * 1.2; gun.position.z += (-.5 - gun.position.z) * Math.min(1, dt * 16);
     stepRain(dt, p.x, p.z);
     for (const fo of G.foes) {
       let m = live.foes.get(fo.id); if (!m) { m = botMesh(fo.type); live.foes.set(fo.id, m); }
@@ -1189,11 +1260,12 @@ function hud() {
 }
 let ammoShown = '';
 function ammoHud(p) {
-  const key = `${p.ammo}/${p.mag}/${p.reloadT > 0 ? Math.round(p.reloadT * 20) : 0}`; if (key === ammoShown) return; ammoShown = key;
-  $('ammoNow').textContent = p.ammo; $('ammoMax').textContent = p.mag; $('gunName').textContent = GUNS[p.gun]?.name || ''; $('ammo').classList.toggle('empty', p.ammo === 0);
+  const key = `${p.gun}/${p.ammo}/${p.mag}/${p.reloadT > 0 ? Math.round(p.reloadT * 20) : 0}`; if (key === ammoShown) return; ammoShown = key;
+  const melee = p.gun === 'knife'; $('ammoNow').textContent = melee ? '—' : p.ammo; $('ammoMax').textContent = melee ? '' : p.mag; $('ammo').classList.toggle('melee', melee); $('gunName').textContent = GUNS[p.gun]?.name || ''; $('ammo').classList.toggle('empty', !melee && p.ammo === 0);
   $('reloadBar').style.width = p.reloadT > 0 ? `${(1 - p.reloadT / p.reloadTime) * 100}%` : '0';
-  $('ammoNote').textContent = p.reloadT > 0 ? 'Reloading' : p.ammo === 0 ? 'Empty' : p.mag > 1 && p.ammo <= Math.max(p.burst * 2, p.mag * .2) ? (touchMode ? 'Low ammo' : 'R to reload') : '';
+  $('ammoNote').textContent = melee ? '' : p.reloadT > 0 ? 'Reloading' : p.ammo === 0 ? 'Empty' : p.mag > 1 && p.ammo <= Math.max(p.burst * 2, p.mag * .2) ? (touchMode ? 'Low ammo' : 'R to reload') : '';
 }
+function slotsHud(p) { $('slots').innerHTML = p.loadout.map((id, i) => `<span${i === p.wi ? ' class="on"' : ''}>${GUNS[id].name}</span>`).join('') + (p.loadout.length > 1 ? `<kbd>${touchMode ? 'Swap' : 'Q'}</kbd>` : ''); }
 // coins earned in a run go into the wallet when the run ends (or you quit)
 function bankCoins() { if (G && !G.banked) { coins += G.coins || 0; G.banked = true; store.set('ss-coins', coins); hud(); } }
 function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver', 'ovControls', 'ovGuide', 'ovShop']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
@@ -1214,7 +1286,7 @@ function offerUpgrades() {
 }
 function takeUpgrade(id) {
   const u = UPGRADES.find(x => x.id === id); if (!u || G?.mode !== 'pick') return;
-  u.apply(G.p); G.p.upgrades.push(id); G.p.ammo = G.p.mag; G.p.reloadT = 0; G.p.burstLeft = 0; sfx.pick(); G.mode = 'play'; show(null); lock(); hud(); startWave();
+  u.apply(G.p); G.p.upgrades.push(id); G.p.ammoBy = {}; G.p.ammo = Infinity; applyGun(G.p, G.p.gun); G.p.ammo = G.p.mag; ammoShown = ''; sfx.pick(); G.mode = 'play'; show(null); lock(); hud(); startWave();
 }
 function gameOver() {
   G.mode = 'over'; unlock(); input.fire = false; releaseHookIfAny(); const earned = G.coins || 0; bankCoins();
@@ -1229,7 +1301,7 @@ function start() {
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
   ac?.resume?.();
   clearLive(); showDemo(false);
-  G = newRun(); showGun(G.p.gun); timeScale = 1; zoomK = 0; show(null); lock(); hud(); startWave();
+  G = newRun(); G.p.wi = Math.max(0, G.p.loadout.indexOf(equipped)); applyGun(G.p, G.p.loadout[G.p.wi]); showGun(G.p.gun); slotsHud(G.p); timeScale = 1; zoomK = 0; show(null); lock(); hud(); startWave();
 }
 function pause(on) {
   if (!G) return;
@@ -1289,6 +1361,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyF') parry();
   if (e.code === 'KeyR') reload();
   if (e.code === 'KeyE') hookStart();
+  if (e.code === 'KeyQ') switchGun(1);
   if (['MetaLeft', 'MetaRight', 'ControlLeft', 'ControlRight'].includes(e.code) && G?.mode === 'play') setLook(!(input.mlook || input.lockWait));
   if (e.code === 'KeyP' || e.code === 'Escape') { if (G?.mode === 'play') pause(true); else if (G?.mode === 'paused' && e.code === 'KeyP') pause(false); }
   if (G?.mode === 'pick' && ['Digit1', 'Digit2', 'Digit3'].includes(e.code)) takeUpgrade(G.offer[+e.code.slice(5) - 1]);
@@ -1319,7 +1392,7 @@ addEventListener('mousemove', e => {
 });
 stage.addEventListener('mouseleave', () => { input.cur = null; });
 { const b = $('dHook'); b.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); hookStart(); }); for (const ev of ['mouseup', 'mouseleave']) b.addEventListener(ev, () => { b.classList.remove('on'); hookEnd(); }); }
-for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()], ['dParry', () => parry()], ['dReload', () => reload()]]) {
+for (const [id, fn] of [['dJump', () => jump()], ['dDash', () => dash()], ['dParry', () => parry()], ['dReload', () => reload()], ['dSwap', () => switchGun(1)]]) {
   const b = $(id);
   b.addEventListener('mousedown', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('on'); fn(); });
   for (const ev of ['mouseup', 'mouseleave']) b.addEventListener(ev, () => b.classList.remove('on'));
@@ -1343,7 +1416,7 @@ const endTouch = e => { const k = sticks.get(e.pointerId); if (k) { input[k] = n
 stage.addEventListener('pointerup', endTouch); stage.addEventListener('pointercancel', endTouch);
 const hold = (id, on, off) => { const b = $(id); b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); on(); }); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { b.classList.remove('on'); off?.(); }); };
 hold('tFire', () => { input.fire = true; input.pull = true; }, () => { input.fire = false; });
-hold('tHook', hookStart, hookEnd); hold('tJump', jump); hold('tDash', dash); hold('tParry', parry); hold('tReload', reload);
+hold('tHook', hookStart, hookEnd); hold('tSwap', () => switchGun(1)); hold('tJump', jump); hold('tDash', dash); hold('tParry', parry); hold('tReload', reload);
 $('startBtn').onclick = start; $('againBtn').onclick = start;
 // Controls, the shop and the enemy guide open from the menu or the pause screen, and Back returns there.
 let backTo = 'ovTitle';
@@ -1363,7 +1436,7 @@ function gunFacts(g) {
 }
 function renderShop() {
   hud();
-  $('shopList').innerHTML = Object.entries(GUNS).map(([id, g]) => {
+  $('shopList').innerHTML = Object.entries(GUNS).filter(([, g]) => !g.free).map(([id, g]) => {
     const have = owned.includes(id), on = equipped === id;
     const btn = on ? '<button class="btn" disabled>Equipped</button>' : have ? `<button class="btn alt" data-equip="${id}">Equip</button>` : `<button class="btn" data-buy="${id}" ${coins < g.price ? 'disabled' : ''}>Buy · <span class="price">${g.price} coins</span></button>`;
     return `<div class="gcard${on ? ' on' : ''}">${gunIcon(id)}<b>${g.name}</b><p>${g.desc}</p><dl>${gunFacts(g).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>${btn}</div>`;
