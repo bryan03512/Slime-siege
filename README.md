@@ -36,7 +36,7 @@ Gravity builds the longer you fall. The long sword only protects you mid-swing w
 
 Everything you'd want to add lives in tables near the top of the script in `index.html`:
 
-- `ENEMIES`: each robot type (health, speed, size, damage, score, coins, which wave it first appears, colours, and special moves like flying and shooting).
+- `ENEMIES`: each robot type (health, speed, size, damage, score, coins, which wave it first appears, colours, and special moves like flying and shooting). Waves are small (3 to about 12 robots); every wave brings at least one tank from the three tank tiers (Bulwark, Titan, Colossus, each bigger and tougher), and every fifth wave the Warden.
 - `UPGRADES`: the upgrade cards offered between waves (`apply` changes the player, `when` hides it when it wouldn't help).
 - `OBSTACLES`: the buildings, cars, walls, crates and barriers in the city.
 - `GUNS`: the weapons and their shop prices (mode: burst, auto, single, charge or melee). `GEAR`, `COLORS`, `CROSSES` and `LEVEL_COST` hold the rest of the shop. The burst rifle is free; the machine gun (full auto, small spread, near misses still count) and the sniper (one huge round per magazine that bursts in a 3.5m blast where it hits the ground or a wall; in the air, a first click scopes in, slows time and shows every robot's hitbox as a cyan box, and a second click fires). Every robot's hitbox is a box (`hitboxOf()`): a shot that enters it hits are bought with coins.
