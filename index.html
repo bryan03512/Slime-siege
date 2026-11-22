@@ -364,7 +364,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 61 · no gravity on swings</p>
+        <p class="ver">Version 62 · swings reel you in, keys steer gently</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1111,7 +1111,7 @@ function hitsGarden(x, y, z) {
 // ===================== Update =====================
 const input = { keys: {}, fire: false, move: null, look: null, locked: false, dragLook: false, mlook: false, releasing: false };
 const EYE = 1.6;
-const HOOK_RANGE = 70, HOOK_SPEED = 36, HOOK_PULL = 70, SWING_REEL = 4, SWING_TUG = 9, SWING_STEER = 32; // grapple: reach for buildings, (old top speed, unused), how fast it speeds up (grows the longer you hold)
+const HOOK_RANGE = 70, HOOK_SPEED = 36, HOOK_PULL = 70, SWING_REEL = 10, SWING_STEER = 20, SWING_SIDE = .6; /* sideways speed stays under 60% of the reel speed */ // grapple: reach for buildings, (old top speed, unused), how fast it speeds up (grows the longer you hold)
 const ROBOT_LEAP_MAX = 4.5; // robots can't leap higher than a small building
 const GRAV = 10; // low, moon-ish gravity: big floaty jumps (was 24)
 function update(dt) {
@@ -1145,20 +1145,28 @@ function update(dt) {
       const sp = Math.max(along, 10) + HOOK_PULL * (1 + p.hook.t * .4) * dt;
       p.mx = ux * sp; p.mz = uz * sp; p.vy = uy * sp;
     } else {
-      // hooked to the city: a rope swing with no gravity. The rope can't stretch, so your speed
-      // turns into an arc around the anchor, while the line slowly reels in and tugs harder the longer you hold
+      // hooked to the city: a rope swing with no gravity. The line reels you in at a steady rate that keeps rising
+      // (so you always arrive), and the rope can't stretch, so any sideways speed curves you around the anchor
       const ux = hx / hd, uy = hy / hd, uz = hz / hd, h = p.hook; h.t = (h.t || 0) + dt;
-      h.L = Math.max(2, Math.min(h.L ?? hd, hd) - SWING_REEL * (1 + h.t * .5) * dt);
-      const tug = SWING_TUG * (1 + h.t * .4) * dt; p.mx += ux * tug; p.vy += uy * tug; p.mz += uz * tug;
-      // hold a direction: push the swing that way along the rope's circle, so you whip around the building
+      const reel = SWING_REEL * (1 + h.t * .6);
+      h.L = Math.max(1.5, Math.min(h.L ?? hd, hd) - reel * dt);
+      // hold a direction: push the swing that way across the rope, but only up to a sideways speed limit,
+      // so you swing round the building instead of spinning faster forever
       const il = Math.hypot(vx, vz);
       if (il > .1) {
-        let sx = vx / il, sy = 0, sz = vz / il; const rd = sx * ux + sz * uz; sx -= ux * rd; sy -= uy * rd; sz -= uz * rd; /* only the part across the rope */
-        const sl = Math.hypot(sx, sy, sz); if (sl > .05) { const push = SWING_STEER * (1 + h.t * .3) * dt / sl; p.mx += sx * push; p.vy += sy * push; p.mz += sz * push; }
+        let sx = vx / il, sy = 0, sz = vz / il; const rd = sx * ux + sz * uz; sx -= ux * rd; sy -= uy * rd; sz -= uz * rd;
+        const sl = Math.hypot(sx, sy, sz);
+        if (sl > .05) {
+          sx /= sl; sy /= sl; sz /= sl; const across = p.mx * sx + p.vy * sy + p.mz * sz;
+          const push = SWING_STEER * dt * clamp(1 - across / (reel * SWING_SIDE), 0, 1); p.mx += sx * push; p.vy += sy * push; p.mz += sz * push;
+        }
       }
-      const radial = p.mx * ux + p.vy * uy + p.mz * uz; /* + is towards the anchor */
-      if (hd >= h.L - .05 && radial < 0) { p.mx -= ux * radial; p.vy -= uy * radial; p.mz -= uz * radial; } /* taut rope: no moving away */
-      if (hd > h.L) { const k = Math.min(1, (hd - h.L) * 8 * dt); p.mx += ux * (hd - h.L) * k / dt * .5; p.vy += uy * (hd - h.L) * k / dt * .5; p.mz += uz * (hd - h.L) * k / dt * .5; }
+      // never move away from the anchor, and close in at least as fast as the line reels
+      const radial = p.mx * ux + p.vy * uy + p.mz * uz, want = Math.max(radial, reel + Math.max(0, hd - h.L) * 4);
+      p.mx += ux * (want - radial); p.vy += uy * (want - radial); p.mz += uz * (want - radial);
+      // sideways speed can't build up as the rope shortens (no endless spin), and it eases off near the anchor so you land
+      const tx = p.mx - ux * want, ty = p.vy - uy * want, tz = p.mz - uz * want, tl = Math.hypot(tx, ty, tz), cap = reel * SWING_SIDE * clamp(hd / 8, .25, 1);
+      if (tl > cap) { const k = cap / tl; p.mx = ux * want + tx * k; p.vy = uy * want + ty * k; p.mz = uz * want + tz * k; }
     }
   }
   const ox = p.x, oz = p.z;
