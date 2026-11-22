@@ -130,10 +130,12 @@ canvas{display:block;width:100%;height:100%}
 .tag{font-size:16px!important}
 .btn.big{font-size:26px;padding:14px 24px}
 .btn.big small{display:block;margin-top:4px;font:800 12px/1 Barlow,sans-serif;letter-spacing:.08em;opacity:.8}
-#contBtn+#startBtn{font-size:20px;padding:12px 22px;background:rgba(23,28,40,.9);color:#fff;border:1px solid #3a4562;box-shadow:0 4px 0 #05070c}
+#contBtn:not([hidden])+#startBtn{font-size:20px;padding:12px 22px;background:rgba(23,28,40,.9);color:#fff;border:1px solid #3a4562;box-shadow:0 4px 0 #05070c}
 .wallet{display:flex;align-items:center;gap:8px;font:20px/1 'Russo One',sans-serif;color:var(--amber);margin:0}
 .wallet svg{width:22px;height:22px}
 .menu-best{color:var(--muted)}
+.sndtest{margin:0;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-weight:800}
+.sndtest .btn{font-size:12px;padding:7px 12px;min-height:0}
 .ver{margin:0;font-size:12px;font-weight:800;color:rgba(232,237,255,.45);letter-spacing:.05em}
 .card{width:min(580px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,var(--panel2),var(--panel));color:var(--text);border:1px solid var(--line);border-radius:10px;padding:24px 26px;box-shadow:0 0 0 1px rgba(62,240,255,.08),0 20px 60px rgba(0,0,0,.6);user-select:text}
 .card.wide{width:min(780px,100%)}
@@ -297,8 +299,9 @@ canvas{display:block;width:100%;height:100%}
         </nav>
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
+        <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 31 · styles colour the whole weapon</p>
+        <p class="ver">Version 32 · sound test, loadout fix</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -517,6 +520,10 @@ function fixLoad() {
   store.set('ss-load', load);
 }
 fixLoad();
+if (!store.get('ss-loadfix', false)) { // loadouts saved before v29 kept the burst rifle first even after buying a new gun
+  if (load.ranged.length > 1 && load.ranged[0] === 'burst') load.ranged.reverse();
+  store.set('ss-load', load); store.set('ss-loadfix', true);
+}
 const hasGear = id => gear.includes(id);
 // Touch controls on phones and tablets, but an iPad with a keyboard or trackpad switches to
 // keyboard-and-mouse as soon as you use them, and back again when you tap the screen.
@@ -804,8 +811,19 @@ let ac = null, master = null;
 // Sound has to be switched on by a tap or key press, and browsers can put it back to sleep (switching tabs,
 // iPhone/iPad lock). So every tap or key wakes it. On iPhone/iPad we also mark it as media playback, which
 // keeps it playing even with the ringer switch on silent.
+let unmuteEl = null;
+function silentTrack() {
+  const n = 4410, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), w = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 44100, true); v.setUint32(28, 88200, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
 function wakeAudio() {
   try {
+    if (!unmuteEl && /iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document) {
+      unmuteEl = document.createElement('audio'); unmuteEl.setAttribute('playsinline', ''); unmuteEl.loop = true; unmuteEl.src = silentTrack(); unmuteEl.volume = .01;
+      unmuteEl.play?.().catch?.(() => { unmuteEl = null; });
+    } else if (unmuteEl?.paused) unmuteEl.play?.().catch?.(() => {});
     if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
     if (!ac) {
       ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -1800,6 +1818,14 @@ $('pauseBtn').onclick = () => (G?.mode === 'paused' ? pause(false) : pause(true)
 $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) takeUpgrade(b.dataset.id); });
 function setMute(m) { muted = m; store.set('ss-muted', m); $('mute').setAttribute('aria-label', m ? 'Sound off' : 'Sound on'); $('wav').style.display = m ? 'none' : ''; }
 $('mute').onclick = () => setMute(!muted);
+$('sndBtn').onclick = () => {
+  wakeAudio();
+  setTimeout(() => {
+    const st = !ac ? 'Sound isn’t supported in this browser.' : muted ? 'The game is muted: tap the speaker button at the top right.' : ac.state !== 'running' ? `Sound is blocked (${ac.state}). Tap the game once more, or open it in Safari or Chrome.` : 'Sound is on. If you heard nothing, check your device volume or silent mode.';
+    $('sndState').textContent = st;
+    if (ac && !muted) { beep(523, .15, 'triangle', .08); setTimeout(() => beep(659, .15, 'triangle', .08), 150); setTimeout(() => beep(784, .25, 'triangle', .08), 300); }
+  }, 120);
+};
 $('touch').hidden = !touchMode;
 
 // ===================== Loop =====================
