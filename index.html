@@ -301,7 +301,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 35 · hammer dives steer and speed up</p>
+        <p class="ver">Version 36 · hammer damage grows exponentially</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -414,7 +414,7 @@ const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
   railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
-  hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: 7, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Click in the air to dive and slam: the higher and faster you fall, the bigger and harder the shockwave. Dash during a dive to steer it; dash down to plunge faster.' },
+  hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: 2, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
   knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .62, mag: 0, reloadTime: 0, dmg: 4, reach: 4.4, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second. Hits harder the faster you’re going, and while you’re moving fast (dashing, grappling or dropping) you can’t be hurt mid-swing.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots and bursts where it lands. In the air, click to scope in and slow time, then click again to fire.' },
 };
@@ -1198,13 +1198,18 @@ function slash() {
 // faster = harder: walking pace is normal damage, rising to 3x at about 28 m/s (dashes, grapples, falls)
 function swordMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 10, 0, 2); }
 function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m.toFixed(1)}`; el.style.fontSize = `${18 + m * 8}px`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
+// The hammer starts weak and grows exponentially: with how far (and fast) you fell for a slam, and with your speed for a swing.
+// 2 damage from a short hop, ~7 from 10m, ~22 from 20m, ~73 from 30m, capped at 150.
+function hammerPower(fall) { return Math.min(150, GUNS.hammer.dmg * Math.exp(Math.max(0, fall) * .12)); }
+function hammerSwingMult(p) { return Math.min(10, Math.exp(Math.max(0, (p.spd || 0) - 6) * .09)); }
 // hammer slam: dive straight down; landing sends out a shockwave that grows with the height you fell from
 function startSlam() {
   const p = G.p; p.slamming = true; p.slamFrom = p.y; p.vy = -34; p.mx *= .3; p.mz *= .3; p.inv = Math.max(p.inv, 3); releaseHook();
   beep(300, .3, 'sawtooth', .03, -250); noise(.3, .08, 900, .5);
 }
 function slamLand() {
-  const p = G.p, fall = Math.max(0, p.slamFrom - p.y) + Math.max(0, -p.vy - 34) * .4, R = Math.min(13, 3 + fall * .45), D = Math.min(60, 6 + fall * 1.4) * p.dmg * (1 + .12 * (levels.hammer || 0)); // height fallen, plus extra for hitting faster than a plain dive
+  const p = G.p, fall = Math.max(0, p.slamFrom - p.y) + Math.max(0, -p.vy - 34) * .4, R = Math.min(13, 3 + fall * .45); // height fallen, plus extra for hitting faster than a plain dive
+  const D = hammerPower(fall) * p.dmg * (1 + .12 * (levels.hammer || 0)); // low from a hop, huge from a long fast dive
   p.slamming = false; p.inv = .4;
   for (const fo of G.foes) {
     if (fo.hp <= 0) continue; const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.max(0, Math.hypot(dx, dz) - fo.r);
@@ -1216,7 +1221,7 @@ function slamLand() {
   ring.rotation.x = -Math.PI / 2; ring.position.set(p.x, p.y + .08, p.z); ring.scale.setScalar(1); scene.add(ring); live.shots.push({ m: ring, life: .5, max: .5, op: .9, grow: R * 1.6 });
   burst(p.x, p.y + .2, p.z, '#ffb020', 30, 12, .07); burst(p.x, p.y + .2, p.z, '#2a2d35', 20, 8, .25);
   shake = Math.max(shake, .2 + fall * .015); hitStop = Math.max(hitStop, .08); landDip = .5; noise(.8, .35, 150, .6); beep(50, .6, 'sine', .12, -20);
-  if (fall > 4) speedPop(R / 3);
+  if (fall > 4) speedPop(D / GUNS.hammer.dmg);
 }
 function swingTick(dt) {
   const p = G.p; if (!(p.slashT > 0)) return; p.slashT -= dt;
@@ -1226,7 +1231,7 @@ function swingTick(dt) {
     if (fo.hp <= 0 || p.slashCut.includes(fo.id)) continue;
     const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
     if (d > g.reach + fo.r || (dx * ax + dz * az) / (d * al) < .1 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2) continue;
-    const mult = g.slam ? 1 : swordMult(p); p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg * mult * (1 + .12 * (levels[p.swingGun] || 0)); fo.flash = .1; fo.kx += dx / d * 14 * Math.min(mult, 2); fo.kz += dz / d * 14 * Math.min(mult, 2); hit++;
+    const mult = g.slam ? hammerSwingMult(p) : swordMult(p); p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg * mult * (1 + .12 * (levels[p.swingGun] || 0)); fo.flash = .1; fo.kx += dx / d * 14 * Math.min(mult, 2); fo.kz += dz / d * 14 * Math.min(mult, 2); hit++;
     if (mult >= 1.2) { speedPop(mult); burst(fo.x, fo.y ?? fo.r, fo.z, '#ffb020', Math.round(6 * mult), 10, .06); }
     burst(fo.x, fo.y ?? fo.r, fo.z, '#ffffff', 8, 8, .05); burst(fo.x, fo.y ?? fo.r, fo.z, ENEMIES[fo.type].glow, 6, 6, .06);
     if (fo.hp <= 0) kill(fo); else sfx.hit();
