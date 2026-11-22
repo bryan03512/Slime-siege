@@ -173,6 +173,8 @@ canvas{display:block;width:100%;height:100%}
 .guide b{font:16px/1.2 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.04em}
 .guide span{font-size:14px;line-height:1.4;color:#c9d2ee}
 .guide i{font-style:normal;font-size:13px;color:var(--muted);font-weight:800}
+.guide i.hpline{color:var(--green)}
+.guide svg{grid-row:span 4!important}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:14px 0 18px;font-size:15px}
 .keys b{font:14px/1.5 'Russo One',sans-serif;color:var(--neon);white-space:nowrap;text-transform:uppercase}
 .btn{font:20px/1 'Russo One',sans-serif;text-transform:uppercase;letter-spacing:.04em;border:0;border-radius:6px;padding:14px 22px;min-height:48px;background:var(--neon);color:#031016;box-shadow:0 0 18px rgba(62,240,255,.35),0 4px 0 #0f7c87;cursor:pointer}
@@ -314,7 +316,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 40 · button fix, gentler hammer slams</p>
+        <p class="ver">Version 41 · health in the enemy guide</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -401,7 +403,7 @@ canvas{display:block;width:100%;height:100%}
 // hp scales up each wave. from = first wave it appears. coins = what a kill pays into your wallet.
 const ENEMIES = {
   walker: { name: 'Walker', hp: 3,   speed: 3.6, r: 0.8,  bob: 0.05, dmg: 10, score: 10,  coins: 1,  from: 1, weight: 10, body: '#c3c9d4', glow: '#ff3d4a', desc: 'Security bot. Marches straight at you and hits hard up close.' },
-  runner: { name: 'Runner', hp: 1,   speed: 5.6, r: 0.5,  bob: 0.08, dmg: 8,  score: 15,  coins: 1,  from: 2, weight: 5,  body: '#dde2ea', glow: '#3ef0ff', desc: 'Small and nimble. Slower than you, but darts in close. Drops to a single round.' },
+  runner: { name: 'Runner', hp: 1,   speed: 5.6, r: 0.5,  bob: 0.08, dmg: 8,  score: 15,  coins: 1,  from: 2, weight: 5,  body: '#dde2ea', glow: '#3ef0ff', desc: 'Small and nimble. Slower than you, but darts in close. Goes down to a single burst.' },
   drone:  { name: 'Drone',  hp: 4,   speed: 3.2, r: 0.7,  fly: 3.4,  dmg: 10, score: 25,  coins: 2,  from: 3, weight: 3,  body: '#aeb7c6', glow: '#ffb020', keepAway: 14, shootEvery: 2.2, desc: 'Hovers out of reach and fires energy bolts. Parry them back with F.' },
   heavy:  { name: 'Heavy',  hp: 14,  speed: 2.2, r: 1.4,  bob: 0.03, dmg: 20, score: 40,  coins: 3,  from: 4, weight: 2,  body: '#9aa1b0', glow: '#b45cff', desc: 'Armoured mech. Slow and tough, takes a fifth of your health per hit.' },
   warden: { name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#cfd3dc', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'runner', splits: 6, desc: 'Every fifth wave. Fires rings of bolts and bursts into Runners when it goes down.' },
@@ -1861,7 +1863,12 @@ $('menuBtn').onclick = toMenu;
 const botIcon = e => e.fly
   ? `<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="12" y="20" width="28" height="11" rx="3" fill="${e.body}"/><rect x="16" y="24" width="20" height="3" fill="${e.glow}"/><g fill="${e.glow}" opacity=".5"><ellipse cx="9" cy="16" rx="8" ry="2"/><ellipse cx="43" cy="16" rx="8" ry="2"/></g><path d="M12 22L9 17M40 22l3-5" stroke="${e.body}" stroke-width="2"/></svg>`
   : `<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="17" y="6" width="18" height="12" rx="2" fill="${e.body}"/><rect x="19" y="10" width="14" height="3" fill="${e.glow}"/><rect x="13" y="19" width="26" height="15" rx="2" fill="${e.body}"/><rect x="21" y="24" width="10" height="2" fill="${e.glow}"/><rect x="7" y="19" width="5" height="14" rx="2" fill="#15181f"/><rect x="40" y="19" width="5" height="14" rx="2" fill="#15181f"/><rect x="17" y="34" width="6" height="14" fill="#15181f"/><rect x="29" y="34" width="6" height="14" fill="#15181f"/>${e.boss ? `<rect x="20" y="1" width="2" height="6" fill="${e.glow}"/><rect x="30" y="1" width="2" height="6" fill="${e.glow}"/>` : ''}</svg>`;
-$('guideList').innerHTML = Object.values(ENEMIES).map(e => `<li>${botIcon(e)}<b>${e.name}</b><span>${e.desc ?? ''}</span><i>${e.boss ? 'Waves 5, 10, 15…' : `From wave ${e.from}`} · ${e.coins} coin${e.coins > 1 ? 's' : ''}</i></li>`).join('');
+// health shown at the first wave each robot appears, then how it grows (+13% a wave; the Warden +35% each time it returns)
+const hpAt = (e, w) => Math.ceil(e.hp * (e.boss ? 1 + .35 * (w / 5 - 1) : 1 + .13 * (w - 1)));
+$('guideList').innerHTML = Object.values(ENEMIES).map(e => {
+  const first = e.boss ? 5 : e.from, hp = e.boss ? `${hpAt(e, 5)} health at wave 5, ${hpAt(e, 10)} at wave 10, ${hpAt(e, 15)} at wave 15` : `${hpAt(e, first)} health at wave ${first}, ${hpAt(e, 10)} by wave 10, ${hpAt(e, 20)} by wave 20`;
+  return `<li>${botIcon(e)}<b>${e.name}</b><span>${e.desc ?? ''}</span><i class="hpline">${hp}</i><i>${e.boss ? 'Waves 5, 10, 15…' : `From wave ${e.from}`} · hits for ${e.dmg} · ${e.coins} coin${e.coins > 1 ? 's' : ''}</i></li>`;
+}).join('');
 $('ctrlDesk').hidden = touchMode; $('ctrlTouch').hidden = !touchMode;
 $('resumeBtn').onclick = () => pause(false);
 $('quitBtn').onclick = () => { saveRun(); unlock(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); continueBtn(); show('ovTitle'); }; // quitting keeps the run so you can Continue
