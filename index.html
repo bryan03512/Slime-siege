@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 65 · robots toughen every wave</p>
+        <p class="ver">Version 66 · the Duelist dives and flies</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -459,7 +459,7 @@ const ENEMIES = {
   bulwark:  { name: 'Bulwark',  hp: 90,  speed: 2.1, r: 1.9, bob: 0.03, dmg: 25, score: 90,  coins: 5,  from: 1, tank: 1, body: '#a7b0bf', glow: '#3dff8a', desc: 'Tank, tier 1. A walking wall of armour. Takes a lot of rounds to bring down.' },
   titan:    { name: 'Titan',    hp: 220, speed: 1.8, r: 2.6, bob: 0.02, dmg: 32, score: 180, coins: 10, from: 5, tank: 2, body: '#b9b2a2', glow: '#ffd23f', desc: 'Tank, tier 2. Bigger and much tougher. Keep your distance; one hit takes a third of your health.' },
   colossus: { name: 'Colossus', hp: 520, speed: 1.5, r: 3.5, bob: 0.02, dmg: 42, score: 360, coins: 18, from: 8, tank: 3, body: '#c9b9b0', glow: '#ff6a00', desc: 'Tank, tier 3. A towering machine with a huge health pool. Hit it from the air, out of reach.' },
-  duelist: { name: 'The Duelist', hp: 840, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, shotDmg: 15, shootEvery: 4.5, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, grapples onto rooftops and snipes you from range with a red laser. Watch for its blade to glow, then parry (F) to stagger it.' },
+  duelist: { name: 'The Duelist', hp: 1400, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, diveDmg: 30, shotDmg: 15, shootEvery: 2.4, aimTime: 1.2, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, snipes you often with a red laser. While healthy it fights aggressively: it launches into the sky and grapples straight onto you for a heavy hit (parry it to stagger it). Once badly hurt it takes to the sky, swinging around you and shooting fast. Watch for its blade to glow, then parry (F).' },
   warden: { retired: true, name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#cfd3dc', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'walker', splits: 4, desc: 'Every fifth wave. Fires rings of bolts and bursts into Walkers when it goes down.' },
 };
 const UPGRADES = [
@@ -1266,14 +1266,14 @@ function update(dt) {
     fo.y = e.fly ? e.fly + Math.sin(fo.ph * .5) * .3 : fo.r + Math.abs(Math.sin(fo.ph)) * (e.bob || 0) * fo.r + Math.max(fo.gy || 0, fo.ly || 0);
     if (fo.aimT > 0) { // locked on: when the time runs out, an instant shot straight at you
       fo.aimT -= dt;
-      if (fo.aimT <= 0 || d > 55) { fo.cd = e.shootEvery * rnd(0.8, 1.2); if (fo.aimT <= 0) droneShot(fo, e); fo.aimT = 0; }
+      if (fo.aimT <= 0 || d > (e.duelist ? 70 : 55)) { fo.cd = e.shootEvery * rnd(0.8, 1.2); if (fo.aimT <= 0) droneShot(fo, e); fo.aimT = 0; }
     }
     if (e.shootEvery || e.ringEvery) {
       fo.cd -= dt;
       if (fo.cd <= 0) {
         if (e.ringEvery) { fo.cd = e.ringEvery; const off = rnd(0, 1); for (let i = 0; i < 16; i++) { const a = (i + off) / 16 * Math.PI * 2; addSpit(fo.x, 1.3, fo.z, Math.cos(a) * 10, 0, Math.sin(a) * 10, fo.id, 10); } }
-        else if (e.duelist && (d < 10 || fo.windT > 0 || fo.hook || fo.stunT > 0)) fo.cd = .5;
-        else if (d < 40 && !(fo.aimT > 0)) { fo.cd = 99; fo.aimT = DRONE_AIM; beep(1600, .12, 'sine', .03, 400); }
+        else if (e.duelist && (d < 6 || fo.windT > 0 || (fo.hook && !fo.skyMode) || fo.stunT > 0)) fo.cd = .5;
+        else if (d < (e.duelist ? 60 : 40) && !(fo.aimT > 0)) { fo.cd = 99; fo.aimT = fo.aimMax = e.aimTime || DRONE_AIM; beep(1600, .12, 'sine', .03, 400); }
         beep(520, 0.09, 'sawtooth', 0.025, -300);
         if (d < 60) { G.threats = (G.threats || []).filter(t => t.id !== fo.id); G.threats.push({ id: fo.id, x: fo.x, z: fo.z, t: 1.4 }); }
       }
@@ -1573,16 +1573,37 @@ function duelTick(fo, e, dx, dz, d, mx, mz, dt) {
   const p = G.p, ux = dx / d, uz = dz / d; fo.side ||= 1;
   fo.dcd = (fo.dcd ?? 1.5) - dt; fo.scd = (fo.scd ?? 0) - dt; if (fo.swingT > 0) fo.swingT -= dt;
   const dashTo = (vx, vz, k) => { fo.kx = vx * k; fo.kz = vz * k; fo.dcd = rnd(1.4, 2.6); sfx.dash(); burst(fo.x, fo.y ?? fo.r, fo.z, '#ff3d8b', 10, 6, .08); };
-  if (fo.hook) { // reel in along a straight line, then hop onto the roof
-    const h = fo.hook, hx = h.x - fo.x, hy = h.y - fo.y, hz = h.z - fo.z, hd = Math.hypot(hx, hy, hz) || 1; h.t -= dt;
-    const step = Math.min(hd, 30 * dt); fo.kx = fo.kz = 0; fo.aimT = 0;
+  const frac = fo.hp / fo.maxHp; fo.skyMode = frac < .45;
+  if (fo.skyMode && !(fo.aimT > 0) && fo.cd > 1.3) fo.cd = 1.3; // badly hurt: shoots much faster
+  if (fo.hook) { // flying on its grapple: rooftop, a launch into the sky, a dive onto you, or a swing around the sky
+    const h = fo.hook;
+    if (h.kind === 'player') { h.x = h.ax = p.x; h.y = h.ay = p.y + 1.1; h.z = h.az = p.z; }
+    const hx = h.x - fo.x, hy = h.y - fo.y, hz = h.z - fo.z, hd = Math.hypot(hx, hy, hz) || 1; h.t -= dt;
+    const speed = h.kind === 'player' ? 44 : h.kind === 'rise' ? 34 : h.kind === 'sky' ? 26 : 30;
+    const step = Math.min(hd, speed * dt); fo.kx = fo.kz = 0; if (!fo.skyMode) fo.aimT = 0;
     fo.x += hx / hd * step; fo.z += hz / hd * step; fo.ly = Math.max(.01, (fo.ly || fo.gy || 0) + hy / hd * step);
-    if (hd < 1.3 || h.t <= 0) { fo.hook = null; fo.x += h.inx * 2.6; fo.z += h.inz * 2.6; fo.lvy = 4; fo.gcd = rnd(4, 7); }
+    const arrived = hd < (h.kind === 'player' ? 2.4 : 1.3) || h.t <= 0;
+    if (!arrived) return [0, 0];
+    fo.hook = null;
+    if (h.kind === 'rise') duelDive(fo, e);
+    else if (h.kind === 'player') { // the hit at the end of the dive
+      const hit = hd < 3.2;
+      if (hit && p.parryT > 0) { fo.stunT = 1.8; fo.hp -= 10 * p.dmg; fo.flash = .2; parried(); toast('Dive parried! It\u2019s staggered'); sfx.chop(); if (fo.hp <= 0) kill(fo, true); }
+      else if (hit && p.inv <= 0 && !(p.dashT > 0)) { hurt(e.diveDmg, hx, hz); shake = .5; noise(.3, .3, 300, .8); }
+      fo.kx = -hx / hd * 22; fo.kz = -hz / hd * 22; fo.lvy = 6; fo.gcd = rnd(4, 6); fo.cd = Math.min(fo.cd, .6); /* bounce off, then line up a shot */
+    }
+    else if (h.kind === 'sky') { if (fo.skyMode && (fo.skyHops = (fo.skyHops || 0) - 1) > 0) duelSky(fo); else { fo.lvy = 0; fo.gcd = rnd(2.5, 4); } }
+    else { fo.x += h.inx * 2.6; fo.z += h.inz * 2.6; fo.lvy = 4; fo.gcd = rnd(3, 5); }
     return [0, 0];
   }
   fo.gcd = (fo.gcd ?? 3) - dt;
   if (fo.stunT > 0) { fo.stunT -= dt; return [0, 0]; }
-  if (fo.gcd <= 0 && !(fo.windT > 0) && !(fo.ly > 0) && (d > 22 || p.y > 3 + (fo.gy || 0))) duelGrapple(fo); 
+  if (fo.gcd <= 0 && !(fo.windT > 0) && !(fo.ly > 0) && !(fo.aimT > 0)) {
+    if (fo.skyMode && d < 70) { fo.skyHops = 6; duelSky(fo); }                       // hurt: take to the sky
+    else if (frac > .5 && d > 7 && d < 55) duelRise(fo);                              // healthy: launch up, then dive onto you
+    else if (frac > .5 && d <= 7 && fo.dcd <= 0) { fo.kx = -ux * 40; fo.kz = -uz * 40; fo.dcd = 1; fo.gcd = .7; sfx.dash(); } // too close: leap back to dive again
+    else if (d > 22 || p.y > 3 + (fo.gy || 0)) duelGrapple(fo);                       // otherwise chase you onto rooftops
+  }
   if (fo.windT > 0) {
     fo.windT -= dt;
     if (fo.windT <= 0) { // the cut
@@ -1600,6 +1621,26 @@ function duelTick(fo, e, dx, dz, d, mx, mz, dt) {
   if (Math.random() < dt * .4) fo.side = -fo.side;
   const strafe = d < 9 ? .8 : .35;
   return [ux * (d < 3 ? -.3 : 1) - uz * fo.side * strafe, uz * (d < 3 ? -.3 : 1) + ux * fo.side * strafe];
+}
+// launch straight up into the sky...
+function duelRise(fo) {
+  const top = (fo.y ?? fo.r) + rnd(14, 20);
+  fo.hook = { kind: 'rise', x: fo.x, y: top, z: fo.z, ax: fo.x, ay: top + 30, az: fo.z, t: 1.4 }; fo.windT = 0; fo.gcd = 1;
+  beep(500, .25, 'sawtooth', .04, 900); noise(.25, .12, 1800, 1.5);
+}
+// ...then hook onto you and dive in for a heavy hit
+function duelDive(fo, e) {
+  const p = G.p; fo.hook = { kind: 'player', x: p.x, y: p.y + 1.1, z: p.z, ax: p.x, ay: p.y + 1.1, az: p.z, t: 2.2 };
+  beep(1400, .2, 'square', .05, -700); sweep(.5, .3, 300, 3000, 1);
+  if (!(buddyFlags.dive > G.t)) { buddyFlags.dive = G.t + 12; say('It\u2019s diving at you! Dash away or parry (F)!', 'ouch', true); }
+}
+// badly hurt: swing from point to point in the sky around you, shooting as it goes
+function duelSky(fo) {
+  const p = G.p, a = Math.atan2(fo.x - p.x, fo.z - p.z) + (fo.side || 1) * rnd(.8, 1.5), r = rnd(18, 28), y = p.y + rnd(14, 24);
+  const x = p.x + Math.sin(a) * r, z = p.z + Math.cos(a) * r;
+  fo.hook = { kind: 'sky', x, y, z, ax: x + rnd(-4, 4), ay: y + 35, az: z + rnd(-4, 4), t: 2.5 }; fo.windT = 0;
+  if (Math.random() < .3) fo.side = -(fo.side || 1);
+  beep(900, .12, 'square', .03, -400);
 }
 // pick a rooftop near you (or the one you're on) and swing up to its edge
 function duelGrapple(fo) {
@@ -1776,7 +1817,7 @@ function laserTick() {
     let m = lasers.get(fo.id);
     if (!(fo.aimT > 0) || fo.hp <= 0) { if (m) { scene.remove(m); lasers.delete(fo.id); } continue; }
     if (!m) { m = new T.Mesh(geo.cube, new T.MeshBasicMaterial({ color: '#ff2a3a', transparent: true, opacity: .6, blending: T.AdditiveBlending, depthWrite: false })); m.renderOrder = 6; scene.add(m); lasers.set(fo.id, m); }
-    const ex = p.x, ey = p.y + 1.1, ez = p.z, d = Math.hypot(ex - fo.x, ey - fo.y, ez - fo.z), k = 1 - fo.aimT / DRONE_AIM;
+    const ex = p.x, ey = p.y + 1.1, ez = p.z, d = Math.hypot(ex - fo.x, ey - fo.y, ez - fo.z), k = 1 - fo.aimT / (fo.aimMax || DRONE_AIM);
     m.position.set((fo.x + ex) / 2, (fo.y + ey) / 2, (fo.z + ez) / 2); m.lookAt(ex, ey, ez); m.scale.set(.03 + .05 * k, .03 + .05 * k, d);
     m.material.opacity = .25 + .55 * k * (k > .7 ? (Math.sin(G.t * 60) > 0 ? 1 : .3) : 1);
     lock = Math.max(lock, k);

@@ -50,7 +50,7 @@ Built with [three.js](https://threejs.org/) r128.
 - Guns do 60% damage and carry limited spare ammo (2 magazines). Melee kills refill spare ammo, heal 4 health and pay 1.5x coins.
 - New upgrades: Keen edge (+30% melee damage), Long arms (+20% reach), Leech (melee kills heal more).
 - Drones lock a red laser on you for 1.8 s, then fire an instant sniper shot. Parry just before it hits, or up to 0.5 s after, to cancel the damage and fire it back.
-- Every fifth wave brings the Duelist instead of the Warden (840 health): it strafes, dashes in, dodges your swings, winds up big cuts (parry to stagger it), grapples onto rooftops near you, and snipes from range with the drones' red-laser shot.
+- Every fifth wave brings the Duelist instead of the Warden (1400 health): it strafes, dashes in, dodges your swings, winds up big cuts (parry to stagger it), grapples onto rooftops near you, and snipes from range with the drones' red-laser shot.
 - New slash, hammer and melee-hit sounds.
 - Damage numbers float up over robots when you hit them (white, orange for big hits, pink for the killing blow), and a red number pops over your health bar when you're hit.
 - Tanks have double health: Bulwark 90, Titan 220, Colossus 520.
@@ -65,3 +65,4 @@ Built with [three.js](https://threejs.org/) r128.
 - Grapple aim assist: of the robots within 6 degrees of your aim (18 on touch screens) that you can see, the grapple goes to the one with the most health; if there are none, it goes where you aim.
 - Pause menu has End run (press twice): ends the run like dying, so your coins are kept and best scores count.
 - Robot health grows faster with each wave: x(1 + 0.2(w-1)) x 1.04^(w-1), about 2x at wave 5, 4x at wave 10, 10x at wave 20. The Duelist gets 60% more each time it returns. The wave banner shows the current multiplier.
+- The Duelist shoots about twice as often (every 2.4 s, 1.2 s lock-on). Above half health it launches into the sky and grapples straight onto you for a 30-damage dive (parry it to stagger it, or dash away). Below 45% health it swings from point to point in the sky around you, shooting every 1.3 s, then drops back down after a few swings.
