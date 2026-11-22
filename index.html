@@ -364,7 +364,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 57 · longer spear immunity</p>
+        <p class="ver">Version 58 · grapple aim assist</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1706,19 +1706,20 @@ function hookAim() {
   // Buildings and the ground only within HOOK_RANGE.
   let best = null;
   for (const fo of G.foes) { if (fo.hp <= 0) continue; const tf = rayBot(fo, ox, oy, oz, dx, dy, dz, t, .5); if (tf > 0 && (!best || tf < best[0])) best = [tf, fo]; }
-  if (best) return { x: best[1].x, y: best[1].y ?? best[1].r, z: best[1].z, foe: best[1].id };
+  // aim assist: of the robots near your aim (6 degrees, 18 on touch screens) that you can see, take the toughest
+  const cone = Math.cos((touchMode ? 18 : 6) * Math.PI / 180); let pick = best ? [best[1].hp, 1, best[1]] : null;
+  for (const fo of G.foes) {
+    if (fo.hp <= 0) continue; const vx = fo.x - ox, vy = (fo.y ?? fo.r) - oy, vz = fo.z - oz, d = Math.hypot(vx, vy, vz) || 1, c = (vx * dx + vy * dy + vz * dz) / d;
+    if (c < cone || rayCity(ox, oy, oz, vx / d, vy / d, vz / d, d) < d - fo.r - .5) continue;
+    if (!pick || fo.hp > pick[0] || (fo.hp === pick[0] && c > pick[1])) pick = [fo.hp, c, fo];
+  }
+  if (pick) { const fo = pick[2]; return { x: fo.x, y: fo.y ?? fo.r, z: fo.z, foe: fo.id }; }
   if (t < HOOK_RANGE && t > 2.5) return { x: ox + dx * t, y: oy + dy * t, z: oz + dz * t };
   return touchMode ? hookAssist(ox, oy, oz, dx, dy, dz) : null;
 }
 // Touch screens: a missed grapple looks around the aim for a robot (within 15 degrees) or a wall/roof (within 12 degrees)
+// Touch screens: a grapple that hits nothing nearby looks within 12 degrees of the aim for a wall or roof
 function hookAssist(ox, oy, oz, dx, dy, dz) {
-  let bestFoe = null;
-  for (const fo of G.foes) {
-    if (fo.hp <= 0) continue; const vx = fo.x - ox, vy = (fo.y ?? fo.r) - oy, vz = fo.z - oz, d = Math.hypot(vx, vy, vz) || 1, c = (vx * dx + vy * dy + vz * dz) / d;
-    if (c < Math.cos(15 * Math.PI / 180) || rayCity(ox, oy, oz, vx / d, vy / d, vz / d, d) < d - fo.r - .5) continue;
-    if (!bestFoe || c > bestFoe[0]) bestFoe = [c, fo];
-  }
-  if (bestFoe) { const fo = bestFoe[1]; return { x: fo.x, y: fo.y ?? fo.r, z: fo.z, foe: fo.id }; }
   const yaw = Math.atan2(dx, dz), pitch = Math.asin(clamp(dy, -1, 1)), range = HOOK_RANGE * 1.3;
   for (const deg of [3, 6, 9, 12]) for (let k = 0; k < 12; k++) {
     const a = k / 12 * Math.PI * 2, r = deg * Math.PI / 180, py = pitch + Math.sin(a) * r, yw = yaw + Math.cos(a) * r / Math.max(.3, Math.cos(pitch));
