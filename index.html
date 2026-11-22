@@ -80,6 +80,13 @@ canvas{display:block;width:100%;height:100%}
 .smult{position:absolute;left:calc(50% + 22px);top:calc(50% + 14px);font:14px/1 'Russo One',sans-serif;color:var(--amber);text-shadow:0 0 8px rgba(255,176,32,.6),0 1px 0 #000;pointer-events:none}
 .smult.hot{color:#fff;text-shadow:0 0 10px var(--amber),0 0 3px var(--amber),0 1px 0 #000}
 .spdpop{position:absolute;left:calc(50% - 40px);top:calc(50% + 22px);transform:translateX(-100%);font:24px/1 'Russo One',sans-serif;color:var(--amber);text-shadow:0 0 12px rgba(255,176,32,.8),0 2px 0 #000;pointer-events:none;opacity:0}
+.dmgnums{position:fixed;inset:0;pointer-events:none;z-index:7;overflow:hidden}
+.dmgnums b{position:absolute;transform:translate(-50%,-50%);font:700 18px/1 'Russo One',sans-serif;color:#fff;text-shadow:0 0 6px rgba(0,0,0,.9),0 2px 0 #000;white-space:nowrap}
+.dmgnums b.big{color:#ffb020;text-shadow:0 0 10px rgba(255,176,32,.7),0 2px 0 #000}
+.dmgnums b.kill{color:#ff3d8b;text-shadow:0 0 12px rgba(255,61,139,.8),0 2px 0 #000}
+.hurtnum{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);font:700 22px/1 'Russo One',sans-serif;color:#ff3040;text-shadow:0 0 10px rgba(255,48,64,.8),0 2px 0 #000;opacity:0;pointer-events:none}
+.hurtnum.on{animation:hurtnum .9s ease-out forwards}
+@keyframes hurtnum{0%{opacity:1;transform:translate(-50%,6px) scale(1.3)}20%{opacity:1;transform:translate(-50%,-4px) scale(1)}100%{opacity:0;transform:translate(-50%,-26px)}}
 .spdpop.on{animation:combo .8s ease-out forwards}
 @keyframes combo{0%{opacity:1;transform:scale(1.6) rotate(-6deg)}20%{transform:scale(1) rotate(-4deg)}70%{opacity:1}100%{opacity:0;transform:translateY(-14px) rotate(-4deg)}}
 .boss{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(440px,70%);pointer-events:none;text-align:center;font:16px/1 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 8px var(--pink)}
@@ -285,10 +292,11 @@ canvas{display:block;width:100%;height:100%}
     <div class="boss" id="boss" hidden><span id="bossName">The Duelist</span><div><b id="bossHp"></b></div></div>
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div><p id="focusRow" hidden><span>Focus</span><div><b id="focusBar"></b></div></p></div>
-    <div class="hp" id="hp" role="meter" aria-label="Health" aria-valuemin="0"><span id="hpText">100</span><div><i id="hpLag"></i><b id="hpFill"></b></div></div>
+    <div class="hp" id="hp" role="meter" aria-label="Health" aria-valuemin="0"><em class="hurtnum" id="hurtNum"></em><span id="hpText">100</span><div><i id="hpLag"></i><b id="hpFill"></b></div></div>
     <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> <span id="ammoMax">/ 24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small><span class="gname" id="gunName">Burst rifle</span><span class="slots" id="slots"></span></div>
     <div class="scope" id="scope" aria-hidden="true"><b>Slow-mo</b></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
+    <div class="dmgnums" id="dmgNums" aria-hidden="true"></div>
     <div class="offs" id="offs" aria-hidden="true"></div>
     <div class="parryfx" id="parryFx" aria-hidden="true"></div>
     <div class="toast" id="toast"></div>
@@ -327,7 +335,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 48 · the Duelist grapples and snipes</p>
+        <p class="ver">Version 49 · damage numbers</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1399,7 +1407,33 @@ function sniperFx(sx, sy, sz, ex, ey, ez, len, landed, col1, col2 = '#9ff6ff', s
 }
 function reload() { const p = G?.p; if (!p || G.mode !== 'play' || GUNS[p.gun]?.mode === 'melee' || p.reloadT > 0 || p.ammo >= p.mag) return; if (!((p.reserveBy || {})[p.gun] > 0)) { sfx.empty(); ammoShown = ''; return; } p.reloadT = p.reloadTime; p.burstLeft = 0; sfx.reload(); }
 function addSpit(x, y, z, vx, vy, vz, from, dmg = 10) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.set(.14, .14, .7); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz, from, dmg }); }
+// floating damage numbers: any drop in a robot's health since last frame pops a number over it
+const dmgNums = []; const _v3 = new T.Vector3();
+function noteDmg(fo) {
+  const prev = fo.shownHp ?? fo.maxHp; fo.shownHp = fo.hp;
+  if (!(fo.hp < prev - .01)) return;
+  const d = prev - Math.max(0, fo.hp), now = performance.now(), last = dmgNums.find(n => n.id === fo.id && now - n.born < 150 && !n.kill);
+  if (last && fo.hp > 0) { last.d += d; last.el.textContent = fmtDmg(last.d); return; } /* merge rapid hits */
+  const el = document.createElement('b'); el.textContent = fmtDmg(d);
+  if (fo.hp <= 0) el.className = 'kill'; else if (d >= fo.maxHp * .25) el.className = 'big';
+  el.style.fontSize = `${Math.min(34, 16 + Math.log2(1 + d) * 3)}px`;
+  $('dmgNums').appendChild(el);
+  dmgNums.push({ id: fo.id, el, d, kill: fo.hp <= 0, born: now, x: fo.x + rnd(-.4, .4), y: (fo.y ?? fo.r) + fo.r + .4, z: fo.z + rnd(-.4, .4), t: 0 });
+  if (dmgNums.length > 40) dmgNums.shift().el.remove();
+}
+function fmtDmg(d) { return d < 10 ? d.toFixed(1).replace(/\.0$/, '') : String(Math.round(d)); }
+function dmgNumsTick(dt) {
+  const r = cv.getBoundingClientRect();
+  for (const n of dmgNums) {
+    n.t += dt; _v3.set(n.x, n.y + n.t * 1.6, n.z).project(camera);
+    if (_v3.z > 1 || n.t > .9) { n.el.style.display = 'none'; continue; }
+    n.el.style.display = ''; n.el.style.left = `${r.left + (_v3.x + 1) / 2 * r.width}px`; n.el.style.top = `${r.top + (1 - _v3.y) / 2 * r.height}px`;
+    n.el.style.opacity = String(Math.min(1, (.9 - n.t) * 4)); n.el.style.transform = `translate(-50%,-50%) scale(${n.t < .08 ? 1.4 : 1})`;
+  }
+  for (let i = dmgNums.length - 1; i >= 0; i--) if (dmgNums[i].t > .9) { dmgNums[i].el.remove(); dmgNums.splice(i, 1); }
+}
 function kill(fo, melee = false) {
+  noteDmg(fo);
   const e = ENEMIES[fo.type]; G.score += e.score; let earn = melee ? Math.round(e.coins * MELEE_COIN_BONUS) : e.coins; if (hasGear('coins')) { G.p.coinFrac = (G.p.coinFrac || 0) + e.coins * .25; earn += Math.floor(G.p.coinFrac); G.p.coinFrac %= 1; } G.coins = (G.coins || 0) + earn; coins += earn; store.set('ss-coins', coins); hud();
   const mesh = live.foes.get(fo.id); if (mesh) { scene.remove(mesh); live.foes.delete(fo.id); }
   if (melee) { // melee kills: heal, and refill spare ammo for your gun
@@ -1501,6 +1535,7 @@ function reflectShot(fo, dmg) {
 function hurt(n, kx, kz) {
   const p = G.p; if (p.dashT > 0) return;
   p.hp = Math.max(0, p.hp - n); p.inv = .8; shake = .25; sfx.hurt();
+  { const h = $('hurtNum'); h.textContent = `-${fmtDmg(n)}`; h.classList.remove('on'); void h.offsetWidth; h.classList.add('on'); }
   const l = Math.hypot(kx, kz) || 1; p.x += kx / l * 1.2; p.z += kz / l * 1.2; pushOut(p, p.r);
   const v = $('vign'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 60);
   hud(); if (p.hp <= 0 && !tryRevive()) gameOver();
@@ -1613,7 +1648,8 @@ function laserTick() {
   else el.style.display = 'none';
 }
 function render(dt) {
-  if (G) laserTick();
+  if (G) { laserTick(); for (const fo of G.foes) noteDmg(fo); }
+  dmgNumsTick(dt);
   const t = performance.now() / 1000;
   if (G) {
     const p = G.p, moving = Math.hypot(p.dvx, p.dvz) > .1 && (G.mode === 'play') && (input.move || ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].some(k => input.keys[k]));
