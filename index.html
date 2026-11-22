@@ -316,7 +316,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 43 · fewer robots, three tank tiers</p>
+        <p class="ver">Version 44 · one gun per run, longer dash cooldown</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -328,7 +328,7 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Shoot</b><span>Click for a 3-round burst. Hold to keep firing bursts</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse right" aria-label="Right mouse button"><i></i></span><span class="kc">E</span></div><b>Grapple</b><span>Hold to reel yourself to where you aim (70m), or onto a robot at any distance. You keep the speed when you let go</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Cycle through your loadout: up to 2 guns and 1 melee weapon, picked in the shop</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Switch between your gun and your melee weapon (one of each, picked in the shop)</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">C</span></div><b>Focus</b><span>If you’ve bought it: slow time for 3 seconds. Recharges in 4</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">R</span></div><b>Reload</b><span>Reloads by itself when the magazine runs dry</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Low gravity: reach cars, containers and rooftops. For more height, dash upwards</span></div>
@@ -450,7 +450,7 @@ const LEVEL_COST = [40, 80, 130, 190, 260], MAX_LEVEL = 5;
 // Cosmetics: one accent colour (guns, sword, tracers, grapple, crosshair) and one crosshair shape
 const COLORS = { stock: { name: 'Stock', price: 0, c: null }, pink: { name: 'Hot pink', price: 30, c: '#ff3d8b' }, toxic: { name: 'Toxic green', price: 30, c: '#3dff8a' }, violet: { name: 'Violet', price: 30, c: '#b45cff' }, gold: { name: 'Gold', price: 50, c: '#ffcf3a' }, ice: { name: 'Ice white', price: 40, c: '#e8f4ff' } };
 const CROSSES = { cross: { name: 'Cross', price: 0 }, dot: { name: 'Dot', price: 20 }, circle: { name: 'Circle', price: 20 }, x: { name: 'X', price: 20 } };
-const MAX_RANGED = 2, MAX_MELEE = 1;
+const MAX_RANGED = 1, MAX_MELEE = 1; // one gun and one melee weapon per run
 const FOCUS_TIME = 3, FOCUS_COOLDOWN = 4; // seconds of slow time, and how long until Focus can be used again
 const MAX_SWING_HITS = 3; // most robots one melee swing can hit
 const A = 80; // the city block runs from -A to A on both axes
@@ -902,7 +902,7 @@ function switchGun(dir = 1) {
 function gunStats(id) { const g = GUNS[id] || GUNS.burst; return { gun: GUNS[id] ? id : 'burst', burst: g.burst || 1, burstGap: g.burstGap || 0, burstPause: g.burstPause || 0, rate: g.rate || 0, mag: g.mag, ammo: g.mag, reloadTime: g.reloadTime, dmgMul: g.dmg, spread: g.spread, assist: g.assist || 0, gunPierce: g.pierce || 0 }; }
 function newRun() {
   return { mode: 'play', wave: 0, score: 0, t: 0, toSpawn: [], spawnTimer: 0, offer: [],
-    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: hasGear('dash3') ? 3 : 2, dashMax: hasGear('dash3') ? 3 : 2, focus: hasGear('focus'), focusT: 0, focusCd: 0, coinFrac: 0, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: hasGear('vest') ? 125 : 100, maxHp: hasGear('vest') ? 125 : 100, speed: 7.5, dmg: 1, pierce: 0, magnet: 3.2, dashCd: 1.2, jump: 11,
+    p: { x: 0, z: 12, y: 0, parryT: 0, parryReady: 0, parryCd: 0.45, dashCharges: hasGear('dash3') ? 3 : 2, dashMax: hasGear('dash3') ? 3 : 2, focus: hasGear('focus'), focusT: 0, focusCd: 0, coinFrac: 0, vy: 0, yaw: 0, pitch: 0, r: 0.5, hp: hasGear('vest') ? 125 : 100, maxHp: hasGear('vest') ? 125 : 100, speed: 7.5, dmg: 1, pierce: 0, magnet: 3.2, dashCd: 2, jump: 11,
          // the starting gun: a burst rifle. 3 quick rounds, a short pause, again. 24-round magazine.
          fireMul: 1, magMul: 1, reloadMul: 1, burstAdd: 0, ammoBy: {}, airJumps: 0,
          loadout: [...load.ranged, load.melee], wi: 0, reloadT: 0, burstLeft: 0,
@@ -1637,6 +1637,7 @@ function resumeSaved() {
   wakeAudio();
   clearLive(); showDemo(false); G = r; G.threats = []; G.p.hook = null; G.p.reloadT = 0; G.p.burstLeft = 0;
   nextId = Math.max(1, ...G.foes.map(f => f.id + 1)); timeScale = 1; zoomK = 0;
+  { const p = G.p, guns = p.loadout.filter(id => GUNS[id]?.mode !== 'melee'), mel = p.loadout.filter(id => GUNS[id]?.mode === 'melee'); if (guns.length > MAX_RANGED) { const keep = guns.includes(p.gun) ? p.gun : guns[0]; p.loadout = [keep, ...mel.slice(0, 1)]; p.wi = p.loadout.indexOf(p.gun) < 0 ? 0 : p.loadout.indexOf(p.gun); if (!p.loadout.includes(p.gun)) applyGun(p, p.loadout[0]); } }
   applyGear(G.p); showGun(G.p.gun); slotsHud(G.p); ammoShown = ''; hud();
   if (G.mode === 'pick') { offerUpgrades(); return; }
   G.mode = 'paused'; pause(false);
@@ -1821,7 +1822,7 @@ const buyBtn = (attr, price, label = 'Buy') => `<button class="btn" ${attr} ${co
 function renderShop() {
   hud(); fixLoad();
   for (const t of document.querySelectorAll('.tab')) t.classList.toggle('on', t.dataset.tab === shopTab);
-  $('loadNote').innerHTML = `Loadout: <b>${load.ranged.map(id => GUNS[id].name).join('</b> + <b>')}</b> and <b>${GUNS[load.melee].name}</b> (you start holding the <b>${GUNS[load.ranged[0]].name}</b>) · up to ${MAX_RANGED} guns and ${MAX_MELEE} melee weapon. Q swaps between them in a run.`;
+  $('loadNote').innerHTML = `Loadout: <b>${GUNS[load.ranged[0]].name}</b> and <b>${GUNS[load.melee].name}</b> (you start holding the gun) · one gun and one melee weapon. Q swaps between them in a run.`;
   let html = '';
   if (shopTab === 'weapons') html = Object.entries(GUNS).map(([id, g]) => {
     const have = g.free || owned.includes(id), melee = g.mode === 'melee', lv = levels[id] || 0;
@@ -1831,7 +1832,7 @@ function renderShop() {
     let btns;
     if (!have) btns = buyBtn(`data-buy="${id}"`, g.price);
     else {
-      const loadBtn = inLoad ? (melee || load.ranged.length === 1 ? '<button class="btn" disabled>In loadout</button>' : `<button class="btn alt" data-unload="${id}">Take out</button>`) : `<button class="btn alt" data-load="${id}">${melee ? 'Use this' : load.ranged.length >= MAX_RANGED ? `Swap in for ${GUNS[load.ranged.at(-1)].name}` : 'Add to loadout'}</button>`;
+      const loadBtn = inLoad ? (melee || load.ranged.length === 1 ? '<button class="btn" disabled>In loadout</button>' : `<button class="btn alt" data-unload="${id}">Take out</button>`) : `<button class="btn alt" data-load="${id}">${melee ? 'Use this' : load.ranged.length >= MAX_RANGED ? `Use instead of ${GUNS[load.ranged.at(-1)].name}` : 'Add to loadout'}</button>`;
       const upBtn = lv >= MAX_LEVEL ? '<button class="btn" disabled>Max level</button>' : buyBtn(`data-level="${id}"`, LEVEL_COST[lv], `Level ${lv + 1}`);
       btns = (inLoad && !melee && !first ? `<button class="btn" data-first="${id}">Start with this</button>` : '') + loadBtn + upBtn;
     }
