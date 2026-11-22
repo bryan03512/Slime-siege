@@ -1,6 +1,6 @@
 # Slime Siege
 
-A first-person shooter in the browser. Security robots are overrunning a dark city block at night, and you hold them off with a burst rifle, wave after wave, picking an upgrade after each one. Every fifth wave the Warden shows up. Every robot you take down earns coins, which are saved between runs for the shop (coming soon).
+A first-person shooter in the browser. Security robots are overrunning a dark city block at night, and you hold them off with a burst rifle, wave after wave, picking an upgrade after each one. Every fifth wave the Warden shows up. Every robot you take down earns coins, which are saved between runs and spent in the shop on new guns.
 
 Play it by opening `index.html` in a browser (it needs an internet connection to load three.js).
 
@@ -27,8 +27,8 @@ Everything you'd want to add lives in tables near the top of the script in `inde
 - `ENEMIES`: each robot type (health, speed, size, damage, score, coins, which wave it first appears, colours, and special moves like flying and shooting).
 - `UPGRADES`: the upgrade cards offered between waves (`apply` changes the player, `when` hides it when it wouldn't help).
 - `OBSTACLES`: the buildings, cars, walls, crates and barriers in the city.
-- The starting gun's numbers (`burst`, `burstGap`, `burstPause`, `mag`, `reloadTime`) are in `newRun()`; new guns will go alongside it.
+- `GUNS`: the guns and their shop prices. The burst rifle is free; the machine gun (full auto, small spread, near misses still count) and the sniper (one huge round per magazine; in the air it slows time, zooms in and shows every robot's hitbox in cyan) are bought with coins.
 
-Coins are stored in the browser under `ss-coins`.
+Coins, owned guns and the equipped gun are stored in the browser under `ss-coins`, `ss-guns` and `ss-gun`.
 
 Built with [three.js](https://threejs.org/) r128.
