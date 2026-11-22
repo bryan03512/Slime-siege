@@ -301,7 +301,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 36 · hammer damage grows exponentially</p>
+        <p class="ver">Version 37 · pop-up size fix</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1197,7 +1197,7 @@ function slash() {
 }
 // faster = harder: walking pace is normal damage, rising to 3x at about 28 m/s (dashes, grapples, falls)
 function swordMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 10, 0, 2); }
-function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m.toFixed(1)}`; el.style.fontSize = `${18 + m * 8}px`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
+function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m < 10 ? m.toFixed(1) : Math.round(m)}`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, m)) * 2.5)}px`; // grows a little for big hits, never past 32px el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 // The hammer starts weak and grows exponentially: with how far (and fast) you fell for a slam, and with your speed for a swing.
 // 2 damage from a short hop, ~7 from 10m, ~22 from 20m, ~73 from 30m, capped at 150.
 function hammerPower(fall) { return Math.min(150, GUNS.hammer.dmg * Math.exp(Math.max(0, fall) * .12)); }
