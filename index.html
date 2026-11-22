@@ -301,7 +301,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 37 · pop-up size fix</p>
+        <p class="ver">Version 38 · weaker war hammer</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -414,7 +414,7 @@ const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
   railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
-  hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: 2, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
+  hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: .6, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
   knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .62, mag: 0, reloadTime: 0, dmg: 4, reach: 4.4, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second. Hits harder the faster you’re going, and while you’re moving fast (dashing, grappling or dropping) you can’t be hurt mid-swing.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots and bursts where it lands. In the air, click to scope in and slow time, then click again to fire.' },
 };
@@ -1197,11 +1197,11 @@ function slash() {
 }
 // faster = harder: walking pace is normal damage, rising to 3x at about 28 m/s (dashes, grapples, falls)
 function swordMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 10, 0, 2); }
-function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m < 10 ? m.toFixed(1) : Math.round(m)}`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, m)) * 2.5)}px`; // grows a little for big hits, never past 32px el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
+function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m < 10 ? m.toFixed(1) : Math.round(m)}`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, m)) * 2.5)}px`; /* grows a little for big hits, never past 32px */ el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 // The hammer starts weak and grows exponentially: with how far (and fast) you fell for a slam, and with your speed for a swing.
-// 2 damage from a short hop, ~7 from 10m, ~22 from 20m, ~73 from 30m, capped at 150.
-function hammerPower(fall) { return Math.min(150, GUNS.hammer.dmg * Math.exp(Math.max(0, fall) * .12)); }
-function hammerSwingMult(p) { return Math.min(10, Math.exp(Math.max(0, (p.spd || 0) - 6) * .09)); }
+// (A Walker starts with 3 health, a Heavy 14.) About 1 damage from a short hop, 1.6 from 10m, 4.4 from 20m, 12 from 30m, 33 from 40m.
+function hammerPower(fall) { return Math.min(120, GUNS.hammer.dmg * Math.exp(Math.max(0, fall) * .1)); }
+function hammerSwingMult(p) { return Math.min(5, Math.exp(Math.max(0, (p.spd || 0) - 6) * .055)); }
 // hammer slam: dive straight down; landing sends out a shockwave that grows with the height you fell from
 function startSlam() {
   const p = G.p; p.slamming = true; p.slamFrom = p.y; p.vy = -34; p.mx *= .3; p.mz *= .3; p.inv = Math.max(p.inv, 3); releaseHook();
