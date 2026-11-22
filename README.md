@@ -28,7 +28,7 @@ Everything you'd want to add lives in tables near the top of the script in `inde
 - `ENEMIES`: each robot type (health, speed, size, damage, score, coins, which wave it first appears, colours, and special moves like flying and shooting).
 - `UPGRADES`: the upgrade cards offered between waves (`apply` changes the player, `when` hides it when it wouldn't help).
 - `OBSTACLES`: the buildings, cars, walls, crates and barriers in the city.
-- `GUNS`: the guns and their shop prices. The burst rifle is free; the machine gun (full auto, small spread, near misses still count) and the sniper (one huge round per magazine; in the air, a first click scopes in, slows time and shows every robot's hitbox as a cyan box, and a second click fires). Every robot's hitbox is a box (`hitboxOf()`): a shot that enters it hits are bought with coins.
+- `GUNS`: the guns and their shop prices. The burst rifle is free; the machine gun (full auto, small spread, near misses still count) and the sniper (one huge round per magazine that bursts in a 3.5m blast where it hits the ground or a wall; in the air, a first click scopes in, slows time and shows every robot's hitbox as a cyan box, and a second click fires). Every robot's hitbox is a box (`hitboxOf()`): a shot that enters it hits are bought with coins.
 
 Everything saves in the browser: coins (`ss-coins`, saved the moment you earn them), owned and equipped guns (`ss-guns`, `ss-gun`), best score (`ss3-best`), sound (`ss-muted`), and the run in progress (`ss-run`, saved every 2 seconds and when you leave the page). Continue on the main menu picks a saved run back up.
 
