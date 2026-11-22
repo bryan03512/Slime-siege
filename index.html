@@ -335,7 +335,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 53 · spear immunity frames</p>
+        <p class="ver">Version 54 · grapple has no top speed</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1062,7 +1062,7 @@ function hitsGarden(x, y, z) {
 // ===================== Update =====================
 const input = { keys: {}, fire: false, move: null, look: null, locked: false, dragLook: false, mlook: false, releasing: false };
 const EYE = 1.6;
-const HOOK_RANGE = 70, HOOK_SPEED = 36, HOOK_PULL = 70; // grapple: reach for buildings, top speed, how fast it speeds up
+const HOOK_RANGE = 70, HOOK_SPEED = 36, HOOK_PULL = 70; // grapple: reach for buildings, (old top speed, unused), how fast it speeds up (grows the longer you hold)
 const ROBOT_LEAP_MAX = 4.5; // robots can't leap higher than a small building
 const GRAV = 10; // low, moon-ish gravity: big floaty jumps (was 24)
 function update(dt) {
@@ -1092,7 +1092,8 @@ function update(dt) {
     else {
       // straight line to the anchor: keep whatever speed you had towards it, speed up, and drop any sideways drift
       const ux = hx / hd, uy = hy / hd, uz = hz / hd, along = Math.max(0, p.mx * ux + p.vy * uy + p.mz * uz);
-      const sp = Math.min(HOOK_SPEED, Math.max(along, 10) + HOOK_PULL * dt);
+      p.hook.t = (p.hook.t || 0) + dt; /* the longer you hang on, the harder it pulls: no top speed */
+      const sp = Math.max(along, 10) + HOOK_PULL * (1 + p.hook.t * 1.5) * dt;
       p.mx = ux * sp; p.mz = uz * sp; p.vy = uy * sp;
     }
   }
@@ -1304,7 +1305,7 @@ function smultHud(p) {
   const m = heldSpeedMult(p), t = m >= 1.1 ? `×${m.toFixed(1)}` : ''; if (t === smultShown) return; smultShown = t;
   const el = $('smult'); el.textContent = t; el.classList.toggle('hot', m >= 1.8);
 }
-// faster = harder: walking pace is about normal damage, rising to 6x at about 36 m/s (dashes, grapples, falls)
+// faster = harder: walking pace is about normal damage, rising to 6x at about 36 m/s (dashes, grapples, falls). The spear has no cap.
 function swordMult(p) { return 1 + clamp(((p.spd || 0) - 6) / 6, 0, 5); } // sword: up to 6x, ~4x mid-dash
 function damagePop(d) { const el = $('spdpop'); el.textContent = `${d < 10 ? d.toFixed(1) : Math.round(d)} dmg`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, d)) * 2.5)}px`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m < 10 ? m.toFixed(1) : Math.round(m)}`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, m)) * 2.5)}px`; /* grows a little for big hits, never past 32px */ el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }

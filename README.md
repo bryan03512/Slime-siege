@@ -56,3 +56,4 @@ Built with [three.js](https://threejs.org/) r128.
 - Tanks have double health: Bulwark 90, Titan 220, Colossus 520.
 - Spear (140 coins, melee): a long narrow thrust (7 m) that pierces every robot in the line, with no 3-hit cap. Moving faster than about 11 m/s, it hits whatever is in its line on its own (half damage, each robot every 0.3 s). Very weak per hit (1 base damage), but its speed bonus has no cap: ×(1 + (speed − 6)/6).
 - Spear immunity: every thrust makes you immune for 0.2 s (0.1 s on each auto-hit that lands).
+- The grapple has no top speed: it pulls harder the longer it's attached (70 m/s² at first, +105 m/s² every second), and it never slows you down if you came in faster. This also lets the spear's uncapped speed bonus go past 6x.
