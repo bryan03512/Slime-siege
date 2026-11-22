@@ -62,7 +62,7 @@ canvas{display:block;width:100%;height:100%}
 .boss{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(440px,70%);pointer-events:none;text-align:center;font:16px/1 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 8px var(--pink)}
 .boss div{height:10px;margin-top:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,61,139,.6);overflow:hidden}
 .boss b{display:block;height:100%;background:linear-gradient(90deg,#ff3d8b,#ff7ab0)}
-.minimap{position:absolute;left:16px;bottom:16px;width:var(--mm);height:var(--mm);border-radius:6px;background:rgba(4,6,12,.75);box-shadow:0 0 0 1px var(--line),0 0 14px rgba(62,240,255,.15);pointer-events:none}
+.minimap{position:absolute;left:16px;bottom:16px;width:var(--mm);height:var(--mm);border-radius:50%;background:rgba(4,6,12,.75);box-shadow:0 0 0 1px var(--line),0 0 14px rgba(62,240,255,.15);pointer-events:none}
 .dashm{position:absolute;left:calc(var(--mm) + 28px);bottom:16px;font:13px/1 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.08em;pointer-events:none;text-shadow:0 1px 0 #000}
 .dashm div{width:90px;height:6px;background:rgba(0,0,0,.55);margin-top:5px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
 .dashm b{display:block;height:100%;background:var(--neon)}
@@ -81,6 +81,10 @@ canvas{display:block;width:100%;height:100%}
 .ammo em{display:block;height:4px;margin:6px 0 0 auto;width:120px;background:rgba(0,0,0,.6);overflow:hidden}
 .ammo em i{display:block;height:100%;width:0;background:var(--amber)}
 .ammo small{display:block;margin-top:6px;font:800 12px/1 Barlow,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--amber)}
+.offs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.offs i{position:absolute;left:-9px;top:-8px;width:18px;height:16px;clip-path:polygon(50% 0,100% 100%,50% 72%,0 100%);filter:drop-shadow(0 0 4px currentColor);opacity:.6}
+.offs i.close{animation:offpulse .5s ease-in-out infinite alternate}
+@keyframes offpulse{to{filter:drop-shadow(0 0 8px #fff) brightness(1.6)}}
 .threats{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
 .threats i{position:absolute;left:-7px;top:-6px;width:14px;height:12px;background:var(--red);clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 3px var(--red));opacity:0;transition:opacity .15s}
 .parryfx{position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;border:2px solid var(--neon);box-shadow:0 0 14px var(--neon);opacity:0;pointer-events:none}
@@ -198,6 +202,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="hp" id="hp" role="meter" aria-label="Health" aria-valuemin="0"><span id="hpText">100</span><div><i id="hpLag"></i><b id="hpFill"></b></div></div>
     <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> / <span id="ammoMax">24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
+    <div class="offs" id="offs" aria-hidden="true"></div>
     <div class="parryfx" id="parryFx" aria-hidden="true"></div>
     <div class="toast" id="toast"></div>
     <div class="mlook" id="mlook" hidden></div>
@@ -228,7 +233,7 @@ canvas{display:block;width:100%;height:100%}
         </nav>
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 16 · grappling hook, more buildings</p>
+        <p class="ver">Version 17 · radar, off-screen markers, silver robots</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -309,11 +314,11 @@ canvas{display:block;width:100%;height:100%}
 // Sizes in metres, speeds in metres per second, damage in health points (you start with 100).
 // hp scales up each wave. from = first wave it appears. coins = what a kill pays into your wallet.
 const ENEMIES = {
-  walker: { name: 'Walker', hp: 3,   speed: 3.6, r: 0.8,  bob: 0.05, dmg: 10, score: 10,  coins: 1,  from: 1, weight: 10, body: '#3a4152', glow: '#ff3d4a', desc: 'Security bot. Marches straight at you and hits hard up close.' },
-  runner: { name: 'Runner', hp: 1,   speed: 7.4, r: 0.5,  bob: 0.08, dmg: 8,  score: 15,  coins: 1,  from: 2, weight: 5,  body: '#2c3445', glow: '#3ef0ff', desc: 'Small and quick. Hard to track, drops to a single round.' },
-  drone:  { name: 'Drone',  hp: 4,   speed: 3.2, r: 0.7,  fly: 3.4,  dmg: 10, score: 25,  coins: 2,  from: 3, weight: 3,  body: '#454d61', glow: '#ffb020', keepAway: 14, shootEvery: 2.2, desc: 'Hovers out of reach and fires energy bolts. Parry them back with F.' },
-  heavy:  { name: 'Heavy',  hp: 14,  speed: 2.2, r: 1.4,  bob: 0.03, dmg: 20, score: 40,  coins: 3,  from: 4, weight: 2,  body: '#4a3f5e', glow: '#b45cff', desc: 'Armoured mech. Slow and tough, takes a fifth of your health per hit.' },
-  warden: { name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#2a2f3d', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'runner', splits: 6, desc: 'Every fifth wave. Fires rings of bolts and bursts into Runners when it goes down.' },
+  walker: { name: 'Walker', hp: 3,   speed: 3.6, r: 0.8,  bob: 0.05, dmg: 10, score: 10,  coins: 1,  from: 1, weight: 10, body: '#c3c9d4', glow: '#ff3d4a', desc: 'Security bot. Marches straight at you and hits hard up close.' },
+  runner: { name: 'Runner', hp: 1,   speed: 7.4, r: 0.5,  bob: 0.08, dmg: 8,  score: 15,  coins: 1,  from: 2, weight: 5,  body: '#dde2ea', glow: '#3ef0ff', desc: 'Small and quick. Hard to track, drops to a single round.' },
+  drone:  { name: 'Drone',  hp: 4,   speed: 3.2, r: 0.7,  fly: 3.4,  dmg: 10, score: 25,  coins: 2,  from: 3, weight: 3,  body: '#aeb7c6', glow: '#ffb020', keepAway: 14, shootEvery: 2.2, desc: 'Hovers out of reach and fires energy bolts. Parry them back with F.' },
+  heavy:  { name: 'Heavy',  hp: 14,  speed: 2.2, r: 1.4,  bob: 0.03, dmg: 20, score: 40,  coins: 3,  from: 4, weight: 2,  body: '#9aa1b0', glow: '#b45cff', desc: 'Armoured mech. Slow and tough, takes a fifth of your health per hit.' },
+  warden: { name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#cfd3dc', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'runner', splits: 6, desc: 'Every fifth wave. Fires rings of bolts and bursts into Runners when it goes down.' },
 };
 const UPGRADES = [
   { id: 'rapid',  name: 'Hair trigger',   text: 'Bursts come 20% faster.',              icon: 'trigger', apply: p => { p.burstPause *= .8; p.burstGap *= .9; }, when: p => p.burstPause > .12 },
@@ -587,20 +592,22 @@ const geo = { cube: new T.BoxGeometry(1, 1, 1), drop: new T.SphereGeometry(1, 8,
 const mats = { parried: glowMat('#3ef0ff'), spit: glowMat('#ff3d4a'), dark: lam('#15181f'), tracer: new T.MeshBasicMaterial({ color: '#ffe9b0', transparent: true, opacity: .9, blending: T.AdditiveBlending, depthWrite: false }), med: glowMat('#3dff8a'), rotor: glowMat('#9fe9ff', .35) };
 const glowOf = {}; for (const [k, e] of Object.entries(ENEMIES)) glowOf[k] = glowMat(e.glow);
 // a robot built from boxes; the unit-size model is scaled by r, so it stands 2r tall
+const BOT_GLOW = '#2a3040'; // a faint self-light so silver robots never sink into the dark
+const botJoint = new T.MeshPhongMaterial({ color: '#4a515e', emissive: '#14181f', specular: '#888888', shininess: 40 });
 function botMesh(type) {
-  const e = ENEMIES[type], g = new T.Group(), metal = new T.MeshLambertMaterial({ color: e.body, emissive: '#000000' }), glow = glowOf[type];
+  const e = ENEMIES[type], g = new T.Group(), metal = new T.MeshPhongMaterial({ color: e.body, emissive: BOT_GLOW, specular: '#ffffff', shininess: 70 }), glow = glowOf[type];
   const add = (parent, mat, x, y, z, sx, sy, sz) => { const m = new T.Mesh(geo.cube, mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; parent.add(m); return m; };
   const ud = { metal, legs: [], arms: [], rotors: [] };
   if (e.fly) {
-    add(g, metal, 0, 0, 0, 1.3, .45, 1.3); add(g, mats.dark, 0, -.32, 0, .8, .25, .8);
+    add(g, metal, 0, 0, 0, 1.3, .45, 1.3); add(g, botJoint, 0, -.32, 0, .8, .25, .8);
     add(g, glow, 0, 0, .66, .8, .14, .04); add(g, glow, 0, -.46, 0, .3, .06, .3);
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { add(g, mats.dark, sx * .75, .1, sz * .75, .6, .08, .1).rotation.y = sx * sz * Math.PI / 4; const r = new T.Mesh(geo.disc, mats.rotor); r.position.set(sx * 1.05, .18, sz * 1.05); r.scale.set(.5, .03, .5); g.add(r); ud.rotors.push(r); }
   } else {
     for (const side of [-1, 1]) {
       const leg = new T.Group(); leg.position.set(side * .3, -.1, 0); g.add(leg); ud.legs.push(leg);
-      add(leg, mats.dark, 0, -.42, 0, .26, .84, .3); add(leg, metal, 0, -.86, .06, .32, .12, .46);
+      add(leg, botJoint, 0, -.42, 0, .26, .84, .3); add(leg, metal, 0, -.86, .06, .32, .12, .46);
       const arm = new T.Group(); arm.position.set(side * .66, .6, 0); g.add(arm); ud.arms.push(arm);
-      add(arm, mats.dark, 0, -.32, 0, .22, .7, .26); add(arm, metal, 0, .02, 0, .36, .26, .4);
+      add(arm, botJoint, 0, -.32, 0, .22, .7, .26); add(arm, metal, 0, .02, 0, .36, .26, .4);
     }
     add(g, metal, 0, .3, 0, 1.0, .8, .72);
     add(g, glow, 0, .36, .37, .46, .08, .02);
@@ -633,8 +640,8 @@ function noise(dur, vol, freq, q = .8) {
   } catch {}
 }
 const sfx = {
-  shoot: () => { noise(.12, .16, 1400, .6); beep(140, .09, 'sine', .07, -90); }, hit: () => beep(1800, 0.03, 'square', 0.02, -600),
-  splat: () => { noise(.35, .12, 500, .5); beep(90, .3, 'sawtooth', .05, -50); },
+  shoot: () => { noise(.12, .16, 1400, .6); beep(140, .09, 'sine', .07, -90); }, hit: () => { noise(.06, .14, 3800, 6); beep(2400, .05, 'triangle', .035, -900); },
+  splat: (big) => { noise(big ? .9 : .4, big ? .35 : .22, 260, .7); noise(.2, .14, 2600, 1.5); beep(big ? 60 : 110, big ? .6 : .25, 'sawtooth', .06, -60); setTimeout(() => { beep(1320, .07, 'sine', .05); setTimeout(() => beep(1980, .1, 'sine', .045), 60); }, 40); },
   reload: () => { noise(.05, .1, 2500, 2); setTimeout(() => noise(.06, .12, 1800, 2), 260); },
   ready: () => noise(.05, .12, 3000, 3), empty: () => beep(2400, .03, 'square', .02), hurt: () => beep(140, 0.3, 'square', 0.07, -80),
   pick: () => beep(1200, 0.06, 'sine', 0.03, 400), dash: () => noise(.18, .08, 900, .4), jump: () => beep(420, 0.1, 'sine', 0.03, 300),
@@ -746,7 +753,8 @@ function update(dt) {
   p.mx ??= 0; p.mz ??= 0;
   if (p.hook) {
     const hx = p.hook.x - p.x, hy = p.hook.y - (p.y + 1.2), hz = p.hook.z - p.z, hd = Math.hypot(hx, hy, hz) || 1;
-    if (hd < 1.8 || !input.hookHeld) releaseHook();
+    if (hd < 2.4) { const top = p.hook.y, up = top - p.hook.fromY > 1, v0 = p.vy; releaseHook(); if (up) { p.vy = Math.max(Math.min(v0, 14), Math.sqrt(2 * GRAV * Math.max(1, top + 3 - p.y))); shake = Math.max(shake, .06); } } // a higher anchor flings your feet about 3m above it
+    else if (!input.hookHeld) releaseHook();
     else {
       const pull = 62;
       p.mx += hx / hd * pull * dt; p.mz += hz / hd * pull * dt; p.vy += hy / hd * pull * dt + GRAV * .7 * dt;
@@ -794,7 +802,7 @@ function update(dt) {
         sp.dead = true; fo.hp -= 3 * p.dmg; fo.flash = .12; fo.kx += sp.vx * .25; fo.kz += sp.vz * .25; burst(sp.x, sp.y, sp.z, '#3ef0ff', 8, 5, .1); marker();
         if (fo.hp <= 0) kill(fo); else sfx.hit(); break;
       }
-    } else if (p.parryT > 0 && near < 2.6) {
+    } else if (p.parryT > 0 && near < 6) {
       // parried: send it back at whoever spat it (or where you're aiming), faster
       const src = G.foes.find(f => f.id === sp.from && f.hp > 0);
       let [ax, ay, az] = aimDir();
@@ -913,7 +921,7 @@ function kill(fo) {
   const n = e.boss ? 3 : Math.random() < .06 ? 1 : 0;
   for (let i = 0; i < n; i++) live.gels.push({ m: medMesh(), x: fo.x + rnd(-1.5, 1.5), z: fo.z + rnd(-1.5, 1.5), heal: 20, life: 20 });
   if (e.splitInto) for (let i = 0; i < e.splits; i++) { const a = i / e.splits * Math.PI * 2; spawn(e.splitInto, fo.x + Math.cos(a) * 3.5, fo.z + Math.sin(a) * 3.5); }
-  shake = Math.max(shake, e.boss ? .5 : .14); hitStop = Math.max(hitStop, e.boss ? .25 : .05); sfx.splat();
+  shake = Math.max(shake, e.boss ? .5 : .14); hitStop = Math.max(hitStop, e.boss ? .25 : .05); sfx.splat(e.boss);
   combo = comboT > 0 ? combo + 1 : 1; comboT = 1.6;
   if (combo > 1) { const c = $('combo'); c.textContent = `${combo}× combo`; c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
 }
@@ -943,7 +951,7 @@ function hookStart() {
   const p = G?.p; input.hookHeld = true; if (!p || G.mode !== 'play' || p.hook) return;
   const at = hookAim();
   if (!at) { beep(300, .08, 'square', .02, -150); return; }
-  p.hook = at; if (p.y <= groundAt(p.x, p.z, p.r) + .02) p.vy = Math.max(p.vy, 4); // pop off the ground
+  p.hook = at; at.fromY = p.y + 1.2; if (p.y <= groundAt(p.x, p.z, p.r) + .02) p.vy = Math.max(p.vy, 4); // pop off the ground
   noise(.12, .12, 2200, 1.5); beep(900, .1, 'sawtooth', .025, 500); burst(at.x, at.y, at.z, '#3ef0ff', 8, 4, .05);
 }
 function hookEnd() { input.hookHeld = false; }
@@ -995,7 +1003,7 @@ function render(dt) {
     const rl = p.reloadT > 0 ? 1 - p.reloadT / p.reloadTime : 0, rk = Math.sin(rl * Math.PI);
     gMag.position.y = -.15 - (rl > .2 && rl < .6 ? .3 : 0);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4 - rk * .5, gunSwing * 3 + rk * .4, gunSwing * 3.5 + rk * .5);
-    drawThreats(p); drawMinimap(p);
+    drawThreats(p); drawMinimap(p); drawOffscreen(p);
     gun.position.x = .22 + Math.sin(bob) * .012; gun.position.y = -.22 + Math.abs(Math.cos(bob)) * .012 - rk * .08; gun.position.z += (-.5 - gun.position.z) * Math.min(1, dt * 16);
     stepRain(dt, p.x, p.z);
     for (const fo of G.foes) {
@@ -1005,7 +1013,7 @@ function render(dt) {
       m.rotation.y = Math.atan2(p.x - fo.x, p.z - fo.z); m.rotation.x = ENEMIES[fo.type].fly ? .15 : 0;
       u.legs.forEach((l, i) => l.rotation.x = sw * .7 * (i ? -1 : 1)); u.arms.forEach((a, i) => a.rotation.x = sw * .5 * (i ? 1 : -1) - .2);
       for (const r of u.rotors) r.rotation.y += dt * 40;
-      u.metal.emissive.set(fo.flash > 0 ? '#ffffff' : '#000000');
+      u.metal.emissive.set(fo.flash > 0 ? '#ffffff' : BOT_GLOW);
     }
   } else {
     // title screen: a slow look around the block with robots posed in it
@@ -1015,31 +1023,65 @@ function render(dt) {
   for (const [m, k] of spin) { if (k === 'blink') m.visible = (t % 1.6) < .2; else m.rotation.y += dt * k; }
   renderer.render(scene, camera);
 }
-// the whole block from above, north up: buildings, every robot, and you as an arrow
-const mm = $('minimap'), mmx = mm.getContext('2d');
+// radar: centred on you and turning with you, so straight ahead is up and behind you is down.
+// Robots past the edge of the radar sit on its rim, so every one of them is always shown.
+const mm = $('minimap'), mmx = mm.getContext('2d'), RADAR = 55;
 function drawMinimap(p) {
   const size = mm.clientWidth; if (!size) return;
   const dpr = Math.min(2, devicePixelRatio || 1);
   if (mm.width !== Math.round(size * dpr)) { mm.width = mm.height = Math.round(size * dpr); }
-  const c = mmx, pad = 8, k = (size - pad * 2) / (A * 2), X = x => pad + (x + A) * k, Z = z => pad + (z + A) * k;
+  const c = mmx, half = size / 2, R = half - 8, k = R / RADAR;
   c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, size, size);
-  c.fillStyle = 'rgba(30,34,46,.8)'; c.fillRect(pad, pad, size - pad * 2, size - pad * 2);
-  c.fillStyle = 'rgba(10,11,16,.9)'; c.fillRect(X(-5), pad, 10 * k, size - pad * 2); c.fillRect(pad, Z(-5), size - pad * 2, 10 * k);
-  for (const b of OBSTACLES) {
-    const big = BUILDINGS.includes(b.kind);
-    c.fillStyle = big ? 'rgba(120,135,170,.9)' : b.kind === 'car' ? 'rgba(180,60,70,.8)' : 'rgba(90,96,112,.9)';
-    c.fillRect(X(b.x - b.w / 2), Z(b.z - b.d / 2), Math.max(1.5, b.w * k), Math.max(1.5, b.d * k));
-  }
+  c.save(); c.beginPath(); c.arc(half, half, R + 4, 0, 7); c.clip();
+  c.fillStyle = 'rgba(14,17,26,.92)'; c.fillRect(0, 0, size, size);
+  // the world, rotated so your view points up
+  c.save(); c.translate(half, half); c.rotate(p.yaw); c.scale(k, k); c.translate(-p.x, -p.z);
+  c.fillStyle = 'rgba(4,5,9,.95)'; c.fillRect(-5, -A, 10, A * 2); c.fillRect(-A, -5, A * 2, 10);
+  c.strokeStyle = 'rgba(62,240,255,.6)'; c.lineWidth = 1.5 / k; c.strokeRect(-A, -A, A * 2, A * 2);
+  for (const b of OBSTACLES) { c.fillStyle = BUILDINGS.includes(b.kind) ? 'rgba(120,135,170,.9)' : b.kind === 'car' ? 'rgba(180,60,70,.8)' : 'rgba(90,96,112,.9)'; c.fillRect(b.x - b.w / 2, b.z - b.d / 2, b.w, b.d); }
+  c.restore();
+  // range rings and your view cone
+  c.strokeStyle = 'rgba(255,255,255,.08)'; c.lineWidth = 1; for (const r of [R / 2, R]) { c.beginPath(); c.arc(half, half, r, 0, 7); c.stroke(); }
+  const fov = (camera.fov * camera.aspect) * Math.PI / 360; c.fillStyle = 'rgba(255,255,255,.07)'; c.beginPath(); c.moveTo(half, half); c.arc(half, half, R, -Math.PI / 2 - fov, -Math.PI / 2 + fov); c.closePath(); c.fill();
+  // robots
+  const sn = Math.sin(p.yaw), cs = Math.cos(p.yaw), pulse = .6 + .4 * Math.sin(performance.now() / 120);
   for (const fo of G.foes) {
     const e = ENEMIES[fo.type]; if (fo.hp <= 0) continue;
-    c.fillStyle = e.glow; c.strokeStyle = '#000'; c.lineWidth = 1;
-    c.beginPath(); c.arc(X(fo.x), Z(fo.z), e.boss ? 6 : fo.type === 'heavy' ? 4 : 3.2, 0, 7); c.fill(); c.stroke();
+    const dx = fo.x - p.x, dz = fo.z - p.z; let sx = (dx * cs - dz * sn) * k, sy = (dx * sn + dz * cs) * k;
+    const L = Math.hypot(sx, sy), out = L > R - 3; if (out) { sx *= (R - 3) / L; sy *= (R - 3) / L; }
+    c.globalAlpha = out ? .75 : 1; c.fillStyle = e.glow; c.strokeStyle = '#000'; c.lineWidth = 1;
+    const rr = e.boss ? 6 : fo.type === 'heavy' ? 4.2 : 3.4;
+    c.beginPath(); c.arc(half + sx, half + sy, out ? rr * .8 : rr, 0, 7); c.fill(); c.stroke();
+    if (!out && Math.hypot(dx, dz) < 10) { c.globalAlpha = pulse * .6; c.strokeStyle = e.glow; c.beginPath(); c.arc(half + sx, half + sy, rr + 3, 0, 7); c.stroke(); }
   }
-  // you: a white arrow pointing where you look
-  c.save(); c.translate(X(p.x), Z(p.z)); c.rotate(-p.yaw);
-  c.fillStyle = '#ffffff'; c.strokeStyle = '#000'; c.lineWidth = 1.5;
-  c.beginPath(); c.moveTo(0, -7); c.lineTo(5, 5); c.lineTo(0, 2.5); c.lineTo(-5, 5); c.closePath(); c.fill(); c.stroke();
+  c.globalAlpha = 1;
+  // you
+  c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 1.5;
+  c.beginPath(); c.moveTo(half, half - 7); c.lineTo(half + 5, half + 5); c.lineTo(half, half + 2.5); c.lineTo(half - 5, half + 5); c.closePath(); c.fill(); c.stroke();
   c.restore();
+}
+// arrows around the edge of the screen for every robot you can't see, pointing the way to turn
+const offBox = $('offs'), _o = new T.Vector3();
+function drawOffscreen(p) {
+  const list = G.mode === 'play' ? G.foes : [], W = stage.clientWidth, H = stage.clientHeight, m = 34;
+  camera.updateMatrixWorld(); let n = 0;
+  for (const fo of list) {
+    const d = Math.hypot(fo.x - p.x, fo.z - p.z); if (fo.hp <= 0 || d > 90) continue;
+    _o.set(fo.x, fo.y ?? fo.r, fo.z).applyMatrix4(camera.matrixWorldInverse);
+    const ahead = _o.z < 0;
+    if (ahead) { _o.applyMatrix4(camera.projectionMatrix); if (Math.abs(_o.x) < .92 && Math.abs(_o.y) < .88) continue; }
+    // screen direction: right = +x, up = +y; things behind you are pushed towards the bottom edge
+    _o.set(fo.x, fo.y ?? fo.r, fo.z).applyMatrix4(camera.matrixWorldInverse);
+    let dx = _o.x, dy = ahead ? _o.y : -Math.abs(_o.z) * .7 + _o.y * .2; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+    const t = Math.min((W / 2 - m) / (Math.abs(dx) || 1e-6), (H / 2 - m) / (Math.abs(dy) || 1e-6));
+    let el = offBox.children[n]; if (!el) { el = document.createElement('i'); offBox.appendChild(el); }
+    const near = clamp(1 - d / 90, 0, 1), sc = .7 + near * .8, e = ENEMIES[fo.type];
+    el.style.transform = `translate(${W / 2 + dx * t}px, ${H / 2 - dy * t}px) rotate(${Math.atan2(dx, dy)}rad) scale(${sc})`;
+    el.style.background = e.glow; el.style.opacity = .45 + near * .55; el.style.display = '';
+    el.classList.toggle('close', d < 10);
+    n++; if (n >= 30) break;
+  }
+  for (let i = n; i < offBox.children.length; i++) offBox.children[i].style.display = 'none';
 }
 // little red arrows round the crosshair, pointing at whoever just shot at you
 function drawThreats(p) {
@@ -1151,7 +1193,7 @@ function requestLock() {
 function lookHud() {
   const playing = G?.mode === 'play' && !touchMode;
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
-  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('ammo').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
+  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('ammo').hidden = !inRun; $('offs').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
   $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This browser can’t lock the mouse here: hold the cursor near the left or right edge to keep turning</small>'
     : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';
