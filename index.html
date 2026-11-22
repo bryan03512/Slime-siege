@@ -316,7 +316,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 41 · health in the enemy guide</p>
+        <p class="ver">Version 42 · Focus recharges in 4s</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -329,7 +329,7 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Shoot</b><span>Click for a 3-round burst. Hold to keep firing bursts</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse right" aria-label="Right mouse button"><i></i></span><span class="kc">E</span></div><b>Grapple</b><span>Hold to reel yourself to where you aim (70m), or onto a robot at any distance. You keep the speed when you let go</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Cycle through your loadout: up to 2 guns and 1 melee weapon, picked in the shop</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc">C</span></div><b>Focus</b><span>If you’ve bought it: slow time for 3 seconds. Recharges in 15</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">C</span></div><b>Focus</b><span>If you’ve bought it: slow time for 3 seconds. Recharges in 4</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">R</span></div><b>Reload</b><span>Reloads by itself when the magazine runs dry</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Low gravity: reach cars, containers and rooftops. For more height, dash upwards</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Flings you the way you’re moving. Look up (or hold Space) to dash up, look down to dash down. Cancels a grapple fling</span></div>
@@ -439,7 +439,7 @@ const GEAR = {
   vest:   { name: 'Armour vest',    price: 90,  desc: 'Start every run with 125 health instead of 100.' },
   coins:  { name: 'Coin booster',   price: 120, desc: 'Earn 25% more coins from every robot.' },
   medkit: { name: 'Med-kit finder', price: 70,  desc: 'Robots drop med kits much more often.' },
-  focus:  { name: 'Focus',          price: 110, desc: 'Press C to slow time for 3 seconds, anywhere. Recharges in 15 seconds.' },
+  focus:  { name: 'Focus',          price: 110, desc: 'Press C to slow time for 3 seconds, anywhere. Recharges in 4 seconds.' },
   revive: { name: 'Second chance',  price: 75,  stack: 3, desc: 'If you die, get back up once with half health and blast nearby robots away. Used up when it saves you; hold up to 3.' },
 };
 // Weapon levels: each level adds 12% damage, 15% magazine (not the sniper) and 6% faster reloads
@@ -448,6 +448,7 @@ const LEVEL_COST = [40, 80, 130, 190, 260], MAX_LEVEL = 5;
 const COLORS = { stock: { name: 'Stock', price: 0, c: null }, pink: { name: 'Hot pink', price: 30, c: '#ff3d8b' }, toxic: { name: 'Toxic green', price: 30, c: '#3dff8a' }, violet: { name: 'Violet', price: 30, c: '#b45cff' }, gold: { name: 'Gold', price: 50, c: '#ffcf3a' }, ice: { name: 'Ice white', price: 40, c: '#e8f4ff' } };
 const CROSSES = { cross: { name: 'Cross', price: 0 }, dot: { name: 'Dot', price: 20 }, circle: { name: 'Circle', price: 20 }, x: { name: 'X', price: 20 } };
 const MAX_RANGED = 2, MAX_MELEE = 1;
+const FOCUS_TIME = 3, FOCUS_COOLDOWN = 4; // seconds of slow time, and how long until Focus can be used again
 const MAX_SWING_HITS = 3; // most robots one melee swing can hit
 const A = 80; // the city block runs from -A to A on both axes
 // Boxes the player and robots can't walk through: x, z = centre, w, d = size, h = height.
@@ -885,7 +886,7 @@ function applyGun(p, id) {
 }
 function useFocus() {
   const p = G?.p; if (!p || G.mode !== 'play' || !p.focus || p.focusCd > 0 || p.focusT > 0) return;
-  p.focusT = 3; p.focusCd = 15; sfx.slow(); noise(.4, .06, 600, .4);
+  p.focusT = FOCUS_TIME; p.focusCd = FOCUS_COOLDOWN; sfx.slow(); noise(.4, .06, 600, .4);
 }
 function switchGun(dir = 1) {
   const p = G?.p; if (!p || G.mode !== 'play' || p.loadout.length < 2) return;
@@ -1161,7 +1162,7 @@ function update(dt) {
   ammoHud(p); altHud(p);
   $('dashBar').style.width = `${p.dashCharges >= (p.dashMax || 2) ? 100 : clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
   $('dashPips').textContent = '●'.repeat(p.dashCharges ?? 2) + '○'.repeat(Math.max(0, (p.dashMax || 2) - (p.dashCharges ?? 2)));
-  $('focusRow').hidden = !p.focus; if (p.focus) $('focusBar').style.width = `${p.focusT > 0 ? p.focusT / 3 * 100 : clamp(1 - p.focusCd / 15, 0, 1) * 100}%`;
+  $('focusRow').hidden = !p.focus; if (p.focus) $('focusBar').style.width = `${p.focusT > 0 ? p.focusT / FOCUS_TIME * 100 : clamp(1 - p.focusCd / FOCUS_COOLDOWN, 0, 1) * 100}%`;
   $('parryBar').style.width = `${clamp(1 - p.parryReady / p.parryCd, 0, 1) * 100}%`;
   const king = G.foes.find(fo => ENEMIES[fo.type].boss);
   $('boss').hidden = !king; if (king) $('bossHp').style.width = `${king.hp / king.maxHp * 100}%`;
