@@ -230,7 +230,7 @@ canvas{display:block;width:100%;height:100%}
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
     <div class="hp" id="hp" role="meter" aria-label="Health" aria-valuemin="0"><span id="hpText">100</span><div><i id="hpLag"></i><b id="hpFill"></b></div></div>
-    <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> / <span id="ammoMax">24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small><span class="gname" id="gunName">Burst rifle</span><span class="slots" id="slots"></span></div>
+    <div class="ammo" id="ammo" aria-label="Ammo"><b id="ammoNow">24</b> <span id="ammoMax">/ 24</span><em><i id="reloadBar"></i></em><small id="ammoNote"></small><span class="gname" id="gunName">Burst rifle</span><span class="slots" id="slots"></span></div>
     <div class="scope" id="scope" aria-hidden="true"><b>Slow-mo</b></div>
     <div class="threats" id="threats" aria-hidden="true"></div>
     <div class="offs" id="offs" aria-hidden="true"></div>
@@ -268,7 +268,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 22 · box hitboxes, no scope overlay</p>
+        <p class="ver">Version 23 · grapple robots, long sword</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -279,8 +279,8 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps"><span class="kc gap"></span><span class="kc">W</span><span class="kc gap"></span><span class="kc">A</span><span class="kc">S</span><span class="kc">D</span></div><b>Move</b><span>Arrow keys work too</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Shoot</b><span>Click for a 3-round burst. Hold to keep firing bursts</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc mouse right" aria-label="Right mouse button"><i></i></span><span class="kc">E</span></div><b>Grapple</b><span>Hold to reel yourself to where you aim. You keep the speed when you let go</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Cycle through every gun you own, plus your knife. The knife makes you untouchable while it swings</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc mouse right" aria-label="Right mouse button"><i></i></span><span class="kc">E</span></div><b>Grapple</b><span>Hold to reel yourself to where you aim, or onto a robot. You keep the speed when you let go</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Cycle through every gun you own, plus your long sword. The sword cuts for half a second per swing and you can’t be hurt while it swings</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">R</span></div><b>Reload</b><span>Reloads by itself when the magazine runs dry</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Low gravity: reach cars, containers and rooftops. For more height, dash upwards</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Flings you the way you’re moving. Look up (or hold Space) to dash upwards. Cancels a grapple fling. Two in a row</span></div>
@@ -378,7 +378,7 @@ const UPGRADES = [
 const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
-  knife:  { name: 'Knife',       price: 0,   mode: 'melee',  rate: .42, mag: 0, reloadTime: 0, dmg: 4, reach: 3.4, free: true, desc: 'Always carried. A wide slash that hits everything in front of you, and you can’t be hurt for a moment while you swing.' },
+  knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .62, mag: 0, reloadTime: 0, dmg: 4, reach: 4.4, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second, and you can’t be hurt while it swings.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots. In the air, click to scope in and slow time, then click again to fire.' },
 };
 const A = 80; // the city block runs from -A to A on both axes
@@ -411,7 +411,7 @@ const OBSTACLES = [
   { x: 66, z: 30, w: 8, d: 9, h: 5, kind: 'block' },
   { x: -66, z: 40, w: 7, d: 8, h: 4.5, kind: 'block' },
   { x: 0, z: -45, w: 14, d: 6, h: 4, kind: 'warehouse' },
-  { x: 36, z: -36, w: 5, d: 5, h: 11, kind: 'tower' }, { x: -36, z: 56, w: 5, d: 5, h: 11, kind: 'tower' },
+  { x: 36, z: -36, w: 5, d: 5, h: 30, kind: 'tower' }, { x: -36, z: 56, w: 5, d: 5, h: 28, kind: 'tower' },
   { x: -20, z: -67, w: 9, d: 8, h: 5, kind: 'block' },
   { x: 66, z: -30, w: 12, d: 10, h: 6, kind: 'warehouse' }, { x: -66, z: -30, w: 5, d: 5, h: 3, kind: 'container' },
   { x: 62, z: 62, w: 7, d: 7, h: 4.5, kind: 'block' },
@@ -419,11 +419,14 @@ const OBSTACLES = [
   { x: -40, z: -14, w: 12, d: 2, h: 2.2, kind: 'wall' }, { x: 20, z: -64, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' },
   { x: -48, z: 8, w: 2.2, d: 2.2, h: 1.6, kind: 'crate' }, { x: 48, z: -8, w: 7, d: 2, h: 1.1, kind: 'barrier' },
   // more of the city
-  { x: -30, z: 66, w: 10, d: 8, h: 6, kind: 'block' }, { x: 30, z: -70, w: 7, d: 7, h: 16, kind: 'tower' },
+  { x: -30, z: 66, w: 10, d: 8, h: 14, kind: 'block' }, { x: 30, z: -70, w: 7, d: 7, h: 38, kind: 'tower' },
   { x: -70, z: -16, w: 8, d: 10, h: 5.5, kind: 'block' }, { x: 72, z: -16, w: 8, d: 10, h: 5.5, kind: 'block' },
-  { x: -20, z: 28, w: 6, d: 6, h: 14, kind: 'tower' }, { x: 22, z: 48, w: 9, d: 8, h: 6, kind: 'block' },
-  { x: -26, z: -46, w: 8, d: 10, h: 5, kind: 'warehouse' }, { x: 46, z: 22, w: 6, d: 6, h: 18, kind: 'tower' },
-  { x: 12, z: -22, w: 7, d: 6, h: 5, kind: 'block' }, { x: -56, z: -50, w: 6, d: 6, h: 15, kind: 'tower' },
+  { x: -20, z: 28, w: 6, d: 6, h: 26, kind: 'tower' }, { x: 22, z: 48, w: 9, d: 8, h: 12, kind: 'block' },
+  { x: -26, z: -46, w: 8, d: 10, h: 5, kind: 'warehouse' }, { x: 46, z: 22, w: 6, d: 6, h: 44, kind: 'tower' },
+  { x: 12, z: -22, w: 7, d: 6, h: 5, kind: 'block' }, { x: -56, z: -50, w: 6, d: 6, h: 34, kind: 'tower' },
+  // skyscrapers
+  { x: 62, z: 46, w: 8, d: 8, h: 52, kind: 'tower' }, { x: -40, z: -26, w: 8, d: 8, h: 46, kind: 'tower' },
+  { x: 48, z: -20, w: 8, d: 8, h: 40, kind: 'tower' }, { x: -52, z: 58, w: 8, d: 8, h: 48, kind: 'tower' },
   // parked cars (you can jump on them)
   { x: 3, z: 24, w: 2, d: 4.4, h: 1.5, kind: 'car' }, { x: -3, z: -28, w: 2, d: 4.4, h: 1.5, kind: 'car' },
   { x: 26, z: 3, w: 4.4, d: 2, h: 1.5, kind: 'car' }, { x: -24, z: -3, w: 4.4, d: 2, h: 1.5, kind: 'car' },
@@ -485,7 +488,7 @@ const camera = new T.PerspectiveCamera(75, 1, 0.05, 340); camera.rotation.order 
 scene.add(camera);
 scene.add(new T.HemisphereLight('#6a7bd0', '#140f1c', 0.75));
 const sun = new T.DirectionalLight('#9fb4ff', 0.6); sun.position.set(25, 45, 15); sun.castShadow = true; // moonlight
-sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 180 });
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 240 });
 scene.add(sun); scene.add(sun.target); // the shadow area follows you round the city
 const lam = c => new T.MeshLambertMaterial({ color: c });
 const glowMat = (c, o = 1) => new T.MeshBasicMaterial({ color: c, transparent: o < 1, opacity: o });
@@ -625,9 +628,9 @@ function gunModelFor(id) {
   const part = (w, h, d, mat, x, y, z) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m; };
   const tube = (r, len, mat, z, y = .015) => { const m = new T.Mesh(new T.CylinderGeometry(r, r, len, 10), mat); m.rotation.x = Math.PI / 2; m.position.set(0, y, z); g.add(m); return m; };
   if (id === 'knife') {
-    const blade = new T.Mesh(new T.BoxGeometry(.03, .09, .55), new T.MeshPhongMaterial({ color: '#d9dee8', specular: '#ffffff', shininess: 90 })); blade.position.set(0, .02, -.42); g.add(blade);
-    part(.012, .02, .5, glowMat('#3ef0ff'), .018, .05, -.42); part(.05, .16, .06, gunMetal, 0, .02, -.12); part(.06, .1, .26, gunDark, 0, -.01, .03);
-    g.userData = { mag: null, magY: 0, tip: -.7, knife: true }; g.position.set(.05, -.02, 0);
+    const blade = new T.Mesh(new T.BoxGeometry(.03, .1, 1.25), new T.MeshPhongMaterial({ color: '#d9dee8', specular: '#ffffff', shininess: 90 })); blade.position.set(0, .02, -.8); g.add(blade);
+    part(.012, .022, 1.15, glowMat('#3ef0ff'), .018, .055, -.8); part(.05, .2, .07, gunMetal, 0, .02, -.15); part(.06, .1, .3, gunDark, 0, -.01, .05);
+    g.userData = { mag: null, magY: 0, tip: -1.4, knife: true }; g.position.set(.05, -.02, 0);
   } else if (id === 'mg') {
     part(.13, .15, .58, gunMetal, 0, 0, 0); part(.11, .12, .32, gunDark, 0, -.01, -.42);
     tube(.03, .42, gunDark, -.74); for (let k = 0; k < 4; k++) tube(.036, .03, gunMetal, -.62 - k * .07);
@@ -827,6 +830,20 @@ function rayCity(ox, oy, oz, dx, dy, dz, max) {
   for (const [o, d] of [[ox, dx], [oz, dz]]) if (Math.abs(d) > 1e-9) { const t = ((d > 0 ? A : -A) - o) / d; if (t > 0) best = Math.min(best, t); }
   return best;
 }
+// where a ray first enters a robot's hitbox (or -1): into the robot's own frame (it turns to face you), then a ray-box test.
+// pad grows the box (the machine gun's assist).
+function rayBot(fo, ox, oy, oz, dx, dy, dz, max, pad = 0) {
+  const p = G.p, hb = hitboxOf(fo), rot = Math.atan2(p.x - fo.x, p.z - fo.z), c = Math.cos(rot), sn = Math.sin(rot);
+  const rx = ox - fo.x, ry = oy - ((fo.y ?? fo.r) + hb.cy), rz = oz - fo.z;
+  const lo = [rx * c - rz * sn, ry, rx * sn + rz * c], ld = [dx * c - dz * sn, dy, dx * sn + dz * c], half = [hb.hx + pad, hb.hy + pad, hb.hx + pad];
+  let t0 = 0, t1 = max;
+  for (let k = 0; k < 3 && t0 <= t1; k++) {
+    if (Math.abs(ld[k]) < 1e-9) { if (Math.abs(lo[k]) > half[k]) return -1; continue; }
+    let a1 = (-half[k] - lo[k]) / ld[k], a2 = (half[k] - lo[k]) / ld[k]; if (a1 > a2) [a1, a2] = [a2, a1];
+    t0 = Math.max(t0, a1); t1 = Math.min(t1, a2);
+  }
+  return t0 <= t1 && t1 > 0 ? Math.max(t0, .01) : -1;
+}
 function hitsGarden(x, y, z) {
   if (Math.abs(x) > A || Math.abs(z) > A || y < 0) return true;
   for (const b of OBSTACLES) if (y < b.h && Math.abs(x - b.x) < b.w / 2 && Math.abs(z - b.z) < b.d / 2) return true;
@@ -855,8 +872,12 @@ function update(dt) {
   // grappling hook: hold to be reeled towards the anchor; the speed you build up carries on after you let go
   p.mx ??= 0; p.mz ??= 0;
   if (p.hook) {
+    // hooked onto a robot: the anchor moves with it, and lets go if it dies
+    if (p.hook.foe) { const fo = G.foes.find(f => f.id === p.hook.foe && f.hp > 0); if (fo) { p.hook.x = fo.x; p.hook.y = fo.y ?? fo.r; p.hook.z = fo.z; } else p.hook.gone = true; }
     const hx = p.hook.x - p.x, hy = p.hook.y - (p.y + 1.2), hz = p.hook.z - p.z, hd = Math.hypot(hx, hy, hz) || 1;
-    if (hd < 2.4) { const top = p.hook.y, up = top - p.hook.fromY > 1, v0 = p.vy; releaseHook(); if (up) { p.vy = Math.max(Math.min(v0, 14), Math.sqrt(2 * GRAV * Math.max(1, top + 3 - p.y))); shake = Math.max(shake, .06); } } // a higher anchor flings your feet about 3m above it
+    if (p.hook.gone) releaseHook();
+    else if (p.hook.foe && hd < 2.2 + (G.foes.find(f => f.id === p.hook.foe)?.r || 0)) { releaseHook(); p.mx *= .25; p.mz *= .25; p.vy = Math.min(p.vy, 3); } // reeled right up to it: stop there, ready to slash
+    else if (hd < 2.4) { const top = p.hook.y, up = top - p.hook.fromY > 1, v0 = p.vy; releaseHook(); if (up) { p.vy = Math.max(Math.min(v0, 14), Math.sqrt(2 * GRAV * Math.max(1, top + 3 - p.y))); shake = Math.max(shake, .06); } } // a higher anchor flings your feet about 3m above it
     else if (!input.hookHeld) releaseHook();
     else {
       const pull = 62;
@@ -913,6 +934,7 @@ function update(dt) {
       if (p.ammo > 0) { fire(); p.ammo--; p.cool = p.rate; if (p.ammo <= 0) reload(); } else reload();
     }
   }
+  swingTick(dt);
   // bullet tracers fade fast
   for (const tr of live.shots) { tr.life -= dt; tr.m.material.opacity = Math.max(0, tr.life / (tr.max || .06)) * (tr.op ?? .9); if (tr.grow) tr.m.scale.multiplyScalar(1 + tr.grow * dt); if (tr.thin) { tr.m.scale.x *= 1 - tr.thin * dt; tr.m.scale.y *= 1 - tr.thin * dt; } }
   live.shots = live.shots.filter(tr => tr.life > 0 || (scene.remove(tr.m), false));
@@ -1004,17 +1026,7 @@ function fire() {
   const hits = [];
   for (const fo of G.foes) {
     if (fo.hp <= 0) continue;
-    // into the robot's own frame (it turns to face you), then a ray-box test; assist grows the box a little
-    const hb = hitboxOf(fo), rot = Math.atan2(p.x - fo.x, p.z - fo.z), c = Math.cos(rot), sn = Math.sin(rot);
-    const rx = ox - fo.x, ry = oy - ((fo.y ?? fo.r) + hb.cy), rz = oz - fo.z;
-    const lo = [rx * c - rz * sn, ry, rx * sn + rz * c], ld = [dx * c - dz * sn, dy, dx * sn + dz * c], half = [hb.hx + as, hb.hy + as, hb.hx + as];
-    let t0 = 0, t1 = wall;
-    for (let k = 0; k < 3 && t0 <= t1; k++) {
-      if (Math.abs(ld[k]) < 1e-9) { if (Math.abs(lo[k]) > half[k]) t1 = -1; continue; }
-      let a1 = (-half[k] - lo[k]) / ld[k], a2 = (half[k] - lo[k]) / ld[k]; if (a1 > a2) [a1, a2] = [a2, a1];
-      t0 = Math.max(t0, a1); t1 = Math.min(t1, a2);
-    }
-    if (t0 <= t1 && t1 > 0) hits.push([Math.max(t0, .01), fo]);
+    const t = rayBot(fo, ox, oy, oz, dx, dy, dz, wall, as); if (t >= 0) hits.push([t, fo]);
   }
   hits.sort((a, b) => a[0] - b[0]);
   let end = wall;
@@ -1035,23 +1047,28 @@ function fire() {
   if (gd.scope) { sfx.snipe(); shake = Math.max(shake, .05); } else if (p.gun === 'mg') sfx.mg(); else sfx.shoot();
 }
 // the knife: a wide slash in front of you; you can't be hurt while it swings
+// the long sword: a swing lasts half a second; anything in the arc during it gets cut (once per swing),
+// bolts in the arc are knocked out of the air, and you can't be hurt until the swing's over
 function slash() {
-  const p = G.p, g = GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1; let hit = 0;
-  p.inv = Math.max(p.inv, .38); slashT = .3; slashSide = -slashSide;
+  const p = G.p, g = GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1;
+  p.slashT = g.swing; p.slashCut = []; p.inv = Math.max(p.inv, g.guard); slashSide = -slashSide;
   p.mx = (p.mx || 0) + ax / al * 5; p.mz = (p.mz || 0) + az / al * 5; // a small lunge
+  noise(.3, .12, 3600, 2.5); beep(700, .18, 'sawtooth', .02, -500);
+  const e = $('edge'); e.classList.add('guard'); clearTimeout(slash.t); slash.t = setTimeout(() => e.classList.remove('guard'), g.guard * 1000);
+}
+function swingTick(dt) {
+  const p = G.p; if (!(p.slashT > 0)) return; p.slashT -= dt;
+  const g = GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1; let hit = 0;
   for (const fo of G.foes) {
-    if (fo.hp <= 0) continue;
+    if (fo.hp <= 0 || p.slashCut.includes(fo.id)) continue;
     const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
-    if (d > g.reach + fo.r || (dx * ax + dz * az) / (d * al) < .2 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 1.6) continue;
-    fo.hp -= g.dmg * p.dmg; fo.flash = .1; fo.kx += dx / d * 14; fo.kz += dz / d * 14; hit++;
+    if (d > g.reach + fo.r || (dx * ax + dz * az) / (d * al) < .1 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2) continue;
+    p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg; fo.flash = .1; fo.kx += dx / d * 14; fo.kz += dz / d * 14; hit++;
     burst(fo.x, fo.y ?? fo.r, fo.z, '#ffffff', 8, 8, .05); burst(fo.x, fo.y ?? fo.r, fo.z, ENEMIES[fo.type].glow, 6, 6, .06);
     if (fo.hp <= 0) kill(fo); else sfx.hit();
   }
-  // knock bolts out of the air too
-  for (const sp of live.spit) if (!sp.mine && Math.hypot(sp.x - p.x, sp.z - p.z) < g.reach && ((sp.x - p.x) * ax + (sp.z - p.z) * az) > 0) { sp.dead = true; burst(sp.x, sp.y, sp.z, '#ff3d4a', 5, 4, .06); }
-  if (hit) { marker(); shake = Math.max(shake, .08); hitStop = Math.max(hitStop, .03); }
-  noise(.16, .12, hit ? 1800 : 4200, hit ? 1 : 3); beep(hit ? 500 : 900, .08, 'sawtooth', .025, -400);
-  const e = $('edge'); e.classList.add('guard'); clearTimeout(slash.t); slash.t = setTimeout(() => e.classList.remove('guard'), 380);
+  for (const sp of live.spit) if (!sp.mine && !sp.dead && Math.hypot(sp.x - p.x, sp.z - p.z) < g.reach && ((sp.x - p.x) * ax + (sp.z - p.z) * az) > 0) { sp.dead = true; burst(sp.x, sp.y, sp.z, '#ff3d4a', 5, 4, .06); }
+  if (hit) { marker(); shake = Math.max(shake, .08); hitStop = Math.max(hitStop, .03); noise(.12, .14, 1600, 1); }
 }
 // the sniper round: a hot core, a wide cyan glow that lingers, rings punched along the path, and a flash where it lands
 const ringGeo = new T.RingGeometry(.35, .5, 24);
@@ -1128,6 +1145,10 @@ function parried() {
 }
 function hookAim() {
   const p = G.p, [dx, dy, dz] = aimDir(), ox = p.x, oy = p.y + EYE, oz = p.z, t = rayCity(ox, oy, oz, dx, dy, dz, HOOK_RANGE);
+  // a robot in front of the wall wins: the hook latches onto it (a little forgiving, like the machine gun)
+  let best = null;
+  for (const fo of G.foes) { if (fo.hp <= 0) continue; const tf = rayBot(fo, ox, oy, oz, dx, dy, dz, Math.min(t, HOOK_RANGE), .5); if (tf > 0 && (!best || tf < best[0])) best = [tf, fo]; }
+  if (best) return { x: best[1].x, y: best[1].y ?? best[1].r, z: best[1].z, foe: best[1].id };
   return t < HOOK_RANGE && t > 2.5 ? { x: ox + dx * t, y: oy + dy * t, z: oz + dz * t } : null;
 }
 function hookStart() {
@@ -1136,6 +1157,7 @@ function hookStart() {
   if (!at) { beep(300, .08, 'square', .02, -150); return; }
   p.hook = at; at.fromY = p.y + 1.2; if (p.y <= groundAt(p.x, p.z, p.r) + .02) p.vy = Math.max(p.vy, 4); // pop off the ground
   noise(.12, .12, 2200, 1.5); beep(900, .1, 'sawtooth', .025, 500); burst(at.x, at.y, at.z, '#3ef0ff', 8, 4, .05);
+  if (at.foe) { beep(1500, .08, 'square', .03, -500); marker(); }
 }
 function hookEnd() { input.hookHeld = false; }
 function releaseHookIfAny() { if (G?.p?.hook) G.p.hook = null; input.hookHeld = false; }
@@ -1187,13 +1209,13 @@ function render(dt) {
     // the grapple line, from the gun to the anchor
     rope.visible = !!p.hook && G.mode === 'play';
     if (rope.visible) { gun.updateMatrixWorld(true); _v.set(0, .015, -.95); gun.localToWorld(_v); const L = Math.hypot(p.hook.x - _v.x, p.hook.y - _v.y, p.hook.z - _v.z); rope.scale.set(.012, .012, L); rope.position.set((_v.x + p.hook.x) / 2, (_v.y + p.hook.y) / 2, (_v.z + p.hook.z) / 2); rope.lookAt(p.hook.x, p.hook.y, p.hook.z); hookTip.visible = true; hookTip.position.set(p.hook.x, p.hook.y, p.hook.z); } else hookTip.visible = false;
-    sun.position.set(p.x - 45, 32, p.z - 30); sun.target.position.set(p.x, 0, p.z); sky.position.copy(camera.position);
+    sun.position.set(p.x - 60, 75, p.z - 40); sun.target.position.set(p.x, 0, p.z); sky.position.copy(camera.position);
     // reload: tip the rifle down and to the side, drop the magazine and slot a new one
     const rl = p.reloadT > 0 ? 1 - p.reloadT / p.reloadTime : 0, rk = Math.sin(rl * Math.PI);
     if (gMag) gMag.position.y = gunModel.userData.magY - (rl > .2 && rl < .6 ? .3 : 0);
     // knife slash: a fast sweep across the view; weapon swap: dip out and back
-    slashT = Math.max(0, slashT - dt); switchT = Math.max(0, switchT - dt); const sw = slashT / .3;
-    if (gunModel.userData.knife) gunModel.rotation.set(-sw * .6, sw * 1.6 * slashSide, sw * 1.2 * slashSide); else gunModel.rotation.set(0, 0, 0);
+    switchT = Math.max(0, switchT - dt); const sw = Math.max(0, p.slashT || 0) / GUNS.knife.swing; const arc = Math.sin(sw * Math.PI);
+    if (gunModel.userData.knife) gunModel.rotation.set(-arc * .5, (sw * 2 - 1) * 1.3 * slashSide * (sw > 0 ? 1 : 0), arc * 1.1 * slashSide); else gunModel.rotation.set(0, 0, 0);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4 - rk * .5, gunSwing * 3 + rk * .4, gunSwing * 3.5 + rk * .5);
     drawThreats(p); drawMinimap(p); drawOffscreen(p);
     gun.position.x = .22 + Math.sin(bob) * .012; gun.position.y = -.22 + Math.abs(Math.cos(bob)) * .012 - rk * .08 - switchT * 1.2; gun.position.z += (-.5 - gun.position.z) * Math.min(1, dt * 16);
@@ -1312,7 +1334,7 @@ function hud() {
 let ammoShown = '';
 function ammoHud(p) {
   const key = `${p.gun}/${p.ammo}/${p.mag}/${p.reloadT > 0 ? Math.round(p.reloadT * 20) : 0}`; if (key === ammoShown) return; ammoShown = key;
-  const melee = p.gun === 'knife'; $('ammoNow').textContent = melee ? '—' : p.ammo; $('ammoMax').textContent = melee ? '' : p.mag; $('ammo').classList.toggle('melee', melee); $('gunName').textContent = GUNS[p.gun]?.name || ''; $('ammo').classList.toggle('empty', !melee && p.ammo === 0);
+  const melee = p.gun === 'knife'; $('ammoNow').textContent = melee ? '—' : p.ammo; $('ammoMax').textContent = melee ? '' : `/ ${p.mag}`; $('ammo').classList.toggle('melee', melee); $('gunName').textContent = GUNS[p.gun]?.name || ''; $('ammo').classList.toggle('empty', !melee && p.ammo === 0);
   $('reloadBar').style.width = p.reloadT > 0 ? `${(1 - p.reloadT / p.reloadTime) * 100}%` : '0';
   $('ammoNote').textContent = melee ? '' : p.reloadT > 0 ? 'Reloading' : p.ammo === 0 ? 'Empty' : p.mag > 1 && p.ammo <= Math.max(p.burst * 2, p.mag * .2) ? (touchMode ? 'Low ammo' : 'R to reload') : '';
 }

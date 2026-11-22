@@ -12,8 +12,8 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 - Reload: R, or the Reload button. It also reloads by itself when the magazine runs dry
 - Jump: Space, or the Jump button. Low, moon-style gravity: a good jump reaches the rooftops
 - Dash: Shift, or the Dash button. Flings you the way you're moving and the speed carries on; look up (or hold Space) to dash upwards. Dashing cancels a grapple fling, and holding the opposite direction brakes any fling. Two charges; both come back when the cooldown ends
-- Swap weapon: Q, or the Swap button. You carry every gun you own plus a knife; the knife makes you untouchable while it swings
-- Grapple: hold the right mouse button (or E) to reel yourself to wherever you're aiming. The speed you build up carries on after you let go, and grappling something above you flings you up past it
+- Swap weapon: Q, or the Swap button. You carry every gun you own plus a long sword; each swing cuts everything in front of you for half a second and you can't be hurt while it swings
+- Grapple: hold the right mouse button (or E) to reel yourself to wherever you're aiming, or onto a robot. The speed you build up carries on after you let go, and grappling something above you flings you up past it
 - Parry: F. Knocks energy bolts back at whoever fired them, or shoves a robot away
 - Pause: Esc or P
 
