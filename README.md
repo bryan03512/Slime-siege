@@ -30,6 +30,6 @@ Everything you'd want to add lives in tables near the top of the script in `inde
 - `OBSTACLES`: the buildings, cars, walls, crates and barriers in the city.
 - `GUNS`: the guns and their shop prices. The burst rifle is free; the machine gun (full auto, small spread, near misses still count) and the sniper (one huge round per magazine; in the air it slows time, zooms in and shows every robot's hitbox in cyan) are bought with coins.
 
-Coins, owned guns and the equipped gun are stored in the browser under `ss-coins`, `ss-guns` and `ss-gun`.
+Everything saves in the browser: coins (`ss-coins`, saved the moment you earn them), owned and equipped guns (`ss-guns`, `ss-gun`), best score (`ss3-best`), sound (`ss-muted`), and the run in progress (`ss-run`, saved every 2 seconds and when you leave the page). Continue on the main menu picks a saved run back up.
 
 Built with [three.js](https://threejs.org/) r128.

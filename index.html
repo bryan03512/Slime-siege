@@ -109,12 +109,16 @@ canvas{display:block;width:100%;height:100%}
 .overlay[hidden],[hidden]{display:none!important}
 .menu{place-items:stretch;justify-items:start;background:linear-gradient(90deg,rgba(3,5,10,.92),rgba(3,5,10,.5) 55%,rgba(3,5,10,0));padding:clamp(16px,4vw,48px)}
 .menu-col{align-self:center;display:flex;flex-direction:column;gap:10px;max-width:440px;max-height:100%;overflow:auto}
-.logo{font:clamp(46px,min(9vw,13vh),108px)/.9 'Russo One',sans-serif;margin:0;color:#fff;text-transform:uppercase;letter-spacing:.02em;text-shadow:0 0 22px rgba(255,61,139,.85),0 0 4px var(--pink),0 6px 0 #000}
+.logo{font:clamp(40px,min(9vw,11vh),104px)/.9 'Russo One',sans-serif;margin:0;color:#fff;text-transform:uppercase;letter-spacing:.02em;text-shadow:0 0 22px rgba(255,61,139,.85),0 0 4px var(--pink),0 6px 0 #000}
 .logo span{display:block;color:var(--neon);text-shadow:0 0 22px rgba(62,240,255,.85),0 0 4px var(--neon),0 6px 0 #000}
 .tag{margin:0;font-size:18px;font-weight:600;color:#c9d2ee;max-width:32ch}
 .menu-btns{display:flex;flex-direction:column;gap:8px;align-items:flex-start;margin-top:6px}
-.menu-btns .btn{min-width:230px;text-align:left}
+.menu-btns .btn{min-width:230px;text-align:left;min-height:40px;padding:10px 20px;font-size:17px}
+.menu-btns .btn.big{font-size:24px;padding:12px 22px}
+.tag{font-size:16px!important}
 .btn.big{font-size:26px;padding:14px 24px}
+.btn.big small{display:block;margin-top:4px;font:800 12px/1 Barlow,sans-serif;letter-spacing:.08em;opacity:.8}
+#contBtn+#startBtn{font-size:20px;padding:12px 22px;background:rgba(23,28,40,.9);color:#fff;border:1px solid #3a4562;box-shadow:0 4px 0 #05070c}
 .wallet{display:flex;align-items:center;gap:8px;font:20px/1 'Russo One',sans-serif;color:var(--amber);margin:0}
 .wallet svg{width:22px;height:22px}
 .menu-best{color:var(--muted)}
@@ -255,6 +259,7 @@ canvas{display:block;width:100%;height:100%}
         <h1 class="logo">Slime<span>Siege</span></h1>
         <p class="tag">Hold the block. Gun down the robots. Pick an upgrade after every wave and spend your coins between runs.</p>
         <nav class="menu-btns" aria-label="Main menu">
+          <button class="btn big" id="contBtn" hidden>Continue</button>
           <button class="btn big" id="startBtn">Play</button>
           <button class="btn alt" id="ctrlBtn">Controls</button>
           <button class="btn alt" id="shopBtn">Shop</button>
@@ -263,7 +268,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 19 · double jump, knife, weapon swap, dash fling</p>
+        <p class="ver">Version 20 · saves your run</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -326,7 +331,7 @@ canvas{display:block;width:100%;height:100%}
       <div class="card">
         <h2>Paused</h2>
         <p id="pauseInfo"></p>
-        <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Quit to menu</button></div>
+        <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Save &amp; quit</button></div>
         <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game.</p>
       </div>
     </section>
@@ -1030,7 +1035,7 @@ function slash() {
 function reload() { const p = G?.p; if (!p || G.mode !== 'play' || p.gun === 'knife' || p.reloadT > 0 || p.ammo >= p.mag) return; p.reloadT = p.reloadTime; p.burstLeft = 0; sfx.reload(); }
 function addSpit(x, y, z, vx, vy, vz, from, dmg = 10) { const m = new T.Mesh(geo.drop, mats.spit); m.scale.set(.14, .14, .7); m.position.set(x, y, z); scene.add(m); live.spit.push({ m, x, y, z, vx, vy, vz, from, dmg }); }
 function kill(fo) {
-  const e = ENEMIES[fo.type]; G.score += e.score; G.coins = (G.coins || 0) + e.coins; hud();
+  const e = ENEMIES[fo.type]; G.score += e.score; G.coins = (G.coins || 0) + e.coins; coins += e.coins; store.set('ss-coins', coins); hud();
   const mesh = live.foes.get(fo.id); if (mesh) { scene.remove(mesh); live.foes.delete(fo.id); }
   burst(fo.x, fo.y, fo.z, e.glow, e.boss ? 50 : 14, e.boss ? 16 : 9, e.boss ? .18 : .08);
   burst(fo.x, fo.y, fo.z, '#ffcf7a', e.boss ? 30 : 10, e.boss ? 20 : 12, .05);
@@ -1255,7 +1260,7 @@ function hud() {
     $('hp').classList.toggle('low', f <= .3); $('lowhp').classList.toggle('on', f <= .3 && G.mode === 'play');
   } else $('lowhp').classList.remove('on');
   $('wave').textContent = G ? Math.max(1, G.wave) : 1; $('score').textContent = G ? G.score : 0;
-  $('coins').textContent = G ? coins + (G.banked ? 0 : G.coins || 0) : coins;
+  $('coins').textContent = G ? coins : coins;
   $('walletCoins').textContent = coins; $('shopCoins').textContent = coins;
 }
 let ammoShown = '';
@@ -1266,8 +1271,25 @@ function ammoHud(p) {
   $('ammoNote').textContent = melee ? '' : p.reloadT > 0 ? 'Reloading' : p.ammo === 0 ? 'Empty' : p.mag > 1 && p.ammo <= Math.max(p.burst * 2, p.mag * .2) ? (touchMode ? 'Low ammo' : 'R to reload') : '';
 }
 function slotsHud(p) { $('slots').innerHTML = p.loadout.map((id, i) => `<span${i === p.wi ? ' class="on"' : ''}>${GUNS[id].name}</span>`).join('') + (p.loadout.length > 1 ? `<kbd>${touchMode ? 'Swap' : 'Q'}</kbd>` : ''); }
+// the run in progress is saved to the browser every couple of seconds and whenever you leave the page,
+// so closing or reloading the tab doesn't lose it; Continue on the main menu picks it back up
+function saveRun() { if (G && G.wave > 0 && G.mode !== 'over') { const snap = { ...G, p: { ...G.p, hook: null } }; store.set('ss-run', snap); } }
+function dropRun() { try { localStorage.removeItem('ss-run'); } catch {} continueBtn(); }
+function continueBtn() { const r = store.get('ss-run', null), b = $('contBtn'); b.hidden = !r; if (r) b.innerHTML = `Continue <small>wave ${r.wave} · ${r.score} pts</small>`; }
+function resumeSaved() {
+  const r = store.get('ss-run', null); if (!r) return;
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } ac?.resume?.();
+  clearLive(); showDemo(false); G = r; G.threats = []; G.p.hook = null; G.p.reloadT = 0; G.p.burstLeft = 0;
+  nextId = Math.max(1, ...G.foes.map(f => f.id + 1)); timeScale = 1; zoomK = 0;
+  showGun(G.p.gun); slotsHud(G.p); ammoShown = ''; hud();
+  if (G.mode === 'pick') { offerUpgrades(); return; }
+  G.mode = 'paused'; pause(false);
+}
+setInterval(saveRun, 2000);
+addEventListener('pagehide', saveRun);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveRun(); });
 // coins earned in a run go into the wallet when the run ends (or you quit)
-function bankCoins() { if (G && !G.banked) { coins += G.coins || 0; G.banked = true; store.set('ss-coins', coins); hud(); } }
+function bankCoins() { if (G) G.banked = true; } // coins are saved the moment you earn them; this just marks the run as finished
 function show(id) { for (const o of ['ovTitle', 'ovPick', 'ovPause', 'ovOver', 'ovControls', 'ovGuide', 'ovShop']) $(o).hidden = o !== id; setTimeout(lookHud); if (id) $(id).querySelector('button')?.focus({ preventScroll: true }); }
 let toastT = 0;
 function banner(big, small) {
@@ -1289,7 +1311,7 @@ function takeUpgrade(id) {
   u.apply(G.p); G.p.upgrades.push(id); G.p.ammoBy = {}; G.p.ammo = Infinity; applyGun(G.p, G.p.gun); G.p.ammo = G.p.mag; ammoShown = ''; sfx.pick(); G.mode = 'play'; show(null); lock(); hud(); startWave();
 }
 function gameOver() {
-  G.mode = 'over'; unlock(); input.fire = false; releaseHookIfAny(); const earned = G.coins || 0; bankCoins();
+  G.mode = 'over'; unlock(); input.fire = false; releaseHookIfAny(); const earned = G.coins || 0; bankCoins(); dropRun();
   const newBest = G.score > best.score;
   if (newBest || G.wave > best.wave) { best = { score: Math.max(best.score, G.score), wave: Math.max(best.wave, G.wave) }; store.set('ss3-best', best); }
   $('oScore').textContent = G.score; $('oWave').textContent = G.wave; $('oBest').textContent = best.score; $('oCoins').textContent = `+${earned}`;
@@ -1300,7 +1322,7 @@ function bestLine() { $('bestTitle').textContent = best.score ? `Best: ${best.sc
 function start() {
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
   ac?.resume?.();
-  clearLive(); showDemo(false);
+  clearLive(); showDemo(false); dropRun();
   G = newRun(); G.p.wi = Math.max(0, G.p.loadout.indexOf(equipped)); applyGun(G.p, G.p.loadout[G.p.wi]); showGun(G.p.gun); slotsHud(G.p); timeScale = 1; zoomK = 0; show(null); lock(); hud(); startWave();
 }
 function pause(on) {
@@ -1417,7 +1439,7 @@ stage.addEventListener('pointerup', endTouch); stage.addEventListener('pointerca
 const hold = (id, on, off) => { const b = $(id); b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); on(); }); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { b.classList.remove('on'); off?.(); }); };
 hold('tFire', () => { input.fire = true; input.pull = true; }, () => { input.fire = false; });
 hold('tHook', hookStart, hookEnd); hold('tSwap', () => switchGun(1)); hold('tJump', jump); hold('tDash', dash); hold('tParry', parry); hold('tReload', reload);
-$('startBtn').onclick = start; $('againBtn').onclick = start;
+$('contBtn').onclick = resumeSaved; $('startBtn').onclick = start; $('againBtn').onclick = start;
 // Controls, the shop and the enemy guide open from the menu or the pause screen, and Back returns there.
 let backTo = 'ovTitle';
 const openPanel = id => { backTo = G?.mode === 'paused' ? 'ovPause' : 'ovTitle'; show(id); };
@@ -1451,7 +1473,7 @@ $('shopList').addEventListener('click', e => {
 });
 function loadoutLine() { $('loadout').textContent = `Gun: ${GUNS[equipped].name}`; }
 for (const b of document.querySelectorAll('[data-back]')) b.onclick = () => show(backTo);
-function toMenu() { unlock(); bankCoins(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); show('ovTitle'); }
+function toMenu() { unlock(); bankCoins(); dropRun(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); show('ovTitle'); }
 $('menuBtn').onclick = toMenu;
 const botIcon = e => e.fly
   ? `<svg viewBox="0 0 52 52" aria-hidden="true"><rect x="12" y="20" width="28" height="11" rx="3" fill="${e.body}"/><rect x="16" y="24" width="20" height="3" fill="${e.glow}"/><g fill="${e.glow}" opacity=".5"><ellipse cx="9" cy="16" rx="8" ry="2"/><ellipse cx="43" cy="16" rx="8" ry="2"/></g><path d="M12 22L9 17M40 22l3-5" stroke="${e.body}" stroke-width="2"/></svg>`
@@ -1459,7 +1481,7 @@ const botIcon = e => e.fly
 $('guideList').innerHTML = Object.values(ENEMIES).map(e => `<li>${botIcon(e)}<b>${e.name}</b><span>${e.desc ?? ''}</span><i>${e.boss ? 'Waves 5, 10, 15…' : `From wave ${e.from}`} · ${e.coins} coin${e.coins > 1 ? 's' : ''}</i></li>`).join('');
 $('ctrlDesk').hidden = touchMode; $('ctrlTouch').hidden = !touchMode;
 $('resumeBtn').onclick = () => pause(false);
-$('quitBtn').onclick = () => toMenu();
+$('quitBtn').onclick = () => { saveRun(); unlock(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); continueBtn(); show('ovTitle'); }; // quitting keeps the run so you can Continue
 $('pauseBtn').onclick = () => (G?.mode === 'paused' ? pause(false) : pause(true));
 $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) takeUpgrade(b.dataset.id); });
 function setMute(m) { muted = m; store.set('ss-muted', m); $('mute').setAttribute('aria-label', m ? 'Sound off' : 'Sound on'); $('wav').style.display = m ? 'none' : ''; }
@@ -1494,7 +1516,7 @@ const boot = data => {
     if (G.mode === 'play') G.mode = 'paused';
     hud(); if (G.mode === 'pick') offerUpgrades(); else { $('pauseInfo').textContent = `Wave ${G.wave} · ${G.score} points`; show('ovPause'); }
   } else showDemo(true);
-  lookHud();
+  continueBtn(); lookHud();
   requestAnimationFrame(frame);
 };
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
