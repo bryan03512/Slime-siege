@@ -59,6 +59,8 @@ canvas{display:block;width:100%;height:100%}
 @keyframes slam{0%{opacity:0;transform:scale(2.4)}12%{opacity:1;transform:scale(.94)}20%{transform:scale(1)}80%{opacity:1;transform:scale(1.04)}100%{opacity:0;transform:scale(1.08)}}
 .combo{position:absolute;left:calc(50% + 40px);top:calc(50% - 46px);font:20px/1 'Russo One',sans-serif;color:#fff;text-shadow:0 0 10px var(--pink),0 2px 0 #000;pointer-events:none;opacity:0}
 .combo.on{animation:combo .9s ease-out forwards}
+.spdpop{position:absolute;left:calc(50% - 40px);top:calc(50% + 22px);transform:translateX(-100%);font:24px/1 'Russo One',sans-serif;color:var(--amber);text-shadow:0 0 12px rgba(255,176,32,.8),0 2px 0 #000;pointer-events:none;opacity:0}
+.spdpop.on{animation:combo .8s ease-out forwards}
 @keyframes combo{0%{opacity:1;transform:scale(1.6) rotate(-6deg)}20%{transform:scale(1) rotate(-4deg)}70%{opacity:1}100%{opacity:0;transform:translateY(-14px) rotate(-4deg)}}
 .boss{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(440px,70%);pointer-events:none;text-align:center;font:16px/1 'Russo One',sans-serif;color:#fff;text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 8px var(--pink)}
 .boss div{height:10px;margin-top:6px;background:rgba(0,0,0,.6);border:1px solid rgba(255,61,139,.6);overflow:hidden}
@@ -226,6 +228,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="bars" aria-hidden="true"><i></i><i></i></div>
     <div class="banner" id="banner" aria-live="polite"></div>
     <div class="combo" id="combo" aria-hidden="true"></div>
+    <div class="spdpop" id="spdpop" aria-hidden="true"></div>
     <div class="boss" id="boss" hidden>The Warden<div><b id="bossHp"></b></div></div>
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div></div>
@@ -268,7 +271,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 25 · sniper blast</p>
+        <p class="ver">Version 26 · speed-powered sword</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -280,7 +283,7 @@ canvas{display:block;width:100%;height:100%}
             <div class="ctrl"><div class="caps one"><span class="kc mouse" aria-label="Mouse"><i></i></span></div><b>Look</b><span>Move the mouse</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse left" aria-label="Left mouse button"><i></i></span></div><b>Shoot</b><span>Click for a 3-round burst. Hold to keep firing bursts</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc mouse right" aria-label="Right mouse button"><i></i></span><span class="kc">E</span></div><b>Grapple</b><span>Hold to reel yourself to where you aim, or onto a robot. You keep the speed when you let go</span></div>
-            <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Cycle through every gun you own, plus your long sword. The sword cuts for half a second per swing and you can’t be hurt while it swings</span></div>
+            <div class="ctrl"><div class="caps one"><span class="kc">Q</span></div><b>Swap weapon</b><span>Cycle through every gun you own, plus your long sword. The sword cuts for half a second per swing, hits harder the faster you’re moving, and you can’t be hurt while it swings</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc">R</span></div><b>Reload</b><span>Reloads by itself when the magazine runs dry</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc space">Space</span></div><b>Jump</b><span>Low gravity: reach cars, containers and rooftops. For more height, dash upwards</span></div>
             <div class="ctrl"><div class="caps one"><span class="kc wide">Shift</span></div><b>Dash</b><span>Flings you the way you’re moving. Look up (or hold Space) to dash upwards. Cancels a grapple fling. Two in a row</span></div>
@@ -378,7 +381,7 @@ const UPGRADES = [
 const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
-  knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .62, mag: 0, reloadTime: 0, dmg: 4, reach: 4.4, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second, and you can’t be hurt while it swings.' },
+  knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .62, mag: 0, reloadTime: 0, dmg: 4, reach: 4.4, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second, and you can’t be hurt while it swings. Hits harder the faster you’re going.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots and bursts where it lands. In the air, click to scope in and slow time, then click again to fire.' },
 };
 const A = 80; // the city block runs from -A to A on both axes
@@ -906,7 +909,9 @@ function update(dt) {
   const ox = p.x, oz = p.z;
   // move in small steps so high speed can't carry you through a wall
   const stepX = vx * p.speed * dt + p.mx * dt, stepZ = vz * p.speed * dt + p.mz * dt, n = Math.max(1, Math.ceil(Math.hypot(stepX, stepZ) / .3));
+  const bx = p.x, bz = p.z;
   for (let i = 0; i < n; i++) { p.x += stepX / n; p.z += stepZ / n; pushOut(p, p.r); }
+  if (dt > 0) p.spd = Math.hypot((p.x - bx) / dt, (p.z - bz) / dt, Math.abs(p.vy) * .6); // your real speed, used by the sword
   // hitting a wall soaks up momentum; the ground slows you quickly, the air hardly at all
   if (Math.hypot(p.mx, p.mz) > .5) { const want = Math.hypot(vx * p.speed + p.mx, vz * p.speed + p.mz) * dt, got = Math.hypot(p.x - ox, p.z - oz); if (want > 0 && got < want * .4) { p.mx *= .5; p.mz *= .5; } }
   const grounded = p.y <= groundAt(p.x, p.z, p.r) + .02;
@@ -1073,6 +1078,9 @@ function slash() {
   noise(.3, .12, 3600, 2.5); beep(700, .18, 'sawtooth', .02, -500);
   const e = $('edge'); e.classList.add('guard'); clearTimeout(slash.t); slash.t = setTimeout(() => e.classList.remove('guard'), g.guard * 1000);
 }
+// faster = harder: walking pace is normal damage, rising to 3x at about 28 m/s (dashes, grapples, falls)
+function swordMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 10, 0, 2); }
+function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m.toFixed(1)}`; el.style.fontSize = `${18 + m * 8}px`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 function swingTick(dt) {
   const p = G.p; if (!(p.slashT > 0)) return; p.slashT -= dt;
   const g = GUNS.knife, [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1; let hit = 0;
@@ -1080,7 +1088,8 @@ function swingTick(dt) {
     if (fo.hp <= 0 || p.slashCut.includes(fo.id)) continue;
     const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1;
     if (d > g.reach + fo.r || (dx * ax + dz * az) / (d * al) < .1 || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2) continue;
-    p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg; fo.flash = .1; fo.kx += dx / d * 14; fo.kz += dz / d * 14; hit++;
+    const mult = swordMult(p); p.slashCut.push(fo.id); fo.hp -= g.dmg * p.dmg * mult; fo.flash = .1; fo.kx += dx / d * 14 * Math.min(mult, 2); fo.kz += dz / d * 14 * Math.min(mult, 2); hit++;
+    if (mult >= 1.2) { speedPop(mult); burst(fo.x, fo.y ?? fo.r, fo.z, '#ffb020', Math.round(6 * mult), 10, .06); }
     burst(fo.x, fo.y ?? fo.r, fo.z, '#ffffff', 8, 8, .05); burst(fo.x, fo.y ?? fo.r, fo.z, ENEMIES[fo.type].glow, 6, 6, .06);
     if (fo.hp <= 0) kill(fo); else sfx.hit();
   }
