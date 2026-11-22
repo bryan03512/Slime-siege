@@ -55,7 +55,7 @@ Built with [three.js](https://threejs.org/) r128.
 - Damage numbers float up over robots when you hit them (white, orange for big hits, pink for the killing blow), and a red number pops over your health bar when you're hit.
 - Tanks have double health: Bulwark 90, Titan 220, Colossus 520.
 - Spear (140 coins, melee): a long narrow thrust (7 m) that pierces every robot in the line, with no 3-hit cap. Moving faster than about 11 m/s, it hits whatever is in its line on its own (half damage, each robot every 0.3 s). Weak per hit (2 base damage), but its speed bonus has no cap and climbs fast: ×(1 + (speed − 6)/3).
-- Spear immunity: every thrust makes you immune for 0.45 s (about 0.23 s on each auto-hit that lands).
+- Spear immunity: every thrust makes you immune for 0.8 s (0.4 s on each auto-hit that lands).
 - The grapple has no top speed: it pulls harder the longer it's attached (70 m/s² at first, +28 m/s² every second), and it never slows you down if you came in faster. This also lets the spear's uncapped speed bonus go past 6x.
 
 ## Slime look, Goop and touch assists (v56)

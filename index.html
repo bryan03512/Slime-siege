@@ -364,7 +364,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 56 · slime weapons, Goop, touch assists</p>
+        <p class="ver">Version 57 · longer spear immunity</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -506,7 +506,7 @@ const CROSSES = { cross: { name: 'Cross', price: 0 }, dot: { name: 'Dot', price:
 const MAX_RANGED = 1, MAX_MELEE = 1; // one gun and one melee weapon per run
 const FOCUS_TIME = 3, FOCUS_COOLDOWN = 4; // seconds of slow time, and how long until Focus can be used again
 const MAX_SWING_HITS = 3;
-const SPEAR_IFRAME = .45;     // seconds you cannot be hurt after a spear thrust (half that on an auto-hit)
+const SPEAR_IFRAME = .8;      // seconds you cannot be hurt after a spear thrust (half that on an auto-hit)
 const DRONE_AIM = 1.8;        // seconds a drone holds its red laser on you before it fires
 const PARRY_BUFFER = .5;      // you can still parry a drone shot this long after it hits you
 // Melee first: guns are a backup with limited spare ammo, refilled by melee kills
