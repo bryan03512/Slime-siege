@@ -301,7 +301,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 33 · no background noise, dash follows movement</p>
+        <p class="ver">Version 34 · railgun slow-mo and lightning</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -413,7 +413,7 @@ const UPGRADES = [
 const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
-  railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge, let go to fire a beam that goes through every robot in a line. A full charge hits very hard.' },
+  railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
   hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: 7, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Click in the air to dive and slam: the higher you fall from, the bigger and harder the shockwave.' },
   knife:  { name: 'Long sword',  price: 0,   mode: 'melee',  rate: .62, mag: 0, reloadTime: 0, dmg: 4, reach: 4.4, swing: .5, guard: .75, free: true, desc: 'Always carried. A long, wide swing that cuts everything in front of you for half a second. Hits harder the faster you’re going, and while you’re moving fast (dashing, grappling or dropping) you can’t be hurt mid-swing.' },
   sniper: { name: 'Sniper',      price: 120, mode: 'single', rate: .3, mag: 1, reloadTime: 1.2, dmg: 14, spread: 0, pierce: 2, scope: true, desc: 'One huge round per magazine that punches through three robots and bursts where it lands. In the air, click to scope in and slow time, then click again to fire.' },
@@ -1046,7 +1046,7 @@ function update(dt) {
     if (GUNS[p.gun].mode === 'melee') { if (want) { input.pull = false; if (GUNS[p.gun].slam && p.y > groundAt(p.x, p.z, p.r) + 1.2) startSlam(); else slash(); p.cool = p.rate; } }
     else if (GUNS[p.gun].mode === 'charge') {
       const cg = GUNS[p.gun].charge;
-      if (input.fire && p.ammo > 0) { p.charge = Math.min(1, (p.charge || 0) + dt / cg); if (Math.floor(p.charge * 10) !== p.chargeTick) { p.chargeTick = Math.floor(p.charge * 10); beep(200 + p.charge * 700, .06, 'sawtooth', .015); } }
+      if (input.fire && p.ammo > 0) { p.charge = Math.min(1, (p.charge || 0) + realDt / cg); if (Math.floor(p.charge * 10) !== p.chargeTick) { p.chargeTick = Math.floor(p.charge * 10); beep(200 + p.charge * 700, .06, 'sawtooth', .015); } }
       else if ((p.charge || 0) > 0 || (input.pull && p.ammo > 0)) { // released (or a quick click): fire with what's built up
         input.pull = false; const c = Math.max(.2, p.charge || 0); p.charge = 0; p.chargeTick = -1;
         fire({ mult: c, pierce: 99, fx: 'rail', charge: c }); p.ammo--; p.cool = p.rate; if (p.ammo <= 0) reload();
@@ -1070,7 +1070,7 @@ function update(dt) {
   }
   swingTick(dt);
   // bullet tracers fade fast
-  for (const tr of live.shots) { tr.life -= dt; tr.m.material.opacity = Math.max(0, tr.life / (tr.max || .06)) * (tr.op ?? .9); if (tr.grow) tr.m.scale.multiplyScalar(1 + tr.grow * dt); if (tr.thin) { tr.m.scale.x *= 1 - tr.thin * dt; tr.m.scale.y *= 1 - tr.thin * dt; } }
+  for (const tr of live.shots) { tr.life -= dt; if (tr.zap) jitterZap(tr); tr.m.material.opacity = Math.max(0, tr.life / (tr.max || .06)) * (tr.op ?? .9); if (tr.grow) tr.m.scale.multiplyScalar(1 + tr.grow * dt); if (tr.thin) { tr.m.scale.x *= 1 - tr.thin * dt; tr.m.scale.y *= 1 - tr.thin * dt; } }
   live.shots = live.shots.filter(tr => tr.life > 0 || (scene.remove(tr.m), false));
   // enemy energy bolts
   for (const sp of live.spit) {
@@ -1177,7 +1177,7 @@ function fire(opt = {}) {
   const ex = ox + dx * Math.min(end, 220), ey = oy + dy * Math.min(end, 220), ez = oz + dz * Math.min(end, 220), len = Math.hypot(ex - _v.x, ey - _v.y, ez - _v.z);
   const tr = new T.Mesh(geo.cube, mats.tracer.clone()); const thick = gd.scope ? .07 : p.gun === 'mg' ? .018 : .025; tr.scale.set(thick, thick, len); if (gd.scope) tr.material.color.set('#9ff6ff'); tr.position.set((_v.x + ex) / 2, (_v.y + ey) / 2, (_v.z + ez) / 2); tr.lookAt(ex, ey, ez); scene.add(tr);
   live.shots.push({ m: tr, life: gd.scope ? .5 : .06, max: gd.scope ? .5 : .06, thin: gd.scope ? 2.5 : 0 });
-  if (opt.fx === 'rail') { tr.visible = false; sniperFx(_v.x, _v.y, _v.z, ex, ey, ez, len, end < 220, cosColor() || '#b45cff', '#ecd2ff', .6 + opt.charge * .8); shake = Math.max(shake, .04 + opt.charge * .1); }
+  if (opt.fx === 'rail') { tr.visible = false; sniperFx(_v.x, _v.y, _v.z, ex, ey, ez, len, end < 220, cosColor() || '#b45cff', '#ecd2ff', 1.3 + opt.charge * 1.4); for (let k = 0; k < 2 + Math.round(opt.charge * 3); k++) zap(_v.x, _v.y, _v.z, ex, ey, ez, .25 + opt.charge * .45 + k * .08, k % 2 ? '#ffffff' : (cosColor() || '#c58bff')); shake = Math.max(shake, .04 + opt.charge * .1); }
   if (gd.scope) { sniperFx(_v.x, _v.y, _v.z, ex, ey, ez, len, end < 220, cosColor()); if (end === wall && end < 220) sniperBlast(ex, Math.max(0, ey), ez, hits.slice(0, pierce + 1).map(h => h[1].id)); }
   gun.position.z = gd.scope ? -.36 : -.44; recoil = Math.min(gd.scope ? .12 : .06, recoil + (gd.scope ? .09 : p.gun === 'mg' ? .006 : .014)); flashT = .045;
   if (opt.fx === 'rail') { noise(.35, .2, 2400, .8); beep(1600, .3, 'sawtooth', .05, -1400); } else if (gd.scope) { sfx.snipe(); shake = Math.max(shake, .05); } else if (p.gun === 'mg') sfx.mg(); else sfx.shoot();
@@ -1258,6 +1258,25 @@ function sniperBlast(x, y, z, skip) {
 }
 // the sniper round: a hot core, a wide cyan glow that lingers, rings punched along the path, and a flash where it lands
 const ringGeo = new T.RingGeometry(.35, .5, 24);
+// crackling lightning around a beam: a jagged line that re-jitters every frame until it fades
+const _za = new T.Vector3(), _zb = new T.Vector3(), _zd = new T.Vector3();
+function zap(sx, sy, sz, ex, ey, ez, amp, color) {
+  const len = Math.hypot(ex - sx, ey - sy, ez - sz), n = Math.max(8, Math.min(70, Math.round(len / 1.2)));
+  const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(new Float32Array((n + 1) * 3), 3));
+  const line = new T.Line(g, new T.LineBasicMaterial({ color, transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
+  line.frustumCulled = false; line.renderOrder = 6; scene.add(line);
+  const z = { m: line, life: .45, max: .45, op: 1, zap: { s: [sx, sy, sz], e: [ex, ey, ez], amp, n } }; live.shots.push(z); jitterZap(z);
+}
+function jitterZap(z) {
+  const { s, e, amp, n } = z.zap, pos = z.m.geometry.attributes.position;
+  _zd.set(e[0] - s[0], e[1] - s[1], e[2] - s[2]).normalize();
+  _za.set(0, 1, 0); if (Math.abs(_zd.y) > .9) _za.set(1, 0, 0); _za.cross(_zd).normalize(); _zb.copy(_zd).cross(_za).normalize();
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, k = i === 0 || i === n ? 0 : amp * (0.4 + Math.random() * .6), a = Math.random() * Math.PI * 2;
+    pos.setXYZ(i, s[0] + (e[0] - s[0]) * t + (_za.x * Math.cos(a) + _zb.x * Math.sin(a)) * k, s[1] + (e[1] - s[1]) * t + (_za.y * Math.cos(a) + _zb.y * Math.sin(a)) * k, s[2] + (e[2] - s[2]) * t + (_za.z * Math.cos(a) + _zb.z * Math.sin(a)) * k);
+  }
+  pos.needsUpdate = true;
+}
 function sniperFx(sx, sy, sz, ex, ey, ez, len, landed, col1, col2 = '#9ff6ff', size = 1) {
   col1 ||= '#3ef0ff'; if (col1 !== '#3ef0ff' && col2 === '#9ff6ff') col2 = '#ffffff';
   const add = (m, life, extra) => { m.renderOrder = 5; scene.add(m); live.shots.push({ m, life, max: life, ...extra }); };
@@ -1265,7 +1284,7 @@ function sniperFx(sx, sy, sz, ex, ey, ez, len, landed, col1, col2 = '#9ff6ff', s
   const glow = new T.Mesh(geo.cube, new T.MeshBasicMaterial({ color: col1, transparent: true, opacity: .5, blending: T.AdditiveBlending, depthWrite: false }));
   glow.scale.set(.16 * size, .16 * size, len); glow.position.set(...mid); glow.lookAt(ex, ey, ez); add(glow, .9, { op: .45, thin: 1.4 });
   const core = new T.Mesh(geo.cube, new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, blending: T.AdditiveBlending, depthWrite: false }));
-  core.scale.set(.035, .035, len); core.position.set(...mid); core.lookAt(ex, ey, ez); add(core, .35, { op: 1 });
+  core.scale.set(.035 * size, .035 * size, len); core.position.set(...mid); core.lookAt(ex, ey, ez); add(core, .35, { op: 1 });
   const dir = new T.Vector3(ex - sx, ey - sy, ez - sz).normalize();
   for (let d = 5; d < Math.min(len, 70); d += 6 + d * .25) {
     const r = new T.Mesh(ringGeo, new T.MeshBasicMaterial({ color: col2, transparent: true, side: T.DoubleSide, blending: T.AdditiveBlending, depthWrite: false }));
@@ -1429,7 +1448,7 @@ function render(dt) {
       m.rotation.y = Math.atan2(p.x - fo.x, p.z - fo.z); m.rotation.x = ENEMIES[fo.type].fly ? .15 : 0;
       u.legs.forEach((l, i) => l.rotation.x = sw * .7 * (i ? -1 : 1)); u.arms.forEach((a, i) => a.rotation.x = sw * .5 * (i ? 1 : -1) - .2);
       for (const r of u.rotors) r.rotation.y += dt * 40;
-      u.metal.emissive.set(fo.flash > 0 ? '#ffffff' : BOT_GLOW); if (u.hitbox) u.hitbox.visible = zoomK > .3;
+      u.metal.emissive.set(fo.flash > 0 ? '#ffffff' : BOT_GLOW); if (u.hitbox) u.hitbox.visible = hitboxK > .3;
     }
   } else {
     // title screen: a slow look around the block with robots posed in it
@@ -1827,7 +1846,8 @@ function resize() {
 }
 const ro = new ResizeObserver(resize); ro.observe(stage);
 let last = performance.now();
-let timeScale = 1, zoomK = 0, wasScoped = false;
+let timeScale = 1, zoomK = 0, wasScoped = false, realDt = 0, hitboxK = 0;
+const sc0 = () => isScoped();
 function isScoped() { const p = G?.p; return !!p && G.mode === 'play' && !!p.scoped && !!GUNS[p.gun]?.scope; }
 function frame(now) {
   let dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -1835,7 +1855,9 @@ function frame(now) {
   const fp = G?.p; let focusing = false;
   if (fp && G.mode === 'play') { if (fp.focusT > 0) { fp.focusT -= dt; focusing = true; } else if (fp.focusCd > 0) fp.focusCd -= dt; } // real seconds, not slowed
   stage.classList.toggle('focusing', focusing);
-  const sc = isScoped(); timeScale += ((sc ? .3 : focusing ? .35 : 1) - timeScale) * Math.min(1, dt * 8); zoomK += ((sc ? 1 : 0) - zoomK) * Math.min(1, dt * 10);
+  realDt = dt; const charging = !!fp && G.mode === 'play' && GUNS[fp.gun]?.mode === 'charge' && (fp.charge || 0) > 0;
+  hitboxK += ((sc0() || charging ? 1 : 0) - hitboxK) * Math.min(1, dt * 10);
+  const sc = isScoped(); timeScale += ((sc ? .3 : charging ? .3 : focusing ? .35 : 1) - timeScale) * Math.min(1, dt * 8); zoomK += ((sc ? 1 : 0) - zoomK) * Math.min(1, dt * 10);
   if (sc && !wasScoped) sfx.slow(); wasScoped = sc;
   dt *= timeScale;
   if (hitStop > 0) { hitStop -= dt; dt *= .08; } // a beat of freeze-frame on kills
