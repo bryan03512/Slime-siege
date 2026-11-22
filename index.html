@@ -298,7 +298,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="wallet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#ffb020"/><circle cx="12" cy="12" r="6.5" fill="none" stroke="#7a4d00" stroke-width="2"/></svg><span id="walletCoins">0</span> coins</p>
         <p class="best menu-best" id="loadout"></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 29 · start with the gun you pick</p>
+        <p class="ver">Version 31 · styles colour the whole weapon</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -687,6 +687,8 @@ function stepRain(dt, cx, cz) {
 // the gun in your hands: one model per gun, shown for whichever is equipped
 const gun = new T.Group();
 const gunMetal = lam('#20252f'), gunDark = lam('#111419'), gunAccent = glowMat('#3ef0ff');
+const shinyMats = []; // blades and hammer heads: tinted by styles too
+const shinyMat = (c, sh) => { const m = new T.MeshPhongMaterial({ color: c, specular: '#ffffff', shininess: sh }); shinyMats.push({ m, def: c }); return m; };
 const accentMats = []; // { m, def }: glowing strips that take the cosmetic colour
 const accent = c => { const m = glowMat(c); accentMats.push({ m, def: c }); return m; };
 function gunModelFor(id) {
@@ -694,12 +696,12 @@ function gunModelFor(id) {
   const part = (w, h, d, mat, x, y, z) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); g.add(m); return m; };
   const tube = (r, len, mat, z, y = .015) => { const m = new T.Mesh(new T.CylinderGeometry(r, r, len, 10), mat); m.rotation.x = Math.PI / 2; m.position.set(0, y, z); g.add(m); return m; };
   if (id === 'knife') {
-    const blade = new T.Mesh(new T.BoxGeometry(.03, .1, 1.25), new T.MeshPhongMaterial({ color: '#d9dee8', specular: '#ffffff', shininess: 90 })); blade.position.set(0, .02, -.8); g.add(blade);
+    const blade = new T.Mesh(new T.BoxGeometry(.03, .1, 1.25), shinyMat('#d9dee8', 90)); blade.position.set(0, .02, -.8); g.add(blade);
     part(.012, .022, 1.15, accent('#3ef0ff'), .018, .055, -.8); part(.05, .2, .07, gunMetal, 0, .02, -.15); part(.06, .1, .3, gunDark, 0, -.01, .05);
     g.userData = { mag: null, magY: 0, tip: -1.4, knife: true }; g.position.set(.05, -.02, 0);
   } else if (id === 'hammer') {
     part(.05, .05, 1.0, gunDark, 0, 0, -.42);
-    const head = part(.34, .22, .22, new T.MeshPhongMaterial({ color: '#8a919f', specular: '#ffffff', shininess: 60 }), 0, .02, -.95);
+    const head = part(.34, .22, .22, shinyMat('#8a919f', 60), 0, .02, -.95);
     part(.36, .04, .24, accent('#ffb020'), 0, .02, -.95); part(.07, .1, .2, gunMetal, 0, 0, .05);
     g.userData = { mag: null, magY: 0, tip: -1.05, knife: true, head }; g.position.set(.06, -.04, 0);
   } else if (id === 'railgun') {
@@ -787,6 +789,11 @@ function cosColor() { return COLORS[cos.color]?.c || null; }
 function applyCosmetics() {
   const c = cosColor();
   for (const a of accentMats) a.m.color.set(c || a.def);
+  // the whole weapon takes the colour: the body a rich tone of it, the dark parts a deep shade, blades and heads a bright metal
+  const col = c ? new T.Color(c) : null, mix = (k, base) => col ? new T.Color(base).lerp(col, k) : new T.Color(base);
+  gunMetal.color.copy(mix(.75, '#20252f')).multiplyScalar(col ? .75 : 1); gunMetal.emissive.copy(col ? col.clone().multiplyScalar(.1) : new T.Color(0));
+  gunDark.color.copy(mix(.45, '#111419')).multiplyScalar(col ? .45 : 1); gunDark.emissive.copy(col ? col.clone().multiplyScalar(.04) : new T.Color(0));
+  for (const a of shinyMats) a.m.color.copy(col ? new T.Color(a.def).lerp(col, .55) : new T.Color(a.def));
   mats.tracer.color.set(c || '#ffe9b0'); rope.material.color.set(c || '#3ef0ff'); hookTip.material.color.set(c || '#3ef0ff');
   const x = $('cross'); x.className = `cross x-${cos.cross}`; x.style.setProperty('--xc', c || '#ffffff');
 }
@@ -1530,12 +1537,20 @@ function slotsHud(p) { $('slots').innerHTML = p.loadout.map((id, i) => `<span${i
 function saveRun() { if (G && G.wave > 0 && G.mode !== 'over') { const snap = { ...G, p: { ...G.p, hook: null } }; store.set('ss-run', snap); } }
 function dropRun() { try { localStorage.removeItem('ss-run'); } catch {} continueBtn(); }
 function continueBtn() { const r = store.get('ss-run', null), b = $('contBtn'); b.hidden = !r; if (r) b.innerHTML = `Continue <small>wave ${r.wave} · ${r.score} pts</small>`; }
+// gear you own always applies, including to a run you saved before buying it
+function applyGear(p) {
+  p.dashMax = hasGear('dash3') ? 3 : 2; p.dashCharges = Math.min(p.dashMax, p.dashCharges ?? p.dashMax);
+  if (p.dashCharges < 2 && !(p.dashReady > 0)) p.dashCharges = p.dashMax;
+  p.focus = hasGear('focus'); p.focusT ||= 0; p.focusCd ||= 0;
+  if (hasGear('vest') && !p.vest) { p.vest = true; if (p.maxHp < 125) { p.maxHp += 25; p.hp += 25; } }
+  $('dFocus').hidden = $('tFocus').hidden = !p.focus;
+}
 function resumeSaved() {
   const r = store.get('ss-run', null); if (!r) return;
   wakeAudio();
   clearLive(); showDemo(false); G = r; G.threats = []; G.p.hook = null; G.p.reloadT = 0; G.p.burstLeft = 0;
   nextId = Math.max(1, ...G.foes.map(f => f.id + 1)); timeScale = 1; zoomK = 0;
-  showGun(G.p.gun); slotsHud(G.p); ammoShown = ''; hud();
+  applyGear(G.p); showGun(G.p.gun); slotsHud(G.p); ammoShown = ''; hud();
   if (G.mode === 'pick') { offerUpgrades(); return; }
   G.mode = 'paused'; pause(false);
 }
@@ -1576,7 +1591,7 @@ function bestLine() { $('bestTitle').textContent = best.score ? `Best: ${best.sc
 function start() {
   wakeAudio();
   clearLive(); showDemo(false); dropRun();
-  fixLoad(); G = newRun(); G.p.wi = 0; G.revived = false; $('dFocus').hidden = $('tFocus').hidden = !G.p.focus; applyGun(G.p, G.p.loadout[G.p.wi]); showGun(G.p.gun); slotsHud(G.p); timeScale = 1; zoomK = 0; show(null); lock(); hud(); startWave();
+  fixLoad(); G = newRun(); G.p.wi = 0; G.revived = false; G.p.vest = hasGear('vest'); applyGear(G.p); applyGun(G.p, G.p.loadout[G.p.wi]); showGun(G.p.gun); slotsHud(G.p); timeScale = 1; zoomK = 0; show(null); lock(); hud(); startWave();
 }
 function pause(on) {
   if (!G) return;
@@ -1743,7 +1758,7 @@ function renderShop() {
   if (shopTab === 'style') html = Object.entries(COLORS).map(([id, c]) => {
     const have = cos.owned.includes(id), on = cos.color === id;
     const btn = on ? '<button class="btn" disabled>Equipped</button>' : have ? `<button class="btn alt" data-color="${id}">Equip</button>` : buyBtn(`data-color="${id}"`, c.price);
-    return `<div class="gcard${on ? ' on' : ''}"><div class="swatch" style="background:${c.c ? `linear-gradient(90deg,#11141c,${c.c})` : 'linear-gradient(90deg,#3ef0ff,#ffb020,#ff3d8b)'}"></div><b>${c.name}</b><p>${c.c ? 'Gun strips, sword edge, tracers, grapple and crosshair.' : 'Each weapon keeps its own colour.'}</p><div class="row2">${btn}</div></div>`;
+    return `<div class="gcard${on ? ' on' : ''}"><div class="swatch" style="background:${c.c ? `linear-gradient(90deg,#11141c,${c.c})` : 'linear-gradient(90deg,#3ef0ff,#ffb020,#ff3d8b)'}"></div><b>${c.name}</b><p>${c.c ? 'Your whole gun, sword and hammer, plus tracers, the grapple and the crosshair.' : 'Dark gunmetal; each weapon keeps its own glow colour.'}</p><div class="row2">${btn}</div></div>`;
   }).join('') + Object.entries(CROSSES).map(([id, c]) => {
     const have = cos.owned.includes('x-' + id) || c.price === 0, on = cos.cross === id;
     const btn = on ? '<button class="btn" disabled>Equipped</button>' : have ? `<button class="btn alt" data-cross="${id}">Equip</button>` : buyBtn(`data-cross="${id}"`, c.price);
