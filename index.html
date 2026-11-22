@@ -364,7 +364,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 58 · grapple aim assist</p>
+        <p class="ver">Version 59 · real grapple swings</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1111,7 +1111,7 @@ function hitsGarden(x, y, z) {
 // ===================== Update =====================
 const input = { keys: {}, fire: false, move: null, look: null, locked: false, dragLook: false, mlook: false, releasing: false };
 const EYE = 1.6;
-const HOOK_RANGE = 70, HOOK_SPEED = 36, HOOK_PULL = 70; // grapple: reach for buildings, (old top speed, unused), how fast it speeds up (grows the longer you hold)
+const HOOK_RANGE = 70, HOOK_SPEED = 36, HOOK_PULL = 70, SWING_REEL = 4, SWING_TUG = 9; // grapple: reach for buildings, (old top speed, unused), how fast it speeds up (grows the longer you hold)
 const ROBOT_LEAP_MAX = 4.5; // robots can't leap higher than a small building
 const GRAV = 10; // low, moon-ish gravity: big floaty jumps (was 24)
 function update(dt) {
@@ -1138,17 +1138,27 @@ function update(dt) {
     else if (p.hook.foe && hd < 2.2 + (G.foes.find(f => f.id === p.hook.foe)?.r || 0)) { releaseHook(); p.mx *= .25; p.mz *= .25; p.vy = Math.min(p.vy, 3); } // reeled right up to it: stop there, ready to slash
     else if (hd < 2.4) { const top = p.hook.y, up = top - p.hook.fromY > 1, v0 = p.vy; releaseHook(); if (up) { p.vy = Math.max(Math.min(v0, 14), Math.sqrt(2 * GRAV * Math.max(1, top + 3 - p.y))); shake = Math.max(shake, .06); } } // a higher anchor flings your feet about 3m above it
     else if (!input.hookHeld) releaseHook();
-    else {
-      // straight line to the anchor: keep whatever speed you had towards it, speed up, and drop any sideways drift
+    else if (p.hook.foe) {
+      // hooked to a robot: straight line to it. Keep whatever speed you had towards it, speed up, and drop any sideways drift
       const ux = hx / hd, uy = hy / hd, uz = hz / hd, along = Math.max(0, p.mx * ux + p.vy * uy + p.mz * uz);
       p.hook.t = (p.hook.t || 0) + dt; /* the longer you hang on, the harder it pulls: no top speed */
       const sp = Math.max(along, 10) + HOOK_PULL * (1 + p.hook.t * .4) * dt;
       p.mx = ux * sp; p.mz = uz * sp; p.vy = uy * sp;
+    } else {
+      // hooked to the city: a real rope swing. Gravity pulls you down, the rope can't stretch, so your speed
+      // turns into an arc around the anchor, while the line slowly reels in and tugs harder the longer you hold
+      const ux = hx / hd, uy = hy / hd, uz = hz / hd, h = p.hook; h.t = (h.t || 0) + dt;
+      h.L = Math.max(2, Math.min(h.L ?? hd, hd) - SWING_REEL * (1 + h.t * .5) * dt);
+      p.vy -= GRAV * dt;
+      const tug = SWING_TUG * (1 + h.t * .4) * dt; p.mx += ux * tug; p.vy += uy * tug; p.mz += uz * tug;
+      const radial = p.mx * ux + p.vy * uy + p.mz * uz; /* + is towards the anchor */
+      if (hd >= h.L - .05 && radial < 0) { p.mx -= ux * radial; p.vy -= uy * radial; p.mz -= uz * radial; } /* taut rope: no moving away */
+      if (hd > h.L) { const k = Math.min(1, (hd - h.L) * 8 * dt); p.mx += ux * (hd - h.L) * k / dt * .5; p.vy += uy * (hd - h.L) * k / dt * .5; p.mz += uz * (hd - h.L) * k / dt * .5; }
     }
   }
   const ox = p.x, oz = p.z;
   // move in small steps so high speed can't carry you through a wall
-  const walk = p.hook ? 0 : 1; // being reeled in: your keys don't push you off the line
+  const walk = p.hook ? (p.hook.foe ? 0 : .3) : 1; // reeled in to a robot: your keys don't push you off the line; on a swing they steer a little
   const stepX = vx * p.speed * dt * walk + p.mx * dt, stepZ = vz * p.speed * dt * walk + p.mz * dt, n = Math.max(1, Math.ceil(Math.hypot(stepX, stepZ) / .3));
   const bx = p.x, bz = p.z;
   for (let i = 0; i < n; i++) { p.x += stepX / n; p.z += stepZ / n; pushOut(p, p.r); }
