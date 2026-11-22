@@ -327,7 +327,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 47 · melee first, sniper drones</p>
+        <p class="ver">Version 48 · the Duelist grapples and snipes</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -420,7 +420,7 @@ const ENEMIES = {
   bulwark:  { name: 'Bulwark',  hp: 45,  speed: 2.1, r: 1.9, bob: 0.03, dmg: 25, score: 90,  coins: 5,  from: 1, tank: 1, body: '#a7b0bf', glow: '#3dff8a', desc: 'Tank, tier 1. A walking wall of armour. Takes a lot of rounds to bring down.' },
   titan:    { name: 'Titan',    hp: 110, speed: 1.8, r: 2.6, bob: 0.02, dmg: 32, score: 180, coins: 10, from: 5, tank: 2, body: '#b9b2a2', glow: '#ffd23f', desc: 'Tank, tier 2. Bigger and much tougher. Keep your distance; one hit takes a third of your health.' },
   colossus: { name: 'Colossus', hp: 260, speed: 1.5, r: 3.5, bob: 0.02, dmg: 42, score: 360, coins: 18, from: 8, tank: 3, body: '#c9b9b0', glow: '#ff6a00', desc: 'Tank, tier 3. A towering machine with a huge health pool. Hit it from the air, out of reach.' },
-  duelist: { name: 'The Duelist', hp: 120, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, and cuts hard. Watch for its blade to glow, then parry (F) to stagger it.' },
+  duelist: { name: 'The Duelist', hp: 420, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, shotDmg: 15, shootEvery: 4.5, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, grapples onto rooftops and snipes you from range with a red laser. Watch for its blade to glow, then parry (F) to stagger it.' },
   warden: { retired: true, name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#cfd3dc', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'walker', splits: 4, desc: 'Every fifth wave. Fires rings of bolts and bursts into Walkers when it goes down.' },
 };
 const UPGRADES = [
@@ -1185,11 +1185,12 @@ function update(dt) {
     if ((!e.boss || e.duelist) && !e.fly && p.y > 1.8 && d < 9 && !(fo.ly > 0)) { fo.leapCd = (fo.leapCd ?? rnd(.5, 2)) - dt; if (fo.leapCd <= 0) { fo.lvy = Math.sqrt(2 * GRAV * Math.min(ROBOT_LEAP_MAX, Math.max(.6, p.y * .5))); /* robots only leap about half as high as you're standing */ fo.ly = (fo.gy || 0) + .01; fo.leapCd = rnd(2, 4); } }
     // fo.gy: the top they're standing on (0 = grass); fo.ly: height while mid-leap
     const under = groundAt(fo.x, fo.z, fo.r * .3);
-    if (fo.ly > 0) {
+    if (fo.hook) { /* flying on its grapple: duelTick moves it */ }
+    else if (fo.ly > 0) {
       fo.x += dx / d * fo.speed * .8 * dt; fo.z += dz / d * fo.speed * .8 * dt; // drift towards you mid-air
       fo.lvy -= GRAV * dt; fo.ly += fo.lvy * dt;
       if (fo.lvy < 0 && fo.ly <= under) { fo.gy = under; fo.ly = 0; fo.lvy = 0; }
-    } else if ((fo.gy || 0) > under + .01) fo.gy = under; // walked off the edge
+    } else if ((fo.gy || 0) > under + .01) { if (e.fly) fo.gy = under; else { fo.ly = fo.gy; fo.lvy = 0; fo.gy = under; } } // walked off the edge: fall
     fo.y = e.fly ? e.fly + Math.sin(fo.ph * .5) * .3 : fo.r + Math.abs(Math.sin(fo.ph)) * (e.bob || 0) * fo.r + Math.max(fo.gy || 0, fo.ly || 0);
     if (fo.aimT > 0) { // locked on: when the time runs out, an instant shot straight at you
       fo.aimT -= dt;
@@ -1199,6 +1200,7 @@ function update(dt) {
       fo.cd -= dt;
       if (fo.cd <= 0) {
         if (e.ringEvery) { fo.cd = e.ringEvery; const off = rnd(0, 1); for (let i = 0; i < 16; i++) { const a = (i + off) / 16 * Math.PI * 2; addSpit(fo.x, 1.3, fo.z, Math.cos(a) * 10, 0, Math.sin(a) * 10, fo.id, 10); } }
+        else if (e.duelist && (d < 10 || fo.windT > 0 || fo.hook || fo.stunT > 0)) fo.cd = .5;
         else if (d < 40 && !(fo.aimT > 0)) { fo.cd = 99; fo.aimT = DRONE_AIM; beep(1600, .12, 'sine', .03, 400); }
         beep(520, 0.09, 'sawtooth', 0.025, -300);
         if (d < 60) { G.threats = (G.threats || []).filter(t => t.id !== fo.id); G.threats.push({ id: fo.id, x: fo.x, z: fo.z, t: 1.4 }); }
@@ -1433,7 +1435,16 @@ function duelTick(fo, e, dx, dz, d, mx, mz, dt) {
   const p = G.p, ux = dx / d, uz = dz / d; fo.side ||= 1;
   fo.dcd = (fo.dcd ?? 1.5) - dt; fo.scd = (fo.scd ?? 0) - dt; if (fo.swingT > 0) fo.swingT -= dt;
   const dashTo = (vx, vz, k) => { fo.kx = vx * k; fo.kz = vz * k; fo.dcd = rnd(1.4, 2.6); sfx.dash(); burst(fo.x, fo.y ?? fo.r, fo.z, '#ff3d8b', 10, 6, .08); };
+  if (fo.hook) { // reel in along a straight line, then hop onto the roof
+    const h = fo.hook, hx = h.x - fo.x, hy = h.y - fo.y, hz = h.z - fo.z, hd = Math.hypot(hx, hy, hz) || 1; h.t -= dt;
+    const step = Math.min(hd, 30 * dt); fo.kx = fo.kz = 0; fo.aimT = 0;
+    fo.x += hx / hd * step; fo.z += hz / hd * step; fo.ly = Math.max(.01, (fo.ly || fo.gy || 0) + hy / hd * step);
+    if (hd < 1.3 || h.t <= 0) { fo.hook = null; fo.x += h.inx * 2.6; fo.z += h.inz * 2.6; fo.lvy = 4; fo.gcd = rnd(4, 7); }
+    return [0, 0];
+  }
+  fo.gcd = (fo.gcd ?? 3) - dt;
   if (fo.stunT > 0) { fo.stunT -= dt; return [0, 0]; }
+  if (fo.gcd <= 0 && !(fo.windT > 0) && !(fo.ly > 0) && (d > 22 || p.y > 3 + (fo.gy || 0))) duelGrapple(fo); 
   if (fo.windT > 0) {
     fo.windT -= dt;
     if (fo.windT <= 0) { // the cut
@@ -1452,23 +1463,39 @@ function duelTick(fo, e, dx, dz, d, mx, mz, dt) {
   const strafe = d < 9 ? .8 : .35;
   return [ux * (d < 3 ? -.3 : 1) - uz * fo.side * strafe, uz * (d < 3 ? -.3 : 1) + ux * fo.side * strafe];
 }
+// pick a rooftop near you (or the one you're on) and swing up to its edge
+function duelGrapple(fo) {
+  const p = G.p; fo.gcd = 1.5; let best = null;
+  for (const b of OBSTACLES) {
+    if (b.h < 3.5 || b.h > 40) continue;
+    const toYou = Math.hypot(b.x - p.x, b.z - p.z) - Math.max(b.w, b.d) / 2, fromMe = Math.hypot(b.x - fo.x, b.z - fo.z);
+    if (fromMe > 60 || toYou > 18) continue;
+    const score = toYou + Math.abs(b.h - p.y) * .3 + fromMe * .2; if (!best || score < best[0]) best = [score, b];
+  }
+  if (!best) return;
+  const b = best[1], ex = clamp(fo.x, b.x - b.w / 2, b.x + b.w / 2), ez = clamp(fo.z, b.z - b.d / 2, b.z + b.d / 2);
+  let ox = fo.x - ex, oz = fo.z - ez; const ol = Math.hypot(ox, oz); if (ol < .1) return; ox /= ol; oz /= ol;
+  fo.hook = { x: ex + ox * (fo.r + .4), y: b.h + fo.r + 1.2, z: ez + oz * (fo.r + .4), inx: -ox, inz: -oz, ax: ex, ay: b.h, az: ez, t: 3 };
+  fo.windT = 0; beep(900, .15, 'square', .03, -500); noise(.2, .1, 2200, 2);
+}
 function droneShot(fo, e) {
   const p = G.p, ex = p.x, ey = p.y + 1.1, ez = p.z, dx = ex - fo.x, dy = ey - fo.y, dz = ez - fo.z, dd = Math.hypot(dx, dy, dz) || 1;
   const wall = rayCity(fo.x, fo.y, fo.z, dx / dd, dy / dd, dz / dd, dd);
   noise(.25, .22, 1200, .7); beep(90, .3, 'sawtooth', .05, -40);
   if (wall < dd - .6) { const t = wall; sniperFx(fo.x, fo.y, fo.z, fo.x + dx / dd * t, fo.y + dy / dd * t, fo.z + dz / dd * t, t, true, '#ff3040', '#ffd0d0', .6); return; } /* a building took it */
   sniperFx(fo.x, fo.y, fo.z, ex, ey, ez, dd, false, '#ff3040', '#ffd0d0', .6);
-  if (p.parryT > 0) { reflectShot(fo, e.dmg); return; }
+  const dmg = e.shotDmg || e.dmg;
+  if (p.parryT > 0) { reflectShot(fo, dmg); return; }
   if (p.inv > 0 || p.dashT > 0) return;
-  const lethal = p.hp - e.dmg <= 0;
-  if (!lethal) hurt(e.dmg, dx, dz);
-  G.snipeBuf = { t: PARRY_BUFFER, from: fo.id, dmg: e.dmg, held: lethal, kx: dx, kz: dz }; /* a killing shot waits for the buffer before it lands */
+  const lethal = p.hp - dmg <= 0;
+  if (!lethal) hurt(dmg, dx, dz);
+  G.snipeBuf = { t: PARRY_BUFFER, from: fo.id, dmg, held: lethal, kx: dx, kz: dz }; /* a killing shot waits for the buffer before it lands */
 }
 function reflectShot(fo, dmg) {
   const p = G.p, src = G.foes.find(f => f.id === fo.id && f.hp > 0); parried(); toast('Shot parried!');
   if (!src) return;
   sniperFx(p.x, p.y + 1.1, p.z, src.x, src.y ?? src.r, src.z, Math.hypot(src.x - p.x, src.z - p.z), false, '#3ef0ff');
-  src.hp -= Math.max(dmg * 1.5, src.maxHp * .8) * p.dmg; src.flash = .2; marker();
+  src.hp -= (ENEMIES[src.type].boss ? dmg * 3 : Math.max(dmg * 1.5, src.maxHp * .8)) * p.dmg; src.flash = .2; marker();
   if (src.hp <= 0) kill(src, true); else sfx.chop();
 }
 function hurt(n, kx, kz) {
@@ -1560,7 +1587,7 @@ function tickCombo(dt) { comboT -= dt; if (comboT <= 0 && combo) { combo = 0; } 
 // ===================== Drawing =====================
 let slashT = 0, slashSide = 1, switchT = 0;
 let bob = 0, gunSwing = 0, recoil = 0, roll = 0, landDip = 0, fovKick = 0, hitStop = 0, combo = 0, comboT = 0, flashT = 0, baseFov = 75;
-const lasers = new Map();
+const lasers = new Map(), ropes = new Map();
 function laserTick() {
   const p = G.p; let lock = 0;
   for (const fo of G.foes) {
@@ -1573,6 +1600,14 @@ function laserTick() {
     lock = Math.max(lock, k);
   }
   for (const [id, m] of lasers) if (!G.foes.some(f => f.id === id)) { scene.remove(m); lasers.delete(id); }
+  for (const fo of G.foes) {
+    let m = ropes.get(fo.id);
+    if (!fo.hook || fo.hp <= 0) { if (m) { scene.remove(m); ropes.delete(fo.id); } continue; }
+    if (!m) { m = new T.Mesh(geo.cube, new T.MeshBasicMaterial({ color: '#ff3d8b' })); scene.add(m); ropes.set(fo.id, m); }
+    const h = fo.hook, sy = fo.y + .4, rd = Math.hypot(h.ax - fo.x, h.ay - sy, h.az - fo.z) || 1;
+    m.position.set((fo.x + h.ax) / 2, (sy + h.ay) / 2, (fo.z + h.az) / 2); m.lookAt(h.ax, h.ay, h.az); m.scale.set(.06, .06, rd);
+  }
+  for (const [id, m] of ropes) if (!G.foes.some(f => f.id === id && f.hook)) { scene.remove(m); ropes.delete(id); }
   const el = $('lockon');
   if (lock > 0) { el.style.display = 'block'; const sz = 150 - 110 * lock; el.style.width = el.style.height = sz + 'px'; el.style.transform = `translate(-50%,-50%) rotate(${lock * 90}deg)`; el.classList.toggle('hot', lock > .7); }
   else el.style.display = 'none';
