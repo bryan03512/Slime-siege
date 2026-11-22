@@ -66,3 +66,4 @@ Built with [three.js](https://threejs.org/) r128.
 - Pause menu has End run (press twice): ends the run like dying, so your coins are kept and best scores count.
 - Robot health grows faster with each wave: x(1 + 0.2(w-1)) x 1.04^(w-1), about 2x at wave 5, 4x at wave 10, 10x at wave 20. The Duelist gets 60% more each time it returns. The wave banner shows the current multiplier.
 - The Duelist shoots about twice as often (every 2.4 s, 1.2 s lock-on). Above half health it launches into the sky and grapples straight onto you for a 30-damage dive (parry it to stagger it, or dash away). Below 45% health it swings from point to point in the sky around you, shooting every 1.3 s, then drops back down after a few swings.
+- Long sword speed bonus: starts at 2.5x and gains 1x for every 12 m/s over 6 m/s (half as fast as before), up to 7.5x.

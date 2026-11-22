@@ -366,7 +366,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 66 · the Duelist dives and flies</p>
+        <p class="ver">Version 67 · long sword rebalance</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1364,7 +1364,7 @@ function smultHud(p) {
   const el = $('smult'); el.textContent = t; el.classList.toggle('hot', m >= 1.8);
 }
 // faster = harder: walking pace is about normal damage, rising to 6x at about 36 m/s (dashes, grapples, falls). The spear has no cap.
-function swordMult(p) { return 1 + clamp(((p.spd || 0) - 6) / 6, 0, 5); } // sword: up to 6x, ~4x mid-dash
+function swordMult(p) { return 2.5 + clamp(((p.spd || 0) - 6) / 12, 0, 5); } // sword: starts at 2.5x, +1x per 12 m/s over 6, up to 7.5x
 function damagePop(d) { const el = $('spdpop'); el.textContent = `${d < 10 ? d.toFixed(1) : Math.round(d)} dmg`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, d)) * 2.5)}px`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m < 10 ? m.toFixed(1) : Math.round(m)}`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, m)) * 2.5)}px`; /* grows a little for big hits, never past 32px */ el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 // The hammer starts weak and grows exponentially: with how far (and fast) you fell for a slam, and with your speed for a swing.
