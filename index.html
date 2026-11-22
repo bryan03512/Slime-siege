@@ -278,6 +278,8 @@ canvas{display:block;width:100%;height:100%}
 .lockon i:nth-child(3) { left: -16px; } .lockon i:nth-child(4) { right: -16px; }
 .lockon.hot { border-color: #ff2a3a; animation: lockblink .12s steps(2) infinite; }
 @keyframes lockblink { 50% { opacity: .35; } }
+.btn.danger{border-color:#ff3040;color:#ffb3ba}
+.btn.danger:hover{background:rgba(255,48,64,.18)}
 </style>
 </head>
 <body>
@@ -364,7 +366,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 63 · straight grapple restored</p>
+        <p class="ver">Version 64 · end run from pause</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -429,7 +431,7 @@ canvas{display:block;width:100%;height:100%}
       <div class="card">
         <h2>Paused</h2>
         <p id="pauseInfo"></p>
-        <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Save &amp; quit</button></div>
+        <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn alt" id="pauseCtrl">Controls</button><button class="btn alt" id="quitBtn">Save &amp; quit</button><button class="btn alt danger" id="endBtn">End run</button></div>
         <p class="note" id="lockNote" hidden>Your browser didn't let the game capture the mouse. Mouse look still works while the cursor is over the game.</p>
       </div>
     </section>
@@ -2236,6 +2238,13 @@ $('guideList').innerHTML = Object.values(ENEMIES).filter(e => !e.retired).map(e 
 }).join('');
 $('ctrlDesk').hidden = touchMode; $('ctrlTouch').hidden = !touchMode;
 $('resumeBtn').onclick = () => pause(false);
+// End run: press twice (so a stray tap can't throw a run away). Ends like dying: coins are banked and best scores count
+let endArm = 0;
+$('endBtn').onclick = () => {
+  if (!G) return;
+  if (performance.now() - endArm > 3000) { endArm = performance.now(); $('endBtn').textContent = 'Press again to end'; setTimeout(() => { $('endBtn').textContent = 'End run'; }, 3000); return; }
+  endArm = 0; $('endBtn').textContent = 'End run'; G.mode = 'play'; gameOver();
+};
 $('quitBtn').onclick = () => { saveRun(); unlock(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); continueBtn(); show('ovTitle'); }; // quitting keeps the run so you can Continue
 $('pauseBtn').onclick = () => (G?.mode === 'paused' ? pause(false) : pause(true));
 $('picks').addEventListener('click', e => { const b = e.target.closest('.pick'); if (b) takeUpgrade(b.dataset.id); });
