@@ -65,6 +65,18 @@ canvas{display:block;width:100%;height:100%}
 @keyframes slam{0%{opacity:0;transform:scale(2.4)}12%{opacity:1;transform:scale(.94)}20%{transform:scale(1)}80%{opacity:1;transform:scale(1.04)}100%{opacity:0;transform:scale(1.08)}}
 .combo{position:absolute;left:calc(50% + 40px);top:calc(50% - 46px);font:20px/1 'Russo One',sans-serif;color:#fff;text-shadow:0 0 10px var(--pink),0 2px 0 #000;pointer-events:none;opacity:0}
 .combo.on{animation:combo .9s ease-out forwards}
+.alt{position:absolute;left:16px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px;pointer-events:none}
+.alt-bar{position:relative;width:6px;height:min(200px,34vh);background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);border-radius:3px}
+.alt-bar b{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,rgba(62,240,255,.25),rgba(62,240,255,.6));border-radius:3px}
+.alt-bar i{position:absolute;left:-5px;width:16px;height:2px;background:#fff;box-shadow:0 0 6px var(--neon);transform:translateY(1px)}
+.alt-read{display:flex;flex-direction:column;font:800 11px/1.2 Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;text-shadow:0 1px 0 #000}
+.alt-read strong{font:24px/1 'Russo One',sans-serif;color:#fff;letter-spacing:0}
+.alt-read small{margin-top:-2px}
+.alt-read em{font-style:normal;color:var(--neon);margin-top:4px}
+.alt-read em.fall{color:var(--amber)}
+.alt-read span{color:var(--amber);margin-top:4px}
+.alt.ground{opacity:.45}
+@media(max-width:700px){.alt{top:38%}.alt-read strong{font-size:18px}}
 .spdpop{position:absolute;left:calc(50% - 40px);top:calc(50% + 22px);transform:translateX(-100%);font:24px/1 'Russo One',sans-serif;color:var(--amber);text-shadow:0 0 12px rgba(255,176,32,.8),0 2px 0 #000;pointer-events:none;opacity:0}
 .spdpop.on{animation:combo .8s ease-out forwards}
 @keyframes combo{0%{opacity:1;transform:scale(1.6) rotate(-6deg)}20%{transform:scale(1) rotate(-4deg)}70%{opacity:1}100%{opacity:0;transform:translateY(-14px) rotate(-4deg)}}
@@ -256,6 +268,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="banner" id="banner" aria-live="polite"></div>
     <div class="combo" id="combo" aria-hidden="true"></div>
     <div class="spdpop" id="spdpop" aria-hidden="true"></div>
+    <div class="alt" id="alt" aria-label="Height"><div class="alt-bar"><i id="altMark"></i><b id="altFill"></b></div><div class="alt-read"><strong id="altNum">0</strong><small>m</small><em id="altVy"></em><span id="altSlam"></span></div></div>
     <div class="boss" id="boss" hidden>The Warden<div><b id="bossHp"></b></div></div>
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
     <div class="dashm" id="dashm">Dash <em id="dashPips">●●</em><div><b id="dashBar"></b></div><span>Parry</span><div><b id="parryBar"></b></div><p id="focusRow" hidden><span>Focus</span><div><b id="focusBar"></b></div></p></div>
@@ -301,7 +314,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 38 · weaker war hammer</p>
+        <p class="ver">Version 39 · height gauge</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1143,7 +1156,7 @@ function update(dt) {
   }
   live.gels = live.gels.filter(g => (!g.got && g.life > 0) || (scene.remove(g.m), false));
   if (!G.toSpawn.length && !G.foes.length && G.wave > 0) { for (const sp of live.spit) scene.remove(sp.m); live.spit = []; for (const g of live.gels) scene.remove(g.m); live.gels = []; offerUpgrades(); }
-  ammoHud(p);
+  ammoHud(p); altHud(p);
   $('dashBar').style.width = `${p.dashCharges >= (p.dashMax || 2) ? 100 : clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
   $('dashPips').textContent = '●'.repeat(p.dashCharges ?? 2) + '○'.repeat(Math.max(0, (p.dashMax || 2) - (p.dashCharges ?? 2)));
   $('focusRow').hidden = !p.focus; if (p.focus) $('focusBar').style.width = `${p.focusT > 0 ? p.focusT / 3 * 100 : clamp(1 - p.focusCd / 15, 0, 1) * 100}%`;
@@ -1567,6 +1580,18 @@ function hud() {
   $('walletCoins').textContent = coins; $('shopCoins').textContent = coins;
 }
 let ammoShown = '';
+// height gauge: metres above the street, how fast you're rising or falling, and (hammer in the air) what a slam would do now
+const ALT_MAX = 60; let altShown = '';
+function altHud(p) {
+  const h = Math.max(0, p.y), vy = p.vy || 0, ground = h < .05 && Math.abs(vy) < .5;
+  const slam = GUNS[p.gun]?.slam && !ground ? Math.round(hammerPower((p.slamming ? p.slamFrom - p.y : 0) + h + Math.max(0, -vy - 34) * .4) * p.dmg * (1 + .12 * (levels.hammer || 0)) * 10) / 10 : null;
+  const key = `${h.toFixed(1)}|${Math.round(vy)}|${slam}`; if (key === altShown) return; altShown = key;
+  const f = `${Math.min(100, h / ALT_MAX * 100)}%`; $('altFill').style.height = f; $('altMark').style.bottom = f;
+  $('altNum').textContent = h < 10 ? h.toFixed(1) : Math.round(h);
+  const ve = $('altVy'); ve.textContent = Math.abs(vy) < 1 ? '' : `${vy > 0 ? '▲' : '▼'} ${Math.abs(vy).toFixed(0)} m/s`; ve.classList.toggle('fall', vy < -10);
+  $('altSlam').textContent = slam != null ? `Slam ≈ ${slam}` : '';
+  $('alt').classList.toggle('ground', ground);
+}
 function ammoHud(p) {
   const key = `${p.gun}/${p.ammo}/${p.mag}/${p.reloadT > 0 ? Math.round(p.reloadT * 20) : 0}`; if (key === ammoShown) return; ammoShown = key;
   const melee = GUNS[p.gun]?.mode === 'melee'; $('ammoNow').textContent = melee ? '—' : p.ammo; $('ammoMax').textContent = melee ? '' : `/ ${p.mag}`; $('ammo').classList.toggle('melee', melee); $('gunName').textContent = GUNS[p.gun]?.name || ''; $('ammo').classList.toggle('empty', !melee && p.ammo === 0);
@@ -1667,7 +1692,7 @@ function requestLock() {
 function lookHud() {
   const playing = G?.mode === 'play' && !touchMode;
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
-  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('ammo').hidden = !inRun; $('offs').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
+  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('alt').hidden = !inRun; $('ammo').hidden = !inRun; $('offs').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
   $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This browser can’t lock the mouse here: hold the cursor near the left or right edge to keep turning</small>'
     : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';

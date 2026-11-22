@@ -20,7 +20,7 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 
 On a phone: drag the left half of the screen to move, the right half to look, and use the round buttons to fire, reload, grapple, jump, dash and parry.
 
-The HUD shows health (bottom centre, 100 to start), ammo (bottom right), and a radar (bottom left) centred on you that turns with you, so behind you is the bottom of the circle. Robots off-screen get glowing arrows around the edge of the screen pointing the way to turn.
+The HUD shows health (bottom centre, 100 to start), ammo (bottom right), a height gauge (left edge: metres up, vertical speed, and with the war hammer in the air an estimate of the slam damage), and a radar (bottom left) centred on you that turns with you, so behind you is the bottom of the circle. Robots off-screen get glowing arrows around the edge of the screen pointing the way to turn.
 
 ## Shop
 
