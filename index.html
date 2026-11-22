@@ -77,6 +77,8 @@ canvas{display:block;width:100%;height:100%}
 .alt-read span{color:var(--amber);margin-top:4px}
 .altg.ground{opacity:.45}
 @media(max-width:700px){.altg{top:38%}.alt-read strong{font-size:18px}}
+.smult{position:absolute;left:calc(50% + 22px);top:calc(50% + 14px);font:14px/1 'Russo One',sans-serif;color:var(--amber);text-shadow:0 0 8px rgba(255,176,32,.6),0 1px 0 #000;pointer-events:none}
+.smult.hot{color:#fff;text-shadow:0 0 10px var(--amber),0 0 3px var(--amber),0 1px 0 #000}
 .spdpop{position:absolute;left:calc(50% - 40px);top:calc(50% + 22px);transform:translateX(-100%);font:24px/1 'Russo One',sans-serif;color:var(--amber);text-shadow:0 0 12px rgba(255,176,32,.8),0 2px 0 #000;pointer-events:none;opacity:0}
 .spdpop.on{animation:combo .8s ease-out forwards}
 @keyframes combo{0%{opacity:1;transform:scale(1.6) rotate(-6deg)}20%{transform:scale(1) rotate(-4deg)}70%{opacity:1}100%{opacity:0;transform:translateY(-14px) rotate(-4deg)}}
@@ -270,6 +272,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="banner" id="banner" aria-live="polite"></div>
     <div class="combo" id="combo" aria-hidden="true"></div>
     <div class="spdpop" id="spdpop" aria-hidden="true"></div>
+    <div class="smult" id="smult" aria-label="Speed damage bonus"></div>
     <div class="altg" id="alt" aria-label="Height"><div class="alt-bar"><i id="altMark"></i><b id="altFill"></b></div><div class="alt-read"><strong id="altNum">0</strong><small>m</small><em id="altVy"></em><span id="altSlam"></span></div></div>
     <div class="boss" id="boss" hidden>The Warden<div><b id="bossHp"></b></div></div>
     <canvas class="minimap" id="minimap" aria-label="Minimap" role="img"></canvas>
@@ -316,7 +319,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 44 · one gun per run, longer dash cooldown</p>
+        <p class="ver">Version 45 · speed boosts all damage, stronger sword scaling</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1173,7 +1176,7 @@ function update(dt) {
   }
   live.gels = live.gels.filter(g => (!g.got && g.life > 0) || (scene.remove(g.m), false));
   if (!G.toSpawn.length && !G.foes.length && G.wave > 0) { for (const sp of live.spit) scene.remove(sp.m); live.spit = []; for (const g of live.gels) scene.remove(g.m); live.gels = []; offerUpgrades(); }
-  ammoHud(p); altHud(p);
+  ammoHud(p); altHud(p); smultHud(p);
   $('dashBar').style.width = `${p.dashCharges >= (p.dashMax || 2) ? 100 : clamp(1 - p.dashReady / p.dashCd, 0, 1) * 100}%`;
   $('dashPips').textContent = '●'.repeat(p.dashCharges ?? 2) + '○'.repeat(Math.max(0, (p.dashMax || 2) - (p.dashCharges ?? 2)));
   $('focusRow').hidden = !p.focus; if (p.focus) $('focusBar').style.width = `${p.focusT > 0 ? p.focusT / FOCUS_TIME * 100 : clamp(1 - p.focusCd / FOCUS_COOLDOWN, 0, 1) * 100}%`;
@@ -1184,7 +1187,7 @@ function update(dt) {
 function aimDir() { const p = G.p, cp = Math.cos(p.pitch); return [-Math.sin(p.yaw) * cp, Math.sin(p.pitch), -Math.cos(p.yaw) * cp]; }
 // one round: an instant hit along where you aim (a touch of spread that grows through the burst)
 function fire(opt = {}) {
-  const p = G.p, gd = GUNS[p.gun] || GUNS.burst, spread = p.gun === 'burst' ? p.spread + (p.burst - p.burstLeft) * .0035 : p.spread, as = p.assist || 0, pierce = opt.pierce ?? p.pierce + (p.gunPierce || 0), dmg = p.dmg * (p.dmgMul || 1) * (opt.mult || 1);
+  const p = G.p, gd = GUNS[p.gun] || GUNS.burst, spread = p.gun === 'burst' ? p.spread + (p.burst - p.burstLeft) * .0035 : p.spread, as = p.assist || 0, pierce = opt.pierce ?? p.pierce + (p.gunPierce || 0), dmg = p.dmg * (p.dmgMul || 1) * (opt.mult || 1) * gunSpeedMult(p);
   const yaw = p.yaw + rnd(-spread, spread), pitch = p.pitch + recoil + rnd(-spread, spread), cp = Math.cos(pitch);
   const dx = -Math.sin(yaw) * cp, dy = Math.sin(pitch), dz = -Math.cos(yaw) * cp, ox = p.x, oy = p.y + EYE, oz = p.z;
   const wall = rayCity(ox, oy, oz, dx, dy, dz, 220);
@@ -1225,8 +1228,17 @@ function slash() {
   if (g.slam) { noise(.35, .14, 500, .6); beep(160, .25, 'sawtooth', .03, -60); } else { noise(.3, .12, 3600, 2.5); beep(700, .18, 'sawtooth', .02, -500); }
   if (guarded) { const e = $('edge'); e.classList.add('guard'); clearTimeout(slash.t); slash.t = setTimeout(() => e.classList.remove('guard'), g.guard * 1000); }
 }
-// faster = harder: walking pace is normal damage, rising to 3x at about 28 m/s (dashes, grapples, falls)
-function swordMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 10, 0, 2); }
+// guns hit harder the faster you're going too: normal at walking pace, up to double at about 28 m/s
+function gunSpeedMult(p) { return 1 + clamp(((p.spd || 0) - 8) / 20, 0, 1); }
+// the speed bonus for whatever's in your hands right now
+function heldSpeedMult(p) { const g = GUNS[p.gun]; return g?.mode === 'melee' ? (g.slam ? hammerSwingMult(p) : swordMult(p)) : gunSpeedMult(p); }
+let smultShown = '';
+function smultHud(p) {
+  const m = heldSpeedMult(p), t = m >= 1.1 ? `×${m.toFixed(1)}` : ''; if (t === smultShown) return; smultShown = t;
+  const el = $('smult'); el.textContent = t; el.classList.toggle('hot', m >= 1.8);
+}
+// faster = harder: walking pace is about normal damage, rising to 6x at about 36 m/s (dashes, grapples, falls)
+function swordMult(p) { return 1 + clamp(((p.spd || 0) - 6) / 6, 0, 5); } // sword: up to 6x, ~4x mid-dash
 function damagePop(d) { const el = $('spdpop'); el.textContent = `${d < 10 ? d.toFixed(1) : Math.round(d)} dmg`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, d)) * 2.5)}px`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 function speedPop(m) { const el = $('spdpop'); el.textContent = `×${m < 10 ? m.toFixed(1) : Math.round(m)}`; el.style.fontSize = `${Math.min(32, 20 + Math.log2(Math.max(1, m)) * 2.5)}px`; /* grows a little for big hits, never past 32px */ el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 // The hammer starts weak and grows exponentially: with how far (and fast) you fell for a slam, and with your speed for a swing.
@@ -1275,7 +1287,7 @@ function swingTick(dt) {
 // centre) and get thrown outward. Robots the round already went through aren't hit twice.
 const BLAST_R = 3.5;
 function sniperBlast(x, y, z, skip) {
-  const p = G.p, full = GUNS.sniper.dmg * p.dmg * .5;
+  const p = G.p, full = GUNS.sniper.dmg * p.dmg * .5 * gunSpeedMult(p);
   for (const fo of G.foes) {
     if (fo.hp <= 0 || skip.includes(fo.id)) continue;
     const dx = fo.x - x, dy = (fo.y ?? fo.r) - y, dz = fo.z - z, d = Math.max(0, Math.hypot(dx, dy, dz) - fo.r);
@@ -1713,7 +1725,7 @@ function requestLock() {
 function lookHud() {
   const playing = G?.mode === 'play' && !touchMode;
   $('mlook').hidden = !playing; $('desk').hidden = !playing;
-  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('alt').hidden = !inRun; $('ammo').hidden = !inRun; $('offs').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
+  const inRun = !!G && G.mode !== 'over'; $('cross').hidden = !inRun; $('dashm').hidden = !inRun; $('minimap').hidden = !inRun; $('hp').hidden = !inRun; $('smult').hidden = !inRun; $('alt').hidden = !inRun; $('ammo').hidden = !inRun; $('offs').hidden = !inRun; gun.visible = inRun; $('touch').hidden = !touchMode || !inRun;
   stage.classList.toggle('looking', playing && input.mlook);
   $('mlook').innerHTML = input.noLock ? (input.mlook ? 'Turning with the cursor · <b>⌘ Cmd</b> to stop' : 'Cursor free · <b>⌘ Cmd</b> to turn with the cursor') + '<br><small>This browser can’t lock the mouse here: hold the cursor near the left or right edge to keep turning</small>'
     : input.mlook ? 'Mouse look <b>on</b> · ⌘ Cmd to free the cursor' : input.lockWait ? '<b>Click the game</b> to lock the mouse' : 'Cursor free · <b>⌘ Cmd</b> to look around';

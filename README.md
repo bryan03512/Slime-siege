@@ -13,7 +13,7 @@ Play it by opening `index.html` in a browser (it needs an internet connection to
 - Jump: Space, or the Jump button. Low, moon-style gravity: a good jump reaches the rooftops
 - Dash: Shift, or the Dash button. Flings you the way you're moving and the speed carries on; look up (or hold Space) to dash upwards, look down to dash downwards. Dashing cancels a grapple fling, and holding the opposite direction brakes any fling. Two charges; both come back when the 2-second cooldown ends
 - Focus: C (if bought). Slows time for 3 seconds; recharges in 4
-- Swap weapon: Q, or the Swap button. You carry every gun you own plus a long sword; each swing cuts everything in front of you for half a second, hits harder the faster you're going (up to 3x), and you can't be hurt while it swings
+- Swap weapon: Q, or the Swap button. You carry every gun you own plus a long sword; each swing cuts everything in front of you for half a second, hits harder the faster you're going (up to 6x), and you can't be hurt while it swings
 - Grapple: hold the right mouse button (or E) to reel yourself to wherever you're aiming (up to 70m), or onto a robot at any distance. The speed you build up carries on after you let go, and grappling something above you flings you up past it
 - Parry: F. Knocks energy bolts back at whoever fired them, or shoves a robot away
 - Pause: Esc or P
@@ -30,7 +30,7 @@ Coins buy:
 - **Gear**: third dash, armour vest (125 health), coin booster (+25% coins), med-kit finder, Focus (4s recharge), and Second chance tokens (revive once per run; hold up to 3).
 - **Style**: accent colours and crosshair shapes.
 
-Gravity builds the longer you fall. The long sword only protects you mid-swing while you're moving fast (dashing, grappling or dropping).
+Every weapon hits harder the faster you're moving: guns up to 2x at about 28 m/s, the sword up to 6x, the hammer much more; the readout beside the crosshair shows your current bonus. Gravity builds the longer you fall. The long sword only protects you mid-swing while you're moving fast (dashing, grappling or dropping).
 
 ## Adding content
 
