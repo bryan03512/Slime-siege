@@ -76,3 +76,4 @@ Built with [three.js](https://threejs.org/) r128.
 - It learns a move each time it returns: level 2 (wave 10) zig-zag triple dash, level 3 spinning slash (longer wind-up, 6.5 m reach), level 4 two one-hit decoy clones at each phase change, level 5 double shots.
 - Headshots: gun hits on the top part of a ground robot's hitbox do double damage, with a cyan HEAD damage number.
 - War hammer: base damage 2 (was 0.6). Swing bonus grows e^(0.09 per m/s over 6), up to 8x. Slam grows e^(0.12 per m fallen past 4 m), up to 200 (for example 14 from 20 m, 45 from 30 m, 150 from 40 m).
+- Harder Duelist: when you grapple onto it, 45% of the time (60% from phase 2, at most every 4 s) it sidesteps and your line breaks. 30% of its cuts are fakes: it pulls back and swings for real 0.3 s later, so an early parry is wasted. Its cuts ignore dashes and immunity windows, except for 1 s after you parry one. From phase 2 its cuts chain: cut, dash in, cut, up to three in a row.

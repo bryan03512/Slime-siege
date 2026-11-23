@@ -367,7 +367,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 68 · the Duelist duel, headshots, heavier hammer</p>
+        <p class="ver">Version 69 · the Duelist fights dirty</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1629,20 +1629,31 @@ function duelTick(fo, e, dx, dz, d, mx, mz, dt) {
   }
   if (fo.windT > 0) {
     fo.windT -= dt;
+    if (fo.windT <= 0 && fo.feint) { // 2. a fake: it pulls the cut back, then swings for real right after
+      fo.feint = false; fo.windT = .3; sweep(.12, .12, 900, 1500, 2); return [ux * .15, uz * .15];
+    }
     if (fo.windT <= 0) { // the cut (or, from level 3, sometimes a full spin that reaches further)
       const spin = fo.spinCut; fo.spinCut = false;
       fo.swingT = .2; fo.scd = rnd(.9, 1.4) * (ph === 2 ? .7 : 1); sweep(spin ? .5 : .22, .3, 400, 4000, 1.4); if (spin) burst(fo.x, fo.y ?? fo.r, fo.z, '#ff3d8b', 24, 10, .08);
       const close = d < (spin ? 6.5 : 4.6) && Math.abs(p.y - (fo.gy || fo.ly || 0)) < 2.6;
       if (close && p.parryT > 0 && fo.finisher) finisher(fo);
-      else if (close && p.parryT > 0) { fo.stunT = 1.6; fo.hp -= 6 * p.dmg; fo.flash = .2; fo.kx = -ux * 18; fo.kz = -uz * 18; parried(); toast('Riposte! It\u2019s staggered'); sfx.chop(); if (fo.hp <= 0) kill(fo, true); }
-      else if (close && p.inv <= 0) hurt(e.swingDmg * (spin ? 1.3 : 1), ux, uz);
+      else if (close && p.parryT > 0) { p.parryGrace = G.t + 1; fo.combo = 0; fo.stunT = 1.6; fo.hp -= 6 * p.dmg; fo.flash = .2; fo.kx = -ux * 18; fo.kz = -uz * 18; parried(); toast('Riposte! It\u2019s staggered'); sfx.chop(); if (fo.hp <= 0) kill(fo, true); }
+      else if (close && !(p.parryGrace > G.t)) { p.inv = 0; p.dashT = 0; hurt(e.swingDmg * (spin ? 1.3 : 1), ux, uz); } // 7. its cuts go through dodges and immunity
+      // 8. combo strings from phase 2: cut, dash, cut (up to three cuts)
+      if (ph >= 2 && !(fo.stunT > 0) && (fo.combo = (fo.combo || 0) + 1) < 3) fo.comboT = .22; else fo.combo = 0;
     }
     return [ux * .15, uz * .15]; // plants its feet
+  }
+  if (fo.comboT > 0) { fo.comboT -= dt; if (fo.comboT <= 0) { dashTo(ux, uz, 30); fo.windT = .3; beep(300, .2, 'sawtooth', .04, 500); } return [ux * .3, uz * .3]; }
+  // 1. it reads your grapple: when you hook onto it, it sometimes sidesteps and cuts the line
+  if (p.hook?.foe === fo.id && !p.hook.read) {
+    p.hook.read = true;
+    if (!(fo.readCd > G.t) && Math.random() < (ph >= 2 ? .6 : .45)) { fo.readCd = G.t + 4; fo.side = -fo.side; dashTo(-uz * fo.side, ux * fo.side, 36); fo.dcd = .6; releaseHook(); toast('It dodged your grapple!'); }
   }
   // dodge your swings like a player would
   if (p.slashT > 0 && d < 6.5 && fo.dcd <= 0 && Math.random() < .6) { fo.side = -fo.side; dashTo(-uz * fo.side - ux * .6, ux * fo.side - uz * .6, 30); }
   else if (d < (fo.lvl >= 3 ? 5.5 : 4) && fo.scd <= 0) { // telegraph: blade glows, a rising whine (a spin winds up longer and lower)
-    fo.spinCut = fo.lvl >= 3 && Math.random() < .4; fo.windT = fo.spinCut ? .75 : ph === 2 ? .4 : .5;
+    fo.spinCut = fo.lvl >= 3 && Math.random() < .4; fo.windT = fo.spinCut ? .75 : ph === 2 ? .4 : .5; fo.feint = !fo.spinCut && Math.random() < .3;
     beep(fo.spinCut ? 140 : 240, fo.spinCut ? .6 : .3, 'sawtooth', .04, fo.spinCut ? 300 : 500);
   }
   else if (fo.dcd <= 0 && d > 6 && d < 26) { dashTo(ux, uz, 34 + Math.min(16, d)); if (fo.lvl >= 2) fo.chain = 2; } // close the gap
