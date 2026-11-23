@@ -368,7 +368,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 74 · seven new melee weapons</p>
+        <p class="ver">Version 75 · longer bow pins</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -488,7 +488,7 @@ const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
   shotgun:{ name: 'Slime shotgun', price: 110, mode: 'shotgun', pellets: 8, rate: .75, mag: 6, reloadTime: 1.8, dmg: .8, spread: .085, pierce: 0, desc: 'Eight slime pellets in a wide spray, deadly up close. Fired in the air, the kick throws you backwards: aim down to launch yourself up, or behind you to rocket forward.' },
   acid:   { name: 'Acid SMG',      price: 130, mode: 'auto', rate: .06, mag: 45, reloadTime: 1.9, dmg: .4, spread: .04, assist: .6, pierce: 0, acid: true, desc: 'A fast spray of weak acid rounds. Every hit sets the robot burning green for 2.5 s, and the burn keeps eating its health while you move on.' },
-  bow:    { name: 'Rail bow',      price: 150, mode: 'bow', draw: .9, rate: .3, mag: 8, reloadTime: 1.6, dmg: 7, spread: 0, pierce: 1, desc: 'Hold to draw, let go to loose a slime-tipped bolt. Damage grows with the draw. A full draw goes through every robot in a line and pins each one in place for 1.5 s.' },
+  bow:    { name: 'Rail bow',      price: 150, mode: 'bow', draw: .9, rate: .3, mag: 8, reloadTime: 1.6, dmg: 7, spread: 0, pierce: 1, desc: 'Hold to draw, let go to loose a slime-tipped bolt. Damage grows with the draw. A full draw goes through every robot in a line and pins each one in place for 4.5 s.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
   railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
   hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: 2, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
@@ -1297,7 +1297,7 @@ function update(dt) {
       if (input.fire && p.ammo > 0) { const was = p.charge || 0; p.charge = Math.min(1, was + dt / dr); if (was < 1 && p.charge >= 1) beep(1500, .1, 'sine', .04, 300); else if (Math.floor(p.charge * 6) !== p.chargeTick) { p.chargeTick = Math.floor(p.charge * 6); beep(300 + p.charge * 500, .04, 'triangle', .015); } }
       else if ((p.charge || 0) > 0 || (input.pull && p.ammo > 0)) { // let go: loose a bolt with what's drawn
         input.pull = false; const c = Math.max(.15, p.charge || 0), full = c >= 1; p.charge = 0; p.chargeTick = -1;
-        fire({ mult: .25 + .75 * c, pierce: full ? 99 : 1, fx: 'bow', pin: full ? 1.5 : 0 }); p.ammo--; p.cool = p.rate; sfx.bow(full); if (p.ammo <= 0) reload();
+        fire({ mult: .25 + .75 * c, pierce: full ? 99 : 1, fx: 'bow', pin: full ? 4.5 : 0 }); p.ammo--; p.cool = p.rate; sfx.bow(full); if (p.ammo <= 0) reload();
       } else if (input.pull) { input.pull = false; reload(); }
     }
     else if (GUNS[p.gun].scope) {

@@ -83,7 +83,7 @@ Built with [three.js](https://threejs.org/) r128.
 ## New guns (v73)
 - Slime shotgun (110): 8 pellets in a wide spray, 6 shells. Fired in the air, the kick throws you the opposite way you aim (17 m/s; a quarter of that on the ground): aim down to launch up, behind you to rocket forward.
 - Acid SMG (130): fast weak spray (16 rounds/s); every hit sets the robot burning for 2.5 s (2.5 damage per second before boosts), and the burn keeps going while you move on.
-- Rail bow (150): hold to draw (0.9 s), let go to loose a bolt. Damage scales from 25% to 100% with the draw (7 at full). A full draw pierces every robot in a line and pins each one in place for 1.5 s (bosses 0.6 s, and it knocks the Duelist off its grapple). No slow motion, unlike the railgun.
+- Rail bow (150): hold to draw (0.9 s), let go to loose a bolt. Damage scales from 25% to 100% with the draw (7 at full). A full draw pierces every robot in a line and pins each one in place for 4.5 s (bosses 1.8 s, and it knocks the Duelist off its grapple). No slow motion, unlike the railgun.
 
 ## New melee weapons (v74)
 The shop's weapons are split into Melee and Ranged tabs. New melee weapons use their own speed bonus: +1x per 8 m/s over 6 m/s, up to 6x (the long sword keeps its 2.5x start).
