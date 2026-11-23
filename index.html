@@ -216,6 +216,7 @@ canvas{display:block;width:100%;height:100%}
 .gcard .chip.in{color:#031016;background:var(--neon);border-color:var(--neon)}
 .gcard .pips{letter-spacing:3px;color:var(--amber)}
 .gcard .row2{display:flex;gap:6px;margin-top:auto;flex-wrap:wrap}
+.gcard .mastery + .row2{margin-top:0}
 .gcard .row2 .btn{flex:1;margin:0;font-size:13px;padding:9px 10px;min-height:38px}
 .swatch{height:46px;border-radius:6px;border:1px solid #3a4562}
 .xprev{height:46px;display:grid;place-items:center}
@@ -282,7 +283,7 @@ canvas{display:block;width:100%;height:100%}
 .btn.danger{border-color:#ff3040;color:#ffb3ba}
 .btn.danger:hover{background:rgba(255,48,64,.18)}
 .btn.revive{background:linear-gradient(180deg,#5dff6a,#1fbf3a);color:#06260d;border-color:#9dff9e}
-.mastery{position:relative;flex:1;min-width:160px;height:34px;border:1px solid #4fe85c;border-radius:8px;background:rgba(10,30,14,.7);overflow:hidden;display:flex;align-items:center;padding:0 10px}
+.mastery{position:relative;margin:auto 0 8px;height:30px;border:1px solid #4fe85c;border-radius:8px;background:rgba(10,30,14,.7);overflow:hidden;display:flex;align-items:center;padding:0 10px}
 .mastery span{position:relative;z-index:1;font:700 11px/1.2 Barlow,sans-serif;color:#d9ffd4}
 .mastery i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#1fbf3a,#5dff6a);opacity:.45}
 .offshield{position:absolute;left:18px;bottom:150px;font:800 11px/1 Barlow,sans-serif;color:#3ef0ff;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
@@ -375,7 +376,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 80 · weapon mastery, off-hand shield</p>
+        <p class="ver">Version 81 · mastery bar fix</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -644,6 +645,9 @@ let owned = store.get('ss-guns', ['burst']), equipped = store.get('ss-gun', 'bur
 if (!owned.includes('burst')) owned.unshift('burst');
 let gear = store.get('ss-gear', []), revives = store.get('ss-revives', 0), levels = store.get('ss-levels', {});
 mastery = store.get('ss-mastery', {}); evolved = store.get('ss-evolved', []);
+if (owned.includes('skip') && !evolved.includes('pogo')) { // the skip lance used to be sold: take it back and refund it
+  owned = owned.filter(id => id !== 'skip'); store.set('ss-guns', owned); store.set('ss-coins', store.get('ss-coins', 0) + 150);
+}
 function applyEvolutions() { // evolved weapons rewrite their own stats, so every part of the game just reads GUNS
   for (const id of evolved) {
     const ev = EVOLVE[id], g = GUNS[id]; if (!ev || ev.into || !g || g.isEvolved) continue;
@@ -2650,22 +2654,23 @@ function renderShop() {
   for (const t of document.querySelectorAll('.tab')) t.classList.toggle('on', t.dataset.tab === shopTab);
   $('loadNote').innerHTML = `Loadout: <b>${GUNS[load.ranged[0]].name}</b> and <b>${GUNS[load.melee].name}</b> (you start holding the melee weapon) · one gun and one melee weapon. Q swaps between them in a run.`;
   let html = '';
-  if (shopTab === 'melee' || shopTab === 'ranged') html = Object.entries(GUNS).filter(([id, g]) => (g.mode === 'melee') === (shopTab === 'melee') && (!g.evolvedFrom || owned.includes(id))).map(([id, g]) => {
+  if (shopTab === 'melee' || shopTab === 'ranged') html = Object.entries(GUNS).filter(([id, g]) => (g.mode === 'melee') === (shopTab === 'melee') && (!g.evolvedFrom || evolved.includes(g.evolvedFrom))).map(([id, g]) => {
     const have = g.free || owned.includes(id), melee = g.mode === 'melee', lv = levels[id] || 0;
     const inLoad = melee ? load.melee === id : load.ranged.includes(id);
     const first = !melee && load.ranged[0] === id;
     const tags = `<div class="chips"><span class="chip">${melee ? 'Melee' : 'Gun'}</span>${g.isEvolved || g.evolvedFrom ? '<span class="chip in">Evolved</span>' : ''}${have ? `<span class="chip">Level ${lv}</span>` : ''}${inLoad ? '<span class="chip in">In loadout</span>' : ''}${first ? '<span class="chip in">Starts in hand</span>' : ''}</div>`;
-    let btns;
+    let btns, masteryBar = '';
     if (!have) btns = buyBtn(`data-buy="${id}"`, g.price);
     else {
       const loadBtn = inLoad ? (melee || load.ranged.length === 1 ? '<button class="btn" disabled>In loadout</button>' : `<button class="btn alt" data-unload="${id}">Take out</button>`) : `<button class="btn alt" data-load="${id}">${melee ? 'Use this' : load.ranged.length >= MAX_RANGED ? `Use instead of ${GUNS[load.ranged.at(-1)].name}` : 'Add to loadout'}</button>`;
       const ev = EVOLVE[id], done = evolved.includes(id), xp = mastery[id] || 0;
       const upBtn = lv < MAX_LEVEL ? buyBtn(`data-level="${id}"`, LEVEL_COST[lv], `Level ${lv + 1}`)
         : !ev || done ? `<button class="btn" disabled>${done ? (ev?.into ? 'Mastered' : 'Evolved') : 'Max level'}</button>`
-        : `<div class="mastery" title="Kills with it fill this bar"><span>Mastery ${xp}/${MASTERY_XP}: unlocks ${ev.into ? GUNS[ev.into].name : ev.name}</span><i style="width:${xp / MASTERY_XP * 100}%"></i></div>`;
+        : '';
+      masteryBar = lv >= MAX_LEVEL && ev && !done ? `<div class="mastery" title="Kills with it fill this bar"><span>Mastery ${xp}/${MASTERY_XP}  -  unlocks ${ev.into ? GUNS[ev.into].name : ev.name}</span><i style="width:${xp / MASTERY_XP * 100}%"></i></div>` : '';
       btns = (inLoad && !melee && !first ? `<button class="btn" data-first="${id}">Start with this</button>` : '') + loadBtn + upBtn;
     }
-    return `<div class="gcard${inLoad ? ' on' : ''}">${gunIcon(id)}<b>${g.name}</b>${tags}<p>${g.desc}</p><dl>${gunFacts(g, lv).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><div class="row2">${btns}</div></div>`;
+    return `<div class="gcard${inLoad ? ' on' : ''}">${gunIcon(id)}<b>${g.name}</b>${tags}<p>${g.desc}</p><dl>${gunFacts(g, lv).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>${masteryBar}<div class="row2">${btns}</div></div>`;
   }).join('');
   if (shopTab === 'gear') html = Object.entries(GEAR).map(([id, g]) => {
     const n = id === 'revive' ? revives : hasGear(id) ? 1 : 0, full = g.stack ? n >= g.stack : n > 0;
