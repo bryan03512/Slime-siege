@@ -84,3 +84,13 @@ Built with [three.js](https://threejs.org/) r128.
 - Slime shotgun (110): 8 pellets in a wide spray, 6 shells. Fired in the air, the kick throws you the opposite way you aim (17 m/s; a quarter of that on the ground): aim down to launch up, behind you to rocket forward.
 - Acid SMG (130): fast weak spray (16 rounds/s); every hit sets the robot burning for 2.5 s (2.5 damage per second before boosts), and the burn keeps going while you move on.
 - Rail bow (150): hold to draw (0.9 s), let go to loose a bolt. Damage scales from 25% to 100% with the draw (7 at full). A full draw pierces every robot in a line and pins each one in place for 1.5 s (bosses 0.6 s, and it knocks the Duelist off its grapple). No slow motion, unlike the railgun.
+
+## New melee weapons (v74)
+The shop's weapons are split into Melee and Ranged tabs. New melee weapons use their own speed bonus: +1x per 8 m/s over 6 m/s, up to 6x (the long sword keeps its 2.5x start).
+- Pogo lance (140): stab on the ground; in the air, click to plunge. Landing on a robot bounces you off its head; each bounce in a row does +50% and throws you higher.
+- Goo gloves (120): click to grab the robot in front and hold it up, click again to hurl it. It smashes into whatever it hits (3x to itself, 4x to everything within 3.5 m). Tanks and the Duelist are too big: you punch them.
+- Drill blade (130): hold to grind the robot in front; damage climbs 1.2x per second of drilling, up to 6x, and you slowly push forward.
+- Splitter axe (140): click to throw it into a robot up to 30 m away; click again to yank yourself to it and chop (5x, half that to robots within 4 m).
+- Ricochet shield (130): hold to block (80% less damage; raising it counts as a parry). Tap to throw it: it bounces between up to 4 robots and comes back (1.2 s).
+- Mirror blade (150): every swing leaves a slime copy that repeats it 0.35 s later from where you stood.
+- Grapple blade (140): normal swings, plus grappling onto a robot ends in an automatic slash that grows 12% per metre you flew.
