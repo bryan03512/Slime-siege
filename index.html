@@ -281,6 +281,7 @@ canvas{display:block;width:100%;height:100%}
 @keyframes lockblink { 50% { opacity: .35; } }
 .btn.danger{border-color:#ff3040;color:#ffb3ba}
 .btn.danger:hover{background:rgba(255,48,64,.18)}
+.btn.revive{background:linear-gradient(180deg,#5dff6a,#1fbf3a);color:#06260d;border-color:#9dff9e}
 </style>
 </head>
 <body>
@@ -367,7 +368,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 69 · the Duelist fights dirty</p>
+        <p class="ver">Version 70 · revive button</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -441,7 +442,7 @@ canvas{display:block;width:100%;height:100%}
         <h2>The robots broke through</h2>
         <div class="figs"><div><b id="oScore">0</b><span>Score</span></div><div><b id="oWave">1</b><span>Wave reached</span></div><div><b id="oBest">0</b><span>Best score</span></div><div class="gold"><b id="oCoins">+0</b><span>Coins earned</span></div></div>
         <p id="oNote"></p>
-        <div class="row"><button class="btn" id="againBtn">Play again</button><button class="btn alt" id="menuBtn">Main menu</button></div>
+        <div class="row"><button class="btn revive" id="reviveBtn" hidden>Revive</button><button class="btn" id="againBtn">Play again</button><button class="btn alt" id="menuBtn">Main menu</button></div>
       </div>
     </section>
   </main>
@@ -499,7 +500,7 @@ const GEAR = {
   coins:  { name: 'Coin booster',   price: 120, desc: 'Earn 25% more coins from every robot.' },
   medkit: { name: 'Med-kit finder', price: 70,  desc: 'Robots drop med kits much more often.' },
   focus:  { name: 'Focus',          price: 110, desc: 'Press C to slow time for 3 seconds, anywhere. Recharges in 4 seconds.' },
-  revive: { name: 'Second chance',  price: 75,  stack: 3, desc: 'If you die, get back up once with half health and blast nearby robots away. Used up when it saves you; hold up to 3.' },
+  revive: { name: 'Second chance',  price: 75,  stack: 3, desc: 'When you die, press Revive on the game over screen to get back up with half health and blast nearby robots away. One per run; hold up to 3.' },
 };
 // Weapon levels: each level adds 12% damage, 15% magazine (not the sniper) and 6% faster reloads
 const LEVEL_COST = [40, 80, 130, 190, 260], MAX_LEVEL = 5;
@@ -1753,7 +1754,7 @@ function hurt(n, kx, kz) {
   { const h = $('hurtNum'); h.textContent = `-${fmtDmg(n)}`; h.classList.remove('on'); void h.offsetWidth; h.classList.add('on'); }
   const l = Math.hypot(kx, kz) || 1; p.x += kx / l * 1.2; p.z += kz / l * 1.2; pushOut(p, p.r);
   const v = $('vign'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 60);
-  goopMood('ouch'); hud(); if (p.hp <= 0 && !tryRevive()) gameOver();
+  goopMood('ouch'); hud(); if (p.hp <= 0) gameOver();
 }
 function dash() {
   const p = G?.p; if (!p || G.mode !== 'play' || (p.dashCharges ?? 2) <= 0) return;
@@ -2153,8 +2154,15 @@ function gameOver() {
   if (newBest || G.wave > best.wave) { best = { score: Math.max(best.score, G.score), wave: Math.max(best.wave, G.wave) }; store.set('ss3-best', best); }
   $('oScore').textContent = G.score; $('oWave').textContent = G.wave; $('oBest').textContent = best.score; $('oCoins').textContent = `+${earned}`;
   $('oNote').textContent = newBest ? 'New best score!' : `Your best is wave ${best.wave}. ${G.wave < 5 ? 'The Duelist waits at wave 5.' : 'Try a different mix of upgrades.'}`;
+  const canRevive = revives > 0 && !G.revived && !G.ended;
+  $('reviveBtn').hidden = !canRevive; if (canRevive) $('reviveBtn').textContent = `Revive (${revives} left)`;
   $('boss').hidden = true; $('lowhp').classList.remove('on'); bestLine(); show('ovOver');
 }
+// Revive from the game over screen: back into the same run with half health (one per run)
+$('reviveBtn').onclick = () => {
+  if (!G || G.mode !== 'over' || G.revived || revives <= 0) return;
+  G.mode = 'play'; show(null); lock(); tryRevive(); saveRun();
+};
 function bestLine() { $('bestTitle').textContent = best.score ? `Best: ${best.score} points, wave ${best.wave}` : ''; }
 function start() {
   wakeAudio();
@@ -2373,7 +2381,7 @@ let endArm = 0;
 $('endBtn').onclick = () => {
   if (!G) return;
   if (performance.now() - endArm > 3000) { endArm = performance.now(); $('endBtn').textContent = 'Press again to end'; setTimeout(() => { $('endBtn').textContent = 'End run'; }, 3000); return; }
-  endArm = 0; $('endBtn').textContent = 'End run'; G.mode = 'play'; gameOver();
+  endArm = 0; $('endBtn').textContent = 'End run'; G.mode = 'play'; G.ended = true; gameOver();
 };
 $('quitBtn').onclick = () => { saveRun(); unlock(); clearLive(); G = null; hud(); $('boss').hidden = true; showDemo(true); bestLine(); continueBtn(); show('ovTitle'); }; // quitting keeps the run so you can Continue
 $('pauseBtn').onclick = () => (G?.mode === 'paused' ? pause(false) : pause(true));

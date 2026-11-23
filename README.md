@@ -77,3 +77,4 @@ Built with [three.js](https://threejs.org/) r128.
 - Headshots: gun hits on the top part of a ground robot's hitbox do double damage, with a cyan HEAD damage number.
 - War hammer: base damage 2 (was 0.6). Swing bonus grows e^(0.09 per m/s over 6), up to 8x. Slam grows e^(0.12 per m fallen past 4 m), up to 200 (for example 14 from 20 m, 45 from 30 m, 150 from 40 m).
 - Harder Duelist: when you grapple onto it, 45% of the time (60% from phase 2, at most every 4 s) it sidesteps and your line breaks. 30% of its cuts are fakes: it pulls back and swings for real 0.3 s later, so an early parry is wasted. Its cuts ignore dashes and immunity windows, except for 1 s after you parry one. From phase 2 its cuts chain: cut, dash in, cut, up to three in a row.
+- Revives no longer trigger on their own: if you have one, the game over screen shows a Revive button (one per run) that puts you back into the run with half health and a shockwave. Not offered after End run.
