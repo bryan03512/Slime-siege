@@ -97,3 +97,8 @@ The shop's weapons are split into Melee and Ranged tabs. New melee weapons use t
 - You can look almost exactly straight up or down (89.7 degrees, was about 77).
 - Skip lance (150, melee): click to lunge where you aim (also from the ground, at least 16 m/s, for 1.2 s). Touching a robot from any side rebounds you off it like a ball off a wall (a true reflection, always with some lift), at the same speed each time; +50% damage per rebound before you land.
 - Pogo and skip lance bounces no longer grow each time: same height and speed every bounce (the +50% damage per bounce in a row stays).
+
+## Mastery and evolved weapons (v80)
+- Once a melee weapon is level 5, melee kills with it fill a mastery bar (100 XP: walker/drone 1, heavy 3, bulwark 6, titan 10, colossus 16, Duelist 40). The bar shows on its shop card and under your ammo while you hold it.
+- A full bar evolves the weapon: Goo Excalibur (sword), Quake hammer, Rail spear, Titan gloves (can throw tanks), Mega drill, Twin splitter, Aegis ricochet (7 bounces), Hall of mirrors (two echoes), Hook reaper. The pogo lance instead unlocks the skip lance as a separate weapon; the skip lance is no longer sold.
+- Ricochet shield in the off hand: with the shield as your melee weapon and a gun in hand, hold V to block (or the Shield button on touch screens) and tap it to throw. In hand, the fire button still blocks and throws as before.
