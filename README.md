@@ -95,4 +95,4 @@ The shop's weapons are split into Melee and Ranged tabs. New melee weapons use t
 - Mirror blade (150): every swing leaves a slime copy that repeats it 0.35 s later from where you stood.
 - Grapple blade (140): normal swings, plus grappling onto a robot ends in an automatic slash that grows 12% per metre you flew.
 - You can look almost exactly straight up or down (89.7 degrees, was about 77).
-- Skip lance (150, melee): like the pogo lance, but clicking in the air dives at an angle along the way you're moving (at least 16 m/s), and hitting a robot bounces you onward in the same direction, 12% faster each bounce (up to 60 m/s). +50% damage per bounce in a row.
+- Skip lance (150, melee): click to lunge where you aim (also from the ground, at least 16 m/s, for 1.2 s). Touching a robot from any side rebounds you off it like a ball off a wall (a true reflection, always with some lift), 12% faster each time up to 60 m/s; +50% damage per rebound before you land.

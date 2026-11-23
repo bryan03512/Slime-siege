@@ -368,7 +368,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 77 · skip lance</p>
+        <p class="ver">Version 78 · skip lance rebounds</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -494,7 +494,7 @@ const GUNS = {
   hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: 2, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
   spear:  { name: 'Spear',       price: 140, mode: 'melee',  rate: .45, mag: 0, reloadTime: 0, dmg: 2, reach: 7, swing: .22, guard: .4, pierce: true, desc: 'A long, narrow thrust that runs through every robot in a line, with no limit on how many. While you’re moving fast it hits whatever you’re pointing at on its own, no click needed. Each hit is very weak, but its speed bonus has no limit: the faster you go, the harder it hits. Every thrust gives a short moment where you can’t be hurt.' },
   pogo:   { name: 'Pogo lance',    price: 140, mode: 'melee', rate: .45, mag: 0, reloadTime: 0, dmg: 3, reach: 4.5, swing: .3, guard: .4, pogo: true, desc: 'A stabbing lance. In the air, click to plunge straight down: land on a robot and you bounce off its head. Every bounce in a row hits harder (+50% each) and throws you higher.' },
-  skip:   { name: 'Skip lance',    price: 150, mode: 'melee', rate: .45, mag: 0, reloadTime: 0, dmg: 3, reach: 4.5, swing: .3, guard: .4, pogo: true, skip: true, desc: 'Like the pogo lance, but you skip like a stone. In the air, click to dive at an angle along the way you are moving; land on a robot and you bounce onward in the same direction, a little faster each time. Every bounce in a row hits harder (+50% each).' },
+  skip:   { name: 'Skip lance',    price: 150, mode: 'melee', rate: .45, mag: 0, reloadTime: 0, dmg: 3, reach: 4.5, swing: .3, guard: .4, pogo: true, skip: true, desc: 'Click to lunge where you aim (up, down or level, even from the ground). Touch a robot from any side, front, top or below, and you rebound off it like a ball off a wall, a little faster each time. Every rebound before you land hits harder (+50% each).' },
   gloves: { name: 'Goo gloves',    price: 120, mode: 'melee', rate: .35, mag: 0, reloadTime: 0, dmg: 4, reach: 4, swing: .25, guard: .4, grab: true, desc: 'Click to grab the robot in front of you and hold it up. Click again to hurl it: it smashes into whatever it hits, hurting itself and everything in the splash. Too big to lift (tanks, the Duelist)? You punch it instead.' },
   drill:  { name: 'Drill blade',   price: 130, mode: 'melee', rate: .1, mag: 0, reloadTime: 0, dmg: .5, reach: 3.4, swing: .1, guard: 0, drill: true, desc: 'Hold to grind into robots in front of you. The damage climbs the longer you keep drilling (up to 6x), and you slowly push through them.' },
   axe:    { name: 'Splitter axe',  price: 140, mode: 'melee', rate: .3, mag: 0, reloadTime: 0, dmg: 3, reach: 30, swing: .2, guard: .3, axe: true, desc: 'Click to throw the axe into a robot up to 30 m away; it sticks. Click again to yank yourself to it and finish with a heavy chop (5x) that splits everything nearby.' },
@@ -1254,7 +1254,7 @@ function update(dt) {
   if (!p.hook) p.vy -= GRAV * (1 + Math.min(1.8, (p.fallT || 0) * 1.6)) * dt; p.vy = Math.max(p.vy, p.slamming ? -70 : -48); p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
   if (p.y <= floor && p.slamming) { p.y = floor; slamLand(); } // slamLand lifts you just off the floor and flings you up
-  if (p.y <= floor) { p.airJumps = 0; p.scoped = false; if (p.pogo) p.pogo = false; p.pogoChain = 0; if (p.vy < -7) { landDip = Math.min(.45, -p.vy * .03); shake = Math.max(shake, -p.vy * .006); beep(110, .12, 'sine', .05, -40); } p.y = floor; p.vy = 0; }
+  if (p.y <= floor) { p.airJumps = 0; p.scoped = false; if (!(p.pogo && GUNS[p.gun]?.skip)) { p.pogo = false; p.pogoChain = 0; } /* a skip lance lunge keeps going along the ground */ if (p.vy < -7) { landDip = Math.min(.45, -p.vy * .03); shake = Math.max(shake, -p.vy * .006); beep(110, .12, 'sine', .05, -40); } p.y = floor; p.vy = 0; }
   p.dashMax ??= 2; p.dashCharges ??= p.dashMax; if (p.dashCharges < p.dashMax) { p.dashReady -= dt; if (p.dashReady <= 0) p.dashCharges = p.dashMax; }
   p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
   if (G.snipeBuf) { G.snipeBuf.t -= dt; if (G.snipeBuf.t <= 0) { const sb = G.snipeBuf; G.snipeBuf = null; if (sb.held) hurt(sb.dmg, sb.kx, sb.kz); } }
@@ -1275,7 +1275,7 @@ function update(dt) {
       if (g.drill || g.shield) { if (g.shield && input.pull && !input.fire && !(p.shieldOut > 0)) shieldThrow(); input.pull = false; } /* held weapons: see drillTick / shieldTick (a click too quick to see as a hold still throws the shield) */
       else if (want) {
         input.pull = false;
-        if (g.slam && air) startSlam(); else if (g.pogo && air) startPogo(); else if (g.grab) gloveClick(); else if (g.axe) axeClick(); else slash();
+        if (g.slam && air) startSlam(); else if (g.pogo && (air || g.skip)) startPogo(); else if (g.grab) gloveClick(); else if (g.axe) axeClick(); else slash();
         p.cool = p.rate;
       }
     }
@@ -1561,13 +1561,29 @@ function meleeTicks(dt) { pogoTick(dt); gloveTick(dt); drillTick(dt); shieldTick
 function startPogo() {
   const p = G.p; p.pogo = true; sweep(.25, .25, 3000, 500, 2);
   if (!GUNS[p.gun].skip) { p.vy = Math.min(p.vy, -34); p.mx *= .5; p.mz *= .5; return; }
-  // skip lance: dive at an angle, keeping (or picking up) speed along the way you're moving
-  const sp = Math.hypot(p.mx, p.mz), [ax, , az] = aimDir(), al = Math.hypot(ax, az) || 1;
-  const dx = sp > 4 ? p.mx / sp : ax / al, dz = sp > 4 ? p.mz / sp : az / al, keep = Math.max(sp, SKIP_MIN);
-  p.mx = dx * keep; p.mz = dz * keep; p.vy = Math.min(p.vy, -24);
+  // skip lance: lunge where you're aiming (up, down or level), at least SKIP_MIN fast, for up to 1.2 s
+  const [ax, ay, az] = aimDir(), sp = Math.max(Math.hypot(p.mx, p.vy, p.mz), SKIP_MIN);
+  p.mx = ax * sp; p.vy = ay * sp; p.mz = az * sp; p.pogoT = 1.2; p.inv = Math.max(p.inv, .3);
 }
-function pogoTick() {
+// skip lance: touch a robot from any side while lunging and you rebound off it like a ball off a wall
+function skipTick(dt) {
+  const p = G.p; p.pogoT = (p.pogoT ?? 1.2) - dt; if (p.pogoT <= 0) { p.pogo = false; return; }
+  const cy = p.y + 1;
+  for (const fo of G.foes) {
+    if (fo.hp <= 0) continue; const fy = fo.y ?? fo.r, nx = p.x - fo.x, ny = cy - fy, nz = p.z - fo.z, d = Math.hypot(nx, ny, nz) || 1;
+    if (d > fo.r + 1.9) continue;
+    const ux = nx / d, uy = ny / d, uz = nz / d, into = p.mx * ux + p.vy * uy + p.mz * uz; /* negative = moving into it */
+    const chain = p.pogoChain || 0; meleeHit(fo, GUNS.skip, 'skip', (1 + chain * POGO_BONUS) * meleeSpeed(p), { color: '#ffb020', n: 14 });
+    if (into < 0) { p.mx -= 2 * into * ux; p.vy -= 2 * into * uy; p.mz -= 2 * into * uz; } /* reflect off the robot */
+    const sp = Math.hypot(p.mx, p.vy, p.mz) || 1, nv = Math.min(SKIP_MAX, Math.max(sp, SKIP_MIN) * SKIP_GAIN);
+    p.mx = p.mx / sp * nv; p.vy = Math.max(p.vy / sp * nv, SKIP_BOUNCE); p.mz = p.mz / sp * nv; /* a little faster, and always some lift */
+    p.x += ux * .6; p.z += uz * .6; p.pogoChain = chain + 1; p.pogo = false; p.inv = Math.max(p.inv, .4); p.fallT = 0;
+    beep(500 + chain * 120, .12, 'square', .04, 400); if (chain >= 2) toast(`Rebound x${chain + 1}!`); return;
+  }
+}
+function pogoTick(dt) {
   const p = G.p; if (!p.pogo || !GUNS[p.gun]?.pogo) { p.pogo = false; return; }
+  if (GUNS[p.gun].skip) { skipTick(dt); return; }
   for (const fo of G.foes) {
     if (fo.hp <= 0) continue; const top = (fo.y ?? fo.r) + hitboxOf(fo).cy + hitboxOf(fo).hy;
     const skip = GUNS[p.gun].skip, reachX = fo.r + (skip ? 1.8 : 1.1);
@@ -2567,7 +2583,7 @@ const gunIcon = id => ({
 }[id] || '<svg viewBox="0 0 200 46" aria-hidden="true"><rect x="50" y="16" width="70" height="14" fill="#3a4152"/><rect x="120" y="20" width="50" height="5" fill="#8a94b0"/><rect x="74" y="30" width="10" height="13" fill="#20252f"/><rect x="26" y="18" width="26" height="10" fill="#3a4152"/><rect x="56" y="14" width="56" height="2" fill="#3ef0ff"/></svg>');
 function gunFacts(g, lv) {
   const dm = (g.dmg * (1 + .12 * lv)).toFixed(lv ? 2 : 1).replace(/\.?0+$/, '');
-  if (g.mode === 'melee') return [['Damage', `${dm}× per hit`], ['Type', g.slam ? 'Melee · air slam' : g.pierce ? 'Melee · pierces, auto-hits at speed' : g.skip ? 'Melee · skipping bounce chain' : g.pogo ? 'Melee · bounce chain' : g.grab ? 'Melee · grab and throw' : g.drill ? 'Melee · hold, ramps up' : g.axe ? 'Melee · throw, yank, chop' : g.shield ? 'Melee · block and throw' : g.mirror ? 'Melee · every swing hits twice' : g.gblade ? 'Melee · grapple finisher' : 'Melee · speed bonus']];
+  if (g.mode === 'melee') return [['Damage', `${dm}× per hit`], ['Type', g.slam ? 'Melee · air slam' : g.pierce ? 'Melee · pierces, auto-hits at speed' : g.skip ? 'Melee · lunge and rebound' : g.pogo ? 'Melee · bounce chain' : g.grab ? 'Melee · grab and throw' : g.drill ? 'Melee · hold, ramps up' : g.axe ? 'Melee · throw, yank, chop' : g.shield ? 'Melee · block and throw' : g.mirror ? 'Melee · every swing hits twice' : g.gblade ? 'Melee · grapple finisher' : 'Melee · speed bonus']];
   if (g.mode === 'charge') return [['Damage', `up to ${dm}×`], ['Fire', 'Hold to charge'], ['Shots', Math.round(g.mag * (1 + .15 * lv))]];
   if (g.mode === 'bow') return [['Damage', `up to ${dm}×`], ['Fire', 'Hold to draw; full draw pierces and pins'], ['Bolts', Math.round(g.mag * (1 + .15 * lv))]];
   if (g.mode === 'shotgun') return [['Damage', `${dm}× x ${g.pellets} pellets`], ['Fire', 'Kick throws you in the air'], ['Shells', Math.round(g.mag * (1 + .15 * lv))]];
