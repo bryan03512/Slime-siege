@@ -94,3 +94,4 @@ The shop's weapons are split into Melee and Ranged tabs. New melee weapons use t
 - Ricochet shield (130): hold to block (80% less damage; raising it counts as a parry). Tap to throw it: it bounces between up to 4 robots and comes back (1.2 s).
 - Mirror blade (150): every swing leaves a slime copy that repeats it 0.35 s later from where you stood.
 - Grapple blade (140): normal swings, plus grappling onto a robot ends in an automatic slash that grows 12% per metre you flew.
+- You can look almost exactly straight up or down (89.7 degrees, was about 77).

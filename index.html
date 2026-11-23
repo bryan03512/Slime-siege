@@ -368,7 +368,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 75 · longer bow pins</p>
+        <p class="ver">Version 76 · look straight down</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -529,6 +529,7 @@ const THROW_SPEED = 34;                    // goo gloves: how fast a thrown robo
 const DRILL_RAMP = 1.2, DRILL_MAX = 6;     // drill blade: damage multiplier gained per second of drilling, cap
 const AXE_CHOP = 5, SHIELD_BLOCK = .2;     // axe finisher multiplier; shield: share of damage that still gets through
 const MIRROR_DELAY = .35;                  // mirror blade echo delay
+const PITCH_MAX = 1.565; // look almost exactly straight up or down (90 degrees is 1.571)
 const HEADSHOT = 2, HEAD_PART = .55; // gun hits on the top of a robot's hitbox do double damage (not on flying drones)
 const DUEL_MOVES = ['', 'triple dash', 'spinning slash', 'decoy clones', 'double shots']; // one new move each time it returns
 let slowT = 0; // slow motion for clashes and finishers
@@ -1258,7 +1259,7 @@ function update(dt) {
     if (c.x < edge) p.yaw += (edge - c.x) / edge * 2.8 * dt; else if (c.x > 1 - edge) p.yaw -= (c.x - (1 - edge)) / edge * 2.8 * dt;
     p.pitch += (clamp((.5 - c.y) * 2.6, -1.3, 1.3) - p.pitch) * Math.min(1, dt * 12);
   }
-  if (input.look) { p.yaw -= input.look.dx * 2.6 * dt; p.pitch = clamp(p.pitch - input.look.dy * 1.6 * dt, -1.3, 1.3); }
+  if (input.look) { p.yaw -= input.look.dx * 2.6 * dt; p.pitch = clamp(p.pitch - input.look.dy * 1.6 * dt, -PITCH_MAX, PITCH_MAX); }
   // firing: burst = a pull fires a whole burst (holding keeps bursting); auto = fires while held; single = one round per pull. Empty = reload
   if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) { const take = Math.min(p.mag - p.ammo, p.reserveBy[p.gun] ?? 0); p.ammo += take; p.reserveBy[p.gun] -= take; sfx.ready(); } }
   else if (p.cool <= 0) {
@@ -2487,7 +2488,7 @@ addEventListener('mouseup', e => { if (e.button === 0) { input.fire = false; inp
 addEventListener('mousemove', e => {
   if (!G || G.mode !== 'play' || touchMode) return;
   const sens = .0023;
-  if (input.locked || input.dragLook) { G.p.yaw -= e.movementX * sens; G.p.pitch = clamp(G.p.pitch - e.movementY * sens, -1.35, 1.35); }
+  if (input.locked || input.dragLook) { G.p.yaw -= e.movementX * sens; G.p.pitch = clamp(G.p.pitch - e.movementY * sens, -PITCH_MAX, PITCH_MAX); }
   else if (input.mlook) {
     // the mouse isn't locked (some tablets and embedded windows can't): turn with the cursor,
     // aim up and down by where it sits on screen, and keep turning while it's near the left or right edge
