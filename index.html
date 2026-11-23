@@ -368,7 +368,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 72 · no boss ring</p>
+        <p class="ver">Version 73 · shotgun, acid SMG, rail bow</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -486,6 +486,9 @@ const UPGRADES = [
 // scope = in the air, time slows, the view zooms and every robot's hitbox shows.
 const GUNS = {
   burst:  { name: 'Burst rifle', price: 0,   mode: 'burst',  burst: 3, burstGap: .075, burstPause: .34, mag: 24, reloadTime: 1.5, dmg: 1,   spread: .004, pierce: 0, desc: 'Three quick rounds, a short pause, again. Reliable at any range.' },
+  shotgun:{ name: 'Slime shotgun', price: 110, mode: 'shotgun', pellets: 8, rate: .75, mag: 6, reloadTime: 1.8, dmg: .8, spread: .085, pierce: 0, desc: 'Eight slime pellets in a wide spray, deadly up close. Fired in the air, the kick throws you backwards: aim down to launch yourself up, or behind you to rocket forward.' },
+  acid:   { name: 'Acid SMG',      price: 130, mode: 'auto', rate: .06, mag: 45, reloadTime: 1.9, dmg: .4, spread: .04, assist: .6, pierce: 0, acid: true, desc: 'A fast spray of weak acid rounds. Every hit sets the robot burning green for 2.5 s, and the burn keeps eating its health while you move on.' },
+  bow:    { name: 'Rail bow',      price: 150, mode: 'bow', draw: .9, rate: .3, mag: 8, reloadTime: 1.6, dmg: 7, spread: 0, pierce: 1, desc: 'Hold to draw, let go to loose a slime-tipped bolt. Damage grows with the draw. A full draw goes through every robot in a line and pins each one in place for 1.5 s.' },
   mg:     { name: 'Machine gun', price: 60,  mode: 'auto',   rate: .065, mag: 60, reloadTime: 2.2, dmg: .6, spread: .02, assist: .9, pierce: 0, desc: 'Hold to spray with a small spread. Near misses still connect.' },
   railgun:{ name: 'Railgun',     price: 160, mode: 'charge', rate: .35, mag: 4, reloadTime: 2.2, dmg: 18, charge: 1.1, spread: 0, pierce: 99, desc: 'Hold to charge (time slows and robot hitboxes show), let go to fire a crackling beam that goes through every robot in a line. A full charge hits very hard.' },
   hammer: { name: 'War hammer',  price: 150, mode: 'melee',  rate: .85, mag: 0, reloadTime: 0, dmg: 2, reach: 3.8, swing: .45, guard: .45, slam: true, desc: 'A heavy swing on the ground. Weak on its own, but its damage grows exponentially with speed and with how far you fall. Click in the air to dive and slam; dash during a dive to steer it, dash down to plunge faster.' },
@@ -512,6 +515,8 @@ const FOCUS_TIME = 3, FOCUS_COOLDOWN = 4; // seconds of slow time, and how long 
 const MAX_SWING_HITS = 3;
 const SPEAR_IFRAME = .8;      // seconds you cannot be hurt after a spear thrust (half that on an auto-hit)
 const SLAM_BOUNCE = 6.5, SLAM_BOUNCE_MAX = 18; // hammer slam: upward fling on impact, more from bigger drops
+const SHOTGUN_KICK = 17; // shotgun recoil push in the air (a quarter of it on the ground)
+const ACID_BURN = 2.5, ACID_DPS = 2.5; // acid SMG burn: seconds, damage per second (before your damage boosts)
 const HEADSHOT = 2, HEAD_PART = .55; // gun hits on the top of a robot's hitbox do double damage (not on flying drones)
 const DUEL_MOVES = ['', 'triple dash', 'spinning slash', 'decoy clones', 'double shots']; // one new move each time it returns
 let slowT = 0; // slow motion for clashes and finishers
@@ -824,6 +829,25 @@ function gunModelFor(id) {
     const cell = part(.08, .1, .12, accent('#b45cff'), 0, -.12, .02);
     part(.07, .16, .08, gunDark, 0, -.13, .17).rotation.x = -.35; part(.09, .12, .26, gunMetal, 0, -.01, .4);
     g.userData = { mag: cell, magY: -.12, tip: -1.05, coils };
+  } else if (id === 'shotgun') {
+    part(.15, .14, .5, gunMetal, 0, 0, 0); for (const x of [-.035, .035]) { const b = new T.Mesh(new T.CylinderGeometry(.03, .03, .62, 10), gunDark); b.rotation.x = Math.PI / 2; b.position.set(x, .02, -.55); g.add(b); }
+    part(.12, .07, .3, gunDark, 0, -.07, -.42); part(.07, .16, .08, gunDark, 0, -.13, .13).rotation.x = -.35; part(.1, .13, .3, gunMetal, 0, -.02, .4); part(.155, .015, .42, accent('#ffb020'), 0, .075, -.05);
+    const mag = part(.06, .06, .06, gunDark, 0, -.09, .02); goo(g, .04, .06, -.86, .045, .035, .04); goo(g, -.04, .06, -.86, .045, .035, .04);
+    g.userData = { mag, magY: -.09, tip: -.88 };
+  } else if (id === 'acid') {
+    part(.1, .13, .4, gunMetal, 0, 0, 0); tube(.02, .26, gunDark, -.33); part(.06, .2, .07, gunDark, 0, -.15, -.08);
+    part(.07, .16, .08, gunDark, 0, -.13, .12).rotation.x = -.35; part(.06, .08, .22, gunMetal, 0, -.01, .3); part(.105, .015, .3, accent('#c6ff3a'), 0, .07, -.02);
+    const acidMat = new T.MeshPhongMaterial({ color: '#c6ff3a', emissive: '#3a5a00', transparent: true, opacity: .8, shininess: 120 });
+    const tank = new T.Mesh(new T.CylinderGeometry(.06, .06, .22, 12), acidMat); tank.position.set(.09, .08, -.02); tank.rotation.x = Math.PI / 2; g.add(tank);
+    const mag = part(.055, .2, .06, gunDark, 0, -.17, -.08); drip(g, 0, -.02, -.44, .06);
+    g.userData = { mag, magY: -.17, tip: -.47 };
+  } else if (id === 'bow') {
+    part(.05, .16, .06, gunDark, 0, -.04, 0); part(.04, .04, .7, gunMetal, 0, .03, -.3);
+    { const arc = new T.Mesh(new T.TorusGeometry(.42, .022, 6, 28, Math.PI), accent('#3ef0ff')); arc.rotation.z = -Math.PI / 2; /* one bow arc: top limb, grip, bottom limb, bending forward */
+      const holder = new T.Group(); holder.add(arc); holder.rotation.y = Math.PI / 2; holder.scale.set(1, 1, .45); holder.position.set(0, .03, -.08); g.add(holder);
+      part(.006, .84, .006, new T.MeshBasicMaterial({ color: '#d9dee8' }), 0, .03, -.08); }
+    const bolt = part(.015, .015, .75, slimeCore, 0, .05, -.38); const tip = goo(g, 0, .05, -.78, .035, .035, .06);
+    g.userData = { mag: null, magY: 0, tip: -.8, bolt, boltTip: tip, bow: true };
   } else if (id === 'mg') {
     part(.13, .15, .58, gunMetal, 0, 0, 0); part(.11, .12, .32, gunDark, 0, -.01, -.42);
     tube(.03, .42, gunDark, -.74); for (let k = 0; k < 4; k++) tube(.036, .03, gunMetal, -.62 - k * .07);
@@ -855,7 +879,7 @@ function gunModelFor(id) {
   }
   return g;
 }
-const gunModels = { burst: gunModelFor('burst'), mg: gunModelFor('mg'), sniper: gunModelFor('sniper'), railgun: gunModelFor('railgun'), knife: gunModelFor('knife'), hammer: gunModelFor('hammer'), spear: gunModelFor('spear') };
+const gunModels = { burst: gunModelFor('burst'), mg: gunModelFor('mg'), shotgun: gunModelFor('shotgun'), acid: gunModelFor('acid'), bow: gunModelFor('bow'), sniper: gunModelFor('sniper'), railgun: gunModelFor('railgun'), knife: gunModelFor('knife'), hammer: gunModelFor('hammer'), spear: gunModelFor('spear') };
 let gunModel = gunModels.burst, gMag = gunModel.userData.mag;
 function showGun(id) { for (const [k, m] of Object.entries(gunModels)) m.visible = k === id; gunModel = gunModels[id] || gunModels.burst; gMag = gunModel.userData.mag; flash.position.z = gunModel.userData.tip; muzzle.position.z = gunModel.userData.tip + .03; }
 const flash = new T.PointLight('#ffd08a', 0, 10); flash.position.set(0, .05, -.95); gun.add(flash);
@@ -973,6 +997,8 @@ function sweep(dur, vol, f0, f1, q = 1.2) {
 }
 function ring(freqs, dur, vol) { for (const f of freqs) beep(f, dur, 'sine', vol, f * .015); }
 const sfx = {
+  shotgun: () => { noise(.3, .4, 900, .6); beep(70, .25, 'sine', .14, -30); noise(.12, .2, 4000, 1.5); sweep(.2, .12, 600, 200, 2); },
+  bow: full => { sweep(full ? .3 : .18, full ? .35 : .22, 2500, 400, 3); beep(full ? 900 : 600, .12, 'triangle', .04, -500); if (full) ring([1800, 2700], .25, .015); },
   swish: () => { sweep(.24, .3, 500, 5200, 1.4); sweep(.16, .12, 1800, 8000, 3); setTimeout(() => ring([2960, 4420, 6100], .32, .012), 40); },
   swoosh: () => { sweep(.4, .32, 160, 1300, .9); beep(85, .3, 'sine', .07, -25); },
   chop: () => { noise(.09, .3, 900, 1.1); noise(.05, .18, 5200, 3); beep(95, .14, 'sine', .14, -45); beep(1800, .06, 'triangle', .03, -1200); },
@@ -1208,6 +1234,26 @@ function update(dt) {
         fire({ mult: c, pierce: 99, fx: 'rail', charge: c }); p.ammo--; p.cool = p.rate; if (p.ammo <= 0) reload();
       } else if (input.pull) { input.pull = false; reload(); }
     }
+    else if (GUNS[p.gun].mode === 'shotgun') {
+      if (want) {
+        input.pull = false;
+        if (p.ammo > 0) {
+          const g = GUNS[p.gun]; for (let k = 0; k < g.pellets; k++) fire({ spread: g.spread, quiet: k > 0 });
+          p.ammo--; p.cool = p.rate; sfx.shotgun(); shake = Math.max(shake, .12);
+          const [ax, ay, az] = aimDir(), air = p.y > groundAt(p.x, p.z, p.r) + .3, kick = air ? SHOTGUN_KICK : SHOTGUN_KICK * .25; /* the kick throws you the other way */
+          p.mx -= ax * kick; p.mz -= az * kick; if (air || ay < -.3) p.vy = Math.max(p.vy, 0) - ay * kick;
+          if (p.ammo <= 0) reload();
+        } else reload();
+      }
+    }
+    else if (GUNS[p.gun].mode === 'bow') {
+      const dr = GUNS[p.gun].draw;
+      if (input.fire && p.ammo > 0) { const was = p.charge || 0; p.charge = Math.min(1, was + dt / dr); if (was < 1 && p.charge >= 1) beep(1500, .1, 'sine', .04, 300); else if (Math.floor(p.charge * 6) !== p.chargeTick) { p.chargeTick = Math.floor(p.charge * 6); beep(300 + p.charge * 500, .04, 'triangle', .015); } }
+      else if ((p.charge || 0) > 0 || (input.pull && p.ammo > 0)) { // let go: loose a bolt with what's drawn
+        input.pull = false; const c = Math.max(.15, p.charge || 0), full = c >= 1; p.charge = 0; p.chargeTick = -1;
+        fire({ mult: .25 + .75 * c, pierce: full ? 99 : 1, fx: 'bow', pin: full ? 1.5 : 0 }); p.ammo--; p.cool = p.rate; sfx.bow(full); if (p.ammo <= 0) reload();
+      } else if (input.pull) { input.pull = false; reload(); }
+    }
     else if (GUNS[p.gun].scope) {
       // sniper: in the air, the first click raises the scope (time slows); the next click fires. On the ground it just fires.
       if (input.pull) {
@@ -1224,6 +1270,7 @@ function update(dt) {
       if (p.ammo > 0) { fire(); p.ammo--; p.cool = p.rate; if (p.ammo <= 0) reload(); } else reload();
     }
   }
+  burnTick(dt);
   swingTick(dt);
   // bullet tracers fade fast
   for (const tr of live.shots) { tr.life -= dt; if (tr.zap) jitterZap(tr); tr.m.material.opacity = Math.max(0, tr.life / (tr.max || .06)) * (tr.op ?? .9); if (tr.grow) tr.m.scale.multiplyScalar(1 + tr.grow * dt); if (tr.thin) { tr.m.scale.x *= 1 - tr.thin * dt; tr.m.scale.y *= 1 - tr.thin * dt; } }
@@ -1254,6 +1301,7 @@ function update(dt) {
     let dir = 1; if (e.keepAway && d < e.keepAway) dir = d < e.keepAway - 4 ? -0.7 : 0;
     let mx = dx / d * dir, mz = dz / d * dir;
     if (e.duelist) [mx, mz] = duelTick(fo, e, dx, dz, d, mx, mz, dt);
+    if (fo.pinT > 0) { mx = 0; mz = 0; fo.kx = fo.kz = 0; } // pinned by a full-draw bolt
     if (fo.stuck > 0) { fo.stuck -= dt; const sx = -mz * fo.side, sz = mx * fo.side; mx = mx * .2 + sx; mz = mz * .2 + sz; }
     const ox = fo.x, oz = fo.z;
     fo.x += (mx * fo.speed + fo.kx) * dt; fo.z += (mz * fo.speed + fo.kz) * dt;
@@ -1317,7 +1365,7 @@ function update(dt) {
 function aimDir() { const p = G.p, cp = Math.cos(p.pitch); return [-Math.sin(p.yaw) * cp, Math.sin(p.pitch), -Math.cos(p.yaw) * cp]; }
 // one round: an instant hit along where you aim (a touch of spread that grows through the burst)
 function fire(opt = {}) {
-  const p = G.p, gd = GUNS[p.gun] || GUNS.burst, spread = p.gun === 'burst' ? p.spread + (p.burst - p.burstLeft) * .0035 : p.spread, as = (p.assist || 0) + (touchMode ? 1.2 : 0), pierce = opt.pierce ?? p.pierce + (p.gunPierce || 0), dmg = p.dmg * (p.dmgMul || 1) * (opt.mult || 1) * gunSpeedMult(p) * GUN_DAMAGE;
+  const p = G.p, gd = GUNS[p.gun] || GUNS.burst, spread = opt.spread ?? (p.gun === 'burst' ? p.spread + (p.burst - p.burstLeft) * .0035 : p.spread), as = (p.assist || 0) + (touchMode ? 1.2 : 0), pierce = opt.pierce ?? p.pierce + (p.gunPierce || 0), dmg = p.dmg * (p.dmgMul || 1) * (opt.mult || 1) * gunSpeedMult(p) * GUN_DAMAGE;
   const yaw = p.yaw + rnd(-spread, spread), pitch = p.pitch + recoil + rnd(-spread, spread), cp = Math.cos(pitch);
   const dx = -Math.sin(yaw) * cp, dy = Math.sin(pitch), dz = -Math.cos(yaw) * cp, ox = p.x, oy = p.y + EYE, oz = p.z;
   const wall = rayCity(ox, oy, oz, dx, dy, dz, 220);
@@ -1333,20 +1381,23 @@ function fire(opt = {}) {
     const [t, fo] = hits[i]; end = i === pierce ? t : end;
     const hb = hitboxOf(fo), top = (fo.y ?? fo.r) + hb.cy + hb.hy, head = !ENEMIES[fo.type].fly && oy + dy * t > top - hb.hy * HEAD_PART;
     if (head) { fo.hsT = G.t; beep(1900, .07, 'square', .03, 600); }
-    fo.hp -= dmg * (head ? HEADSHOT : 1); fo.flash = .07; fo.kx += dx * (gd.scope ? 9 : 2.2); fo.kz += dz * (gd.scope ? 9 : 2.2);
+    fo.hp -= dmg * (head ? HEADSHOT : 1); fo.flash = .07;
+    if (gd.acid) { fo.burnT = ACID_BURN; fo.burnDps = ACID_DPS * p.dmg * (p.dmgMul || 1) * (1 + .12 * (levels.acid || 0)) * GUN_DAMAGE; }
+    if (opt.pin) { fo.pinT = ENEMIES[fo.type].boss ? opt.pin * .4 : opt.pin; fo.kx = fo.kz = 0; if (ENEMIES[fo.type].boss) { fo.hook = null; fo.windT = 0; } burst(fo.x, fo.y ?? fo.r, fo.z, '#3ef0ff', 12, 6, .06); } fo.kx += dx * (gd.scope ? 9 : 2.2); fo.kz += dz * (gd.scope ? 9 : 2.2);
     burst(ox + dx * t, oy + dy * t, oz + dz * t, ENEMIES[fo.type].glow, 5, 6, .06); marker();
-    if (fo.hp <= 0) kill(fo); else sfx.hit();
+    if (fo.hp <= 0) kill(fo); else if (!opt.quiet) sfx.hit();
   }
   if (end === wall && end < 220) burst(ox + dx * end, Math.max(.05, oy + dy * end), oz + dz * end, '#ffcf7a', 4, 5, .045);
   // tracer from the muzzle to whatever it hit
   gun.updateMatrixWorld(true); _v.set(0, .015, gunModel.userData.tip); gun.localToWorld(_v);
   const ex = ox + dx * Math.min(end, 220), ey = oy + dy * Math.min(end, 220), ez = oz + dz * Math.min(end, 220), len = Math.hypot(ex - _v.x, ey - _v.y, ez - _v.z);
-  const tr = new T.Mesh(geo.cube, mats.tracer.clone()); const thick = gd.scope ? .07 : p.gun === 'mg' ? .018 : .025; tr.scale.set(thick, thick, len); if (gd.scope) tr.material.color.set('#9ff6ff'); tr.position.set((_v.x + ex) / 2, (_v.y + ey) / 2, (_v.z + ez) / 2); tr.lookAt(ex, ey, ez); scene.add(tr);
+  const tr = new T.Mesh(geo.cube, mats.tracer.clone()); const thick = gd.scope ? .07 : opt.fx === 'bow' ? .04 : p.gun === 'mg' || p.gun === 'acid' || p.gun === 'shotgun' ? .016 : .025; tr.scale.set(thick, thick, len); if (gd.scope || opt.fx === 'bow') tr.material.color.set('#9ff6ff'); else if (gd.acid) tr.material.color.set('#c6ff3a'); tr.position.set((_v.x + ex) / 2, (_v.y + ey) / 2, (_v.z + ez) / 2); tr.lookAt(ex, ey, ez); scene.add(tr);
   live.shots.push({ m: tr, life: gd.scope ? .5 : .06, max: gd.scope ? .5 : .06, thin: gd.scope ? 2.5 : 0 });
   if (opt.fx === 'rail') { tr.visible = false; sniperFx(_v.x, _v.y, _v.z, ex, ey, ez, len, end < 220, cosColor() || '#b45cff', '#ecd2ff', 1.3 + opt.charge * 1.4); for (let k = 0; k < 2 + Math.round(opt.charge * 3); k++) zap(_v.x, _v.y, _v.z, ex, ey, ez, .25 + opt.charge * .45 + k * .08, k % 2 ? '#ffffff' : (cosColor() || '#c58bff')); shake = Math.max(shake, .04 + opt.charge * .1); }
   if (gd.scope) { sniperFx(_v.x, _v.y, _v.z, ex, ey, ez, len, end < 220, cosColor()); if (end === wall && end < 220) sniperBlast(ex, Math.max(0, ey), ez, hits.slice(0, pierce + 1).map(h => h[1].id)); }
-  gun.position.z = gd.scope ? -.36 : -.44; recoil = Math.min(gd.scope ? .12 : .06, recoil + (gd.scope ? .09 : p.gun === 'mg' ? .006 : .014)); flashT = .045;
-  if (opt.fx === 'rail') { noise(.35, .2, 2400, .8); beep(1600, .3, 'sawtooth', .05, -1400); } else if (gd.scope) { sfx.snipe(); shake = Math.max(shake, .05); } else if (p.gun === 'mg') sfx.mg(); else sfx.shoot();
+  if (opt.quiet) return; /* extra shotgun pellets: no extra kick or sound */
+  gun.position.z = gd.scope ? -.36 : -.44; recoil = Math.min(gd.scope ? .12 : .06, recoil + (gd.scope ? .09 : p.gun === 'mg' || p.gun === 'acid' ? .005 : p.gun === 'shotgun' ? .05 : .014)); flashT = .045;
+  if (opt.fx === 'rail') { noise(.35, .2, 2400, .8); beep(1600, .3, 'sawtooth', .05, -1400); } else if (gd.scope) { sfx.snipe(); shake = Math.max(shake, .05); } else if (p.gun === 'mg' || p.gun === 'acid') sfx.mg(); else if (p.gun === 'shotgun' || opt.fx === 'bow') {} else sfx.shoot();
 }
 // the knife: a wide slash in front of you; you can't be hurt while it swings
 // the long sword: a swing lasts half a second; anything in the arc during it gets cut (once per swing),
@@ -1438,6 +1489,16 @@ function meleeSnap() {
   if (!best) return; const fo = best[1];
   p.yaw = Math.atan2(-(fo.x - p.x), -(fo.z - p.z));
   if (g.pierce) p.pitch = Math.atan2((fo.y ?? fo.r) - (p.y + EYE), best[0]);
+}
+// acid burns tick down health; pinned robots can't move
+function burnTick(dt) {
+  for (const fo of [...G.foes]) {
+    if (fo.pinT > 0) fo.pinT -= dt;
+    if (!(fo.burnT > 0) || fo.hp <= 0) continue;
+    fo.burnT -= dt; fo.hp -= fo.burnDps * dt;
+    if (Math.random() < dt * 8) burst(fo.x + rnd(-.4, .4), (fo.y ?? fo.r) + rnd(-.3, .5), fo.z + rnd(-.4, .4), '#c6ff3a', 2, 2, .05);
+    if (fo.hp <= 0) kill(fo);
+  }
 }
 function swingTick(dt) {
   const p = G.p; spearTick(dt); if (!(p.slashT > 0)) return; p.slashT -= dt;
@@ -1954,7 +2015,8 @@ function render(dt) {
     if (gMag) gMag.position.y = gunModel.userData.magY - (rl > .2 && rl < .6 ? .3 : 0);
     // knife slash: a fast sweep across the view; weapon swap: dip out and back
     switchT = Math.max(0, switchT - dt); const sw = Math.max(0, p.slashT || 0) / ((GUNS[p.swingGun] || GUNS.knife).swing || .5); const arc = Math.sin(sw * Math.PI);
-    const ud = gunModel.userData; if (ud.coils) { const c = p.charge || 0; ud.coils.forEach((k, i) => k.scale.setScalar(1 + c * .5 * (i / 4 + .5))); flash.intensity = Math.max(flash.intensity, c * 1.5); }
+    const ud = gunModel.userData; if (ud.bow) { const c = p.charge || 0; ud.bolt.position.z = -.38 + c * .3; ud.boltTip.position.z = -.78 + c * .3; }
+    if (ud.coils) { const c = p.charge || 0; ud.coils.forEach((k, i) => k.scale.setScalar(1 + c * .5 * (i / 4 + .5))); flash.intensity = Math.max(flash.intensity, c * 1.5); }
     for (const b of ud.goo || []) { const w = Math.sin(performance.now() / 200 + b.ph) * .12; b.m.scale.y = b.sy * (1 + w); if (b.m.userData.drip) b.m.position.y = b.y - b.sy * w; }
     if (ud.spear) { gunModel.rotation.set(0, 0, 0); gunModel.position.z = .1 - arc * .7 - (spearAuto > 0 ? .25 : 0); } else if (ud.head && p.slamming) gunModel.rotation.set(1.1, 0, 0); else if (gunModel.userData.knife) gunModel.rotation.set(-arc * .5, (sw * 2 - 1) * 1.3 * slashSide * (sw > 0 ? 1 : 0), arc * 1.1 * slashSide); else gunModel.rotation.set(0, 0, 0);
     gunSwing = Math.max(0, gunSwing - dt); gun.rotation.set(gunSwing * 2.4 - rk * .5, gunSwing * 3 + rk * .4, gunSwing * 3.5 + rk * .5);
@@ -2295,6 +2357,9 @@ $('pauseCtrl').onclick = () => openPanel('ovControls');
 $('guideBtn').onclick = () => openPanel('ovGuide');
 $('shopBtn').onclick = () => { renderShop(); openPanel('ovShop'); };
 const gunIcon = id => ({
+  shotgun: '<svg viewBox="0 0 200 46" aria-hidden="true"><rect x="40" y="14" width="60" height="16" fill="#3a4152"/><rect x="100" y="15" width="80" height="5" fill="#20252f"/><rect x="100" y="22" width="80" height="5" fill="#20252f"/><rect x="18" y="18" width="24" height="12" fill="#3a4152"/><circle cx="182" cy="21" r="5" fill="#5dff6a"/></svg>',
+  acid: '<svg viewBox="0 0 200 46" aria-hidden="true"><rect x="50" y="14" width="60" height="16" fill="#3a4152"/><rect x="110" y="19" width="44" height="5" fill="#20252f"/><rect x="70" y="30" width="10" height="14" fill="#20252f"/><rect x="62" y="5" width="34" height="9" rx="4" fill="#c6ff3a"/></svg>',
+  bow: '<svg viewBox="0 0 200 46" aria-hidden="true"><path d="M70 4 Q40 23 70 42" fill="none" stroke="#3ef0ff" stroke-width="4"/><line x1="70" y1="4" x2="70" y2="42" stroke="#d9dee8" stroke-width="1"/><rect x="58" y="21" width="120" height="3" fill="#1fbf3a"/><circle cx="180" cy="22.5" r="5" fill="#5dff6a"/></svg>',
   mg: '<svg viewBox="0 0 200 46" aria-hidden="true"><rect x="40" y="14" width="80" height="14" fill="#3a4152"/><rect x="120" y="18" width="62" height="5" fill="#8a94b0"/><circle cx="78" cy="34" r="10" fill="#20252f"/><rect x="20" y="16" width="22" height="10" fill="#3a4152"/><rect x="46" y="12" width="70" height="2" fill="#ffb020"/></svg>',
   sniper: '<svg viewBox="0 0 200 46" aria-hidden="true"><rect x="40" y="20" width="70" height="10" fill="#3a4152"/><rect x="110" y="23" width="80" height="3" fill="#8a94b0"/><rect x="60" y="10" width="44" height="7" rx="3" fill="#20252f"/><rect x="14" y="20" width="28" height="12" fill="#3a4152"/><rect x="72" y="30" width="8" height="10" fill="#20252f"/><rect x="44" y="18" width="62" height="2" fill="#ff3d8b"/></svg>',
   railgun: '<svg viewBox="0 0 200 46" aria-hidden="true"><rect x="40" y="16" width="60" height="14" fill="#3a4152"/><rect x="100" y="18" width="84" height="3" fill="#8a94b0"/><rect x="100" y="25" width="84" height="3" fill="#8a94b0"/><g fill="none" stroke="#b45cff" stroke-width="3"><circle cx="112" cy="23" r="6"/><circle cx="130" cy="23" r="6"/><circle cx="148" cy="23" r="6"/><circle cx="166" cy="23" r="6"/></g><rect x="16" y="18" width="26" height="10" fill="#3a4152"/></svg>',
@@ -2305,6 +2370,9 @@ function gunFacts(g, lv) {
   const dm = (g.dmg * (1 + .12 * lv)).toFixed(lv ? 2 : 1).replace(/\.?0+$/, '');
   if (g.mode === 'melee') return [['Damage', `${dm}× per hit`], ['Type', g.slam ? 'Melee · air slam' : g.pierce ? 'Melee · pierces, auto-hits at speed' : 'Melee · speed bonus']];
   if (g.mode === 'charge') return [['Damage', `up to ${dm}×`], ['Fire', 'Hold to charge'], ['Shots', Math.round(g.mag * (1 + .15 * lv))]];
+  if (g.mode === 'bow') return [['Damage', `up to ${dm}×`], ['Fire', 'Hold to draw; full draw pierces and pins'], ['Bolts', Math.round(g.mag * (1 + .15 * lv))]];
+  if (g.mode === 'shotgun') return [['Damage', `${dm}× x ${g.pellets} pellets`], ['Fire', 'Kick throws you in the air'], ['Shells', Math.round(g.mag * (1 + .15 * lv))]];
+  if (g.acid) return [['Damage', `${dm}× per round + burn`], ['Fire', `Full auto, ${Math.round(1 / g.rate)}/s`], ['Magazine', Math.round(g.mag * (1 + .15 * lv))]];
   return [['Damage', `${dm}× per round`], ['Fire', g.mode === 'burst' ? `${g.burst}-round bursts` : g.mode === 'auto' ? `Full auto, ${Math.round(1 / g.rate)}/s` : 'One shot'], ['Magazine', g.mag > 1 ? Math.round(g.mag * (1 + .15 * lv)) : g.mag]];
 }
 let shopTab = 'weapons';

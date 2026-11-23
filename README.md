@@ -79,3 +79,8 @@ Built with [three.js](https://threejs.org/) r128.
 - Harder Duelist: when you grapple onto it, 45% of the time (60% from phase 2, at most every 4 s) it sidesteps and your line breaks. 30% of its cuts are fakes: it pulls back and swings for real 0.3 s later, so an early parry is wasted. Its cuts ignore dashes and immunity windows, except for 1 s after you parry one. From phase 2 its cuts chain: cut, dash in, cut, up to three in a row.
 - Revives no longer trigger on their own: if you have one, the game over screen shows a Revive button (one per run) that puts you back into the run with half health and a shockwave. Not offered after End run.
 - War hammer slam flings you back up on impact: 6.5 m/s upward plus a bit more for bigger drops (up to 18 m/s), so you can chain slams.
+
+## New guns (v73)
+- Slime shotgun (110): 8 pellets in a wide spray, 6 shells. Fired in the air, the kick throws you the opposite way you aim (17 m/s; a quarter of that on the ground): aim down to launch up, behind you to rocket forward.
+- Acid SMG (130): fast weak spray (16 rounds/s); every hit sets the robot burning for 2.5 s (2.5 damage per second before boosts), and the burn keeps going while you move on.
+- Rail bow (150): hold to draw (0.9 s), let go to loose a bolt. Damage scales from 25% to 100% with the draw (7 at full). A full draw pierces every robot in a line and pins each one in place for 1.5 s (bosses 0.6 s, and it knocks the Duelist off its grapple). No slow motion, unlike the railgun.
