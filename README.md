@@ -69,7 +69,7 @@ Built with [three.js](https://threejs.org/) r128.
 - Long sword speed bonus: starts at 2.5x and gains 1x for every 12 m/s over 6 m/s (half as fast as before), up to 7.5x.
 
 ## The Duelist duel (v68)
-- Boss waves are a one-on-one duel: only the Duelist spawns, inside a pink ring of light (38 m). Step outside and its shots lock on twice as fast.
+- Boss waves are a one-on-one duel: only the Duelist spawns (no ring).
 - Phases: at 66% and 33% health it roars (can't be hurt for 1.3 s), then blasts you back with a shockwave (12 damage within 22 m). Phase 2: 25% faster, quicker cuts, more dives, a shot every 1.8 s. Phase 3: swings around the sky shooting every 1.3 s.
 - Clash: grapple into it while it's flying on its own grapple. Whoever is moving faster wins: if it's you, it's knocked out of the sky, stunned 2.2 s and loses 6% health; if it's faster, you're slammed down for 25 damage.
 - Finisher: below 12% health, parrying its next cut, dive or shot finishes it in slow motion.

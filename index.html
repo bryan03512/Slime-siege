@@ -368,7 +368,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 71 · hammer slam bounce</p>
+        <p class="ver">Version 72 · no boss ring</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -461,7 +461,7 @@ const ENEMIES = {
   bulwark:  { name: 'Bulwark',  hp: 90,  speed: 2.1, r: 1.9, bob: 0.03, dmg: 25, score: 90,  coins: 5,  from: 1, tank: 1, body: '#a7b0bf', glow: '#3dff8a', desc: 'Tank, tier 1. A walking wall of armour. Takes a lot of rounds to bring down.' },
   titan:    { name: 'Titan',    hp: 220, speed: 1.8, r: 2.6, bob: 0.02, dmg: 32, score: 180, coins: 10, from: 5, tank: 2, body: '#b9b2a2', glow: '#ffd23f', desc: 'Tank, tier 2. Bigger and much tougher. Keep your distance; one hit takes a third of your health.' },
   colossus: { name: 'Colossus', hp: 520, speed: 1.5, r: 3.5, bob: 0.02, dmg: 42, score: 360, coins: 18, from: 8, tank: 3, body: '#c9b9b0', glow: '#ff6a00', desc: 'Tank, tier 3. A towering machine with a huge health pool. Hit it from the air, out of reach.' },
-  duelist: { name: 'The Duelist', hp: 1400, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, diveDmg: 30, shotDmg: 15, shootEvery: 2.4, aimTime: 1.2, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, snipes you often with a red laser. While healthy it fights aggressively: it launches into the sky and grapples straight onto you for a heavy hit (parry it to stagger it). Boss waves are a one-on-one duel in a ring of light. At 66% and 33% health it roars, blasts you back and changes style; below 33% it takes to the sky, swinging around you and shooting fast. Grapple into it while it flies: whoever is moving faster wins the clash. Nearly beaten, parry its next attack to finish it. It learns a new move each time it returns. Watch for its blade to glow, then parry (F).' },
+  duelist: { name: 'The Duelist', hp: 1400, speed: 6.5, r: 1.05, dmg: 6, swingDmg: 22, diveDmg: 30, shotDmg: 15, shootEvery: 2.4, aimTime: 1.2, score: 400, coins: 25, boss: true, duelist: true, body: '#dfe3ea', glow: '#ff3d8b', desc: 'Every fifth wave. Fights like you do: dashes in, dodges your swings, snipes you often with a red laser. While healthy it fights aggressively: it launches into the sky and grapples straight onto you for a heavy hit (parry it to stagger it). Boss waves are a one-on-one duel: no other robots spawn. At 66% and 33% health it roars, blasts you back and changes style; below 33% it takes to the sky, swinging around you and shooting fast. Grapple into it while it flies: whoever is moving faster wins the clash. Nearly beaten, parry its next attack to finish it. It learns a new move each time it returns. Watch for its blade to glow, then parry (F).' },
   warden: { retired: true, name: 'The Warden', hp: 150, speed: 1.9, r: 2.8, bob: 0.02, dmg: 20, score: 400, coins: 25, boss: true, body: '#cfd3dc', glow: '#ff3d8b', ringEvery: 2.8, splitInto: 'walker', splits: 4, desc: 'Every fifth wave. Fires rings of bolts and bursts into Walkers when it goes down.' },
 };
 const UPGRADES = [
@@ -1041,8 +1041,8 @@ function startWave() {
     const count = n % 5 ? 1 + Math.floor((n - 1) / 6) : 1; // boss waves bring just one tank alongside the Duelist
     for (let i = 0; i < count; i++) G.toSpawn.splice(Math.floor(G.toSpawn.length * (i + 1) / (count + 1)), 0, i === 0 ? tanks.at(-1) : tanks[Math.floor(Math.random() * tanks.length)]);
   }
-  if (n % 5 === 0) { G.toSpawn = ['duelist']; G.arena = { x: G.p.x, z: G.p.z, r: 38 }; } // boss waves: a one-on-one duel in a ring of light
-  else G.arena = null;
+  if (n % 5 === 0) G.toSpawn = ['duelist']; // boss waves: just you and the Duelist
+  G.arena = null; /* (the old ring is gone) */
   G.spawnTimer = 0.8;
   setTimeout(() => say(n % 5 === 0 ? 'Boss wave! Stay fast and keep parrying.' : n === 1 ? "Hi, I'm Goop! Slash those robots, I'll cheer you on." : `Wave ${n}, let's go!`, 'cheer', true), 900);
   const total = G.toSpawn.length, big = G.toSpawn.filter(k => ENEMIES[k].tank).map(k => ENEMIES[k].name);
@@ -1884,7 +1884,7 @@ function tickCombo(dt) { comboT -= dt; if (comboT <= 0 && combo) { combo = 0; } 
 let slashT = 0, slashSide = 1, switchT = 0;
 let bob = 0, gunSwing = 0, recoil = 0, roll = 0, landDip = 0, fovKick = 0, hitStop = 0, combo = 0, comboT = 0, flashT = 0, baseFov = 75;
 const lasers = new Map(), ropes = new Map(); let arenaMesh = null;
-function outsideArena() { const a = G?.arena; return !!a && Math.hypot(G.p.x - a.x, G.p.z - a.z) > a.r; }
+function outsideArena() { return false; } // the duel ring was removed
 function arenaTick() {
   const a = G.arena;
   if (!a) { if (arenaMesh) { scene.remove(arenaMesh); arenaMesh = null; } return; }
