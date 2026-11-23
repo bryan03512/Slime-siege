@@ -376,7 +376,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 82 · see the thrown axe</p>
+        <p class="ver">Version 83 · axe always comes back</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -1698,12 +1698,21 @@ function axeClick() {
 }
 // the thrown axe in flight
 function axeFlyTick(dt) {
-  const p = G.p, f = p.axeFly; if (!f) return;
+  const p = G.p;
+  // stuck in a robot that died or vanished: the axe flies back from where it was
+  if (!p.axeFly && p.axeIn && !G.foes.some(o => o.id === p.axeIn && o.hp > 0)) {
+    const m = axeMesh?.visible ? axeMesh.position : { x: p.x, y: p.y + 1.3, z: p.z };
+    p.axeIn = null; p.axePull = null; p.axeFly = { x: m.x, y: m.y, z: m.z, foe: null, back: true, spin: 0, t: 0 };
+  }
+  const f = p.axeFly; if (!f) return;
   if (p.gun !== 'axe') { p.axeFly = null; return; }
+  f.t = (f.t || 0) + dt;
   const fo = f.foe && G.foes.find(o => o.id === f.foe && o.hp > 0);
   if (f.foe && !fo) { f.foe = null; f.back = true; } /* its target died on the way: come back */
+  if (!f.back && f.t > 1.5) { f.foe = null; f.back = true; } /* never hangs in the air: after 1.5 s it turns around */
+  if (f.back && (f.t > 4 || Math.hypot(p.x - f.x, p.y + 1.3 - f.y, p.z - f.z) < 2)) { p.axeFly = null; beep(500, .06, 'triangle', .03); return; } /* caught (or snaps back) */
   const tx = f.back ? p.x : fo ? fo.x : f.tx, ty = f.back ? p.y + 1.3 : fo ? (fo.y ?? fo.r) : f.ty, tz = f.back ? p.z : fo ? fo.z : f.tz;
-  const dx = tx - f.x, dy = ty - f.y, dz = tz - f.z, d = Math.hypot(dx, dy, dz) || 1, step = Math.min(d, AXE_SPEED * dt);
+  const dx = tx - f.x, dy = ty - f.y, dz = tz - f.z, d = Math.hypot(dx, dy, dz) || 1, step = Math.min(d, (f.back ? Math.max(AXE_SPEED, (p.spd || 0) * 1.6) : AXE_SPEED) * dt); /* coming back it always outruns you */
   f.x += dx / d * step; f.y += dy / d * step; f.z += dz / d * step; f.spin += dt * 22;
   if (Math.random() < dt * 40) burst(f.x, f.y, f.z, '#5dff6a', 2, 1.5, .05); /* a slime trail so you can follow it */
   if (d > (fo ? fo.r * .8 : .6)) return;

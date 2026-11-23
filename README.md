@@ -104,3 +104,4 @@ The shop's weapons are split into Melee and Ranged tabs. New melee weapons use t
 - Ricochet shield in the off hand: with the shield as your melee weapon and a gun in hand, hold V to block (or the Shield button on touch screens) and tap it to throw. In hand, the fire button still blocks and throws as before.
 - Shop: the mastery bar sits on its own line above the buttons. The skip lance only shows in the shop once the pogo lance is mastered; skip lances bought before it became an evolution were refunded (150 coins).
 - Splitter axe: the throw is now visible: a big glowing axe spins through the air with a slime trail, sticks in the robot (the one in your hand disappears meanwhile), and spins back to you if it misses.
+- The thrown axe always comes back: it turns around after 1.5 s in the air, outruns you on the way back, snaps to your hand after 4 s at most, and flies back if the robot it's stuck in dies.
