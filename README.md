@@ -67,3 +67,12 @@ Built with [three.js](https://threejs.org/) r128.
 - Robot health grows faster with each wave: x(1 + 0.2(w-1)) x 1.04^(w-1), about 2x at wave 5, 4x at wave 10, 10x at wave 20. The Duelist gets 60% more each time it returns. The wave banner shows the current multiplier.
 - The Duelist shoots about twice as often (every 2.4 s, 1.2 s lock-on). Above half health it launches into the sky and grapples straight onto you for a 30-damage dive (parry it to stagger it, or dash away). Below 45% health it swings from point to point in the sky around you, shooting every 1.3 s, then drops back down after a few swings.
 - Long sword speed bonus: starts at 2.5x and gains 1x for every 12 m/s over 6 m/s (half as fast as before), up to 7.5x.
+
+## The Duelist duel (v68)
+- Boss waves are a one-on-one duel: only the Duelist spawns, inside a pink ring of light (38 m). Step outside and its shots lock on twice as fast.
+- Phases: at 66% and 33% health it roars (can't be hurt for 1.3 s), then blasts you back with a shockwave (12 damage within 22 m). Phase 2: 25% faster, quicker cuts, more dives, a shot every 1.8 s. Phase 3: swings around the sky shooting every 1.3 s.
+- Clash: grapple into it while it's flying on its own grapple. Whoever is moving faster wins: if it's you, it's knocked out of the sky, stunned 2.2 s and loses 6% health; if it's faster, you're slammed down for 25 damage.
+- Finisher: below 12% health, parrying its next cut, dive or shot finishes it in slow motion.
+- It learns a move each time it returns: level 2 (wave 10) zig-zag triple dash, level 3 spinning slash (longer wind-up, 6.5 m reach), level 4 two one-hit decoy clones at each phase change, level 5 double shots.
+- Headshots: gun hits on the top part of a ground robot's hitbox do double damage, with a cyan HEAD damage number.
+- War hammer: base damage 2 (was 0.6). Swing bonus grows e^(0.09 per m/s over 6), up to 8x. Slam grows e^(0.12 per m fallen past 4 m), up to 200 (for example 14 from 20 m, 45 from 30 m, 150 from 40 m).
