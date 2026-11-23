@@ -368,7 +368,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 70 · revive button</p>
+        <p class="ver">Version 71 · hammer slam bounce</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -511,6 +511,7 @@ const MAX_RANGED = 1, MAX_MELEE = 1; // one gun and one melee weapon per run
 const FOCUS_TIME = 3, FOCUS_COOLDOWN = 4; // seconds of slow time, and how long until Focus can be used again
 const MAX_SWING_HITS = 3;
 const SPEAR_IFRAME = .8;      // seconds you cannot be hurt after a spear thrust (half that on an auto-hit)
+const SLAM_BOUNCE = 6.5, SLAM_BOUNCE_MAX = 18; // hammer slam: upward fling on impact, more from bigger drops
 const HEADSHOT = 2, HEAD_PART = .55; // gun hits on the top of a robot's hitbox do double damage (not on flying drones)
 const DUEL_MOVES = ['', 'triple dash', 'spinning slash', 'decoy clones', 'double shots']; // one new move each time it returns
 let slowT = 0; // slow motion for clashes and finishers
@@ -1181,7 +1182,7 @@ function update(dt) {
   if (p.vy < 0 && !p.hook) p.fallT = (p.fallT || 0) + dt; else p.fallT = 0;
   if (!p.hook) p.vy -= GRAV * (1 + Math.min(1.8, (p.fallT || 0) * 1.6)) * dt; p.vy = Math.max(p.vy, p.slamming ? -70 : -48); p.y += p.vy * dt;
   const floor = groundAt(p.x, p.z, p.r);
-  if (p.y <= floor && p.slamming) slamLand();
+  if (p.y <= floor && p.slamming) { p.y = floor; slamLand(); } // slamLand lifts you just off the floor and flings you up
   if (p.y <= floor) { p.airJumps = 0; p.scoped = false; if (p.vy < -7) { landDip = Math.min(.45, -p.vy * .03); shake = Math.max(shake, -p.vy * .006); beep(110, .12, 'sine', .05, -40); } p.y = floor; p.vy = 0; }
   p.dashMax ??= 2; p.dashCharges ??= p.dashMax; if (p.dashCharges < p.dashMax) { p.dashReady -= dt; if (p.dashReady <= 0) p.dashCharges = p.dashMax; }
   p.inv -= dt; p.cool -= dt; p.parryT -= dt; p.parryReady -= dt;
@@ -1390,6 +1391,7 @@ function slamLand() {
   const p = G.p, fall = slamFall(p.slamFrom - p.y, p.vy), R = Math.min(13, 3 + fall * .45); // height fallen, plus extra for hitting faster than a plain dive
   const D = hammerPower(fall) * p.dmg * (1 + .12 * (levels.hammer || 0)) * (p.meleeMul || 1); // low from a hop, huge from a long fast dive
   p.slamming = false; p.inv = .4;
+  p.vy = Math.min(SLAM_BOUNCE_MAX, SLAM_BOUNCE + fall * .25); p.fallT = 0; p.y += .05; p.slamFrom = p.y; // the impact flings you back up
   for (const fo of G.foes) {
     if (fo.hp <= 0) continue; const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.max(0, Math.hypot(dx, dz) - fo.r);
     if (d > R || Math.abs((fo.y ?? fo.r) - p.y) > fo.r + 3) continue;
