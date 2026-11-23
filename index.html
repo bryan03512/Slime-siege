@@ -376,7 +376,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 81 · mastery bar fix</p>
+        <p class="ver">Version 82 · see the thrown axe</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -506,7 +506,7 @@ const GUNS = {
   skip:   { name: 'Skip lance',    price: 0, evolvedFrom: 'pogo', mode: 'melee', rate: .45, mag: 0, reloadTime: 0, dmg: 3, reach: 4.5, swing: .3, guard: .4, pogo: true, skip: true, desc: 'Click to lunge where you aim (up, down or level, even from the ground). Touch a robot from any side, front, top or below, and you rebound off it like a ball off a wall, at the same speed each time. Every rebound before you land hits harder (+50% each).' },
   gloves: { name: 'Goo gloves',    price: 120, mode: 'melee', rate: .35, mag: 0, reloadTime: 0, dmg: 4, reach: 4, swing: .25, guard: .4, grab: true, desc: 'Click to grab the robot in front of you and hold it up. Click again to hurl it: it smashes into whatever it hits, hurting itself and everything in the splash. Too big to lift (tanks, the Duelist)? You punch it instead.' },
   drill:  { name: 'Drill blade',   price: 130, mode: 'melee', rate: .1, mag: 0, reloadTime: 0, dmg: .5, reach: 3.4, swing: .1, guard: 0, drill: true, desc: 'Hold to grind into robots in front of you. The damage climbs the longer you keep drilling (up to 6x), and you slowly push through them.' },
-  axe:    { name: 'Splitter axe',  price: 140, mode: 'melee', rate: .3, mag: 0, reloadTime: 0, dmg: 3, reach: 30, swing: .2, guard: .3, axe: true, desc: 'Click to throw the axe into a robot up to 30 m away; it sticks. Click again to yank yourself to it and finish with a heavy chop (5x) that splits everything nearby.' },
+  axe:    { name: 'Splitter axe',  price: 140, mode: 'melee', rate: .3, mag: 0, reloadTime: 0, dmg: 3, reach: 30, swing: .2, guard: .3, axe: true, desc: 'Click to throw the axe: it spins through the air into a robot up to 30 m away and sticks (miss, and it spins back to you). Click again to yank yourself to it and finish with a heavy chop (5x) that splits everything nearby.' },
   shield: { name: 'Ricochet shield', price: 130, mode: 'melee', rate: .2, mag: 0, reloadTime: 0, dmg: 3, reach: 18, swing: .2, guard: 0, shield: true, desc: 'Hold to block: you take 80% less damage, and raising it right before a hit is a perfect block (a parry), sending shots back. Tap to throw it: it bounces between up to 4 robots and comes back.' },
   mirror: { name: 'Mirror blade',  price: 150, mode: 'melee', rate: .55, mag: 0, reloadTime: 0, dmg: 4, reach: 5, swing: .4, guard: .5, mirror: true, desc: 'Every swing leaves a slime copy of you that repeats it 0.35 s later from where you were, so each attack hits twice. Hits harder the faster you move.' },
   gblade: { name: 'Grapple blade', price: 140, mode: 'melee', rate: .5, mag: 0, reloadTime: 0, dmg: 3, reach: 4.5, swing: .35, guard: .5, gblade: true, desc: 'A hooked blade. Grapple onto a robot and you finish the pull with an automatic heavy slash: the further you flew, the harder it hits.' },
@@ -555,6 +555,7 @@ const POGO_BOUNCE = 15, POGO_BONUS = .5;  // pogo lance: bounce speed, extra dam
 const SKIP_MIN = 16, SKIP_GAIN = 1, SKIP_MAX = 60, SKIP_BOUNCE = 11; // skip lance: least forward speed, speed-up per bounce, cap, upward bounce
 const THROW_SPEED = 34;                    // goo gloves: how fast a thrown robot flies
 const DRILL_RAMP = 1.2, DRILL_MAX = 6;     // drill blade: damage multiplier gained per second of drilling, cap
+const AXE_SPEED = 48; // how fast the thrown axe flies (m/s)
 const AXE_CHOP = 5, SHIELD_BLOCK = .2;     // axe finisher multiplier; shield: share of damage that still gets through
 const MIRROR_DELAY = .35;                  // mirror blade echo delay
 const PITCH_MAX = 1.565; // look almost exactly straight up or down (90 degrees is 1.571)
@@ -1605,7 +1606,7 @@ function frontFoe(range, cone = .5) { // nearest robot in front of you within ra
   for (const fo of G.foes) { if (fo.hp <= 0 || fo.thrown || fo.carried) continue; const dx = fo.x - p.x, dz = fo.z - p.z, d = Math.hypot(dx, dz) || 1; if (d > range + fo.r || (dx * ax + dz * az) / (d * al) < cone || Math.abs((fo.y ?? fo.r) - (p.y + 1)) > fo.r + 2.5) continue; if (!best || d < best[0]) best = [d, fo]; }
   return best?.[1];
 }
-function meleeTicks(dt) { pogoTick(dt); gloveTick(dt); drillTick(dt); shieldTick(dt); axeTick(); echoTick(dt); gbladeTick(); }
+function meleeTicks(dt) { axeFlyTick(dt); pogoTick(dt); gloveTick(dt); drillTick(dt); shieldTick(dt); axeTick(); echoTick(dt); gbladeTick(); }
 // 2. pogo lance: plunge down, bounce off heads
 function startPogo() {
   const p = G.p; p.pogo = true; sweep(.25, .25, 3000, 500, 2);
@@ -1687,10 +1688,47 @@ function axeClick() {
   if (stuck) { // yank yourself to it
     p.hook = { x: stuck.x, y: stuck.y ?? stuck.r, z: stuck.z, foe: stuck.id, fromY: p.y + 1.2, keep: true }; p.axePull = stuck.id; beep(700, .2, 'sawtooth', .04, 500); return;
   }
+  if (p.axeFly) return; // it's still in the air
   p.axeIn = null; const [ax, ay, az] = aimDir(), ox = p.x, oy = p.y + EYE, oz = p.z, wall = rayCity(ox, oy, oz, ax, ay, az, 30); let best = null;
   for (const fo of G.foes) { if (fo.hp <= 0) continue; const t = rayBot(fo, ox, oy, oz, ax, ay, az, wall, 1.2); if (t >= 0 && (!best || t < best[0])) best = [t, fo]; }
-  sweep(.2, .2, 2000, 600, 2);
-  if (!best) return; const fo = best[1]; p.axeIn = fo.id; meleeHit(fo, GUNS.axe, 'axe', 1, { color: '#ffb020' }); beep(300, .1, 'square', .04, -100);
+  sweep(.35, .22, 2000, 500, 2);
+  // the axe now really flies: it homes in on the robot you aimed at, or spins out to where you aimed and comes back
+  const end = best ? null : Math.min(wall, 30);
+  p.axeFly = { x: ox + ax * .8, y: oy - .3, z: oz + az * .8, foe: best ? best[1].id : null, tx: end != null ? ox + ax * end : 0, ty: end != null ? oy + ay * end : 0, tz: end != null ? oz + az * end : 0, back: false, spin: 0 };
+}
+// the thrown axe in flight
+function axeFlyTick(dt) {
+  const p = G.p, f = p.axeFly; if (!f) return;
+  if (p.gun !== 'axe') { p.axeFly = null; return; }
+  const fo = f.foe && G.foes.find(o => o.id === f.foe && o.hp > 0);
+  if (f.foe && !fo) { f.foe = null; f.back = true; } /* its target died on the way: come back */
+  const tx = f.back ? p.x : fo ? fo.x : f.tx, ty = f.back ? p.y + 1.3 : fo ? (fo.y ?? fo.r) : f.ty, tz = f.back ? p.z : fo ? fo.z : f.tz;
+  const dx = tx - f.x, dy = ty - f.y, dz = tz - f.z, d = Math.hypot(dx, dy, dz) || 1, step = Math.min(d, AXE_SPEED * dt);
+  f.x += dx / d * step; f.y += dy / d * step; f.z += dz / d * step; f.spin += dt * 22;
+  if (Math.random() < dt * 40) burst(f.x, f.y, f.z, '#5dff6a', 2, 1.5, .05); /* a slime trail so you can follow it */
+  if (d > (fo ? fo.r * .8 : .6)) return;
+  if (f.back) { p.axeFly = null; beep(500, .06, 'triangle', .03); return; } // caught it
+  if (fo) { p.axeFly = null; p.axeIn = fo.id; p.axeAt = { ox: f.x - fo.x, oy: f.y - (fo.y ?? fo.r), oz: f.z - fo.z }; meleeHit(fo, GUNS.axe, 'axe', 1, { color: '#ffb020' }); beep(300, .1, 'square', .04, -100); noise(.08, .2, 1500, 2); return; }
+  f.back = true; noise(.06, .12, 3000, 2); // hit the wall or ran out of range: spin back
+}
+// what you see: the axe flying, or stuck in a robot (the one in your hand hides meanwhile)
+let axeMesh = null;
+function axeVisTick() {
+  const p = G?.p, out = p && p.gun === 'axe' && (p.axeFly || p.axeIn);
+  if (gunModels.axe) gunModels.axe.visible = gunModel === gunModels.axe && !out;
+  if (!out) { if (axeMesh) axeMesh.visible = false; return; }
+  if (!axeMesh) {
+    axeMesh = new T.Group();
+    const handle = new T.Mesh(new T.BoxGeometry(.08, .08, 1.1), gunDark); handle.position.z = .2; axeMesh.add(handle);
+    const blade = new T.Mesh(blobGeo, new T.MeshBasicMaterial({ color: '#7dff5a' })); blade.scale.set(.06, .3, .34); blade.position.set(0, .18, -.32); axeMesh.add(blade); /* glows so you can spot it at range */
+    const edge = new T.Mesh(new T.BoxGeometry(.04, .42, .42), gunMetal); edge.position.set(0, .14, -.3); axeMesh.add(edge);
+    axeMesh.scale.setScalar(2.4); scene.add(axeMesh);
+  }
+  axeMesh.visible = true;
+  const f = p.axeFly, fo = !f && G.foes.find(o => o.id === p.axeIn && o.hp > 0);
+  if (f) { axeMesh.position.set(f.x, f.y, f.z); axeMesh.rotation.set(-f.spin, Math.atan2(p.x - f.x, p.z - f.z), 0); }
+  else if (fo) { const a = p.axeAt || { ox: 0, oy: 0, oz: 0 }; axeMesh.position.set(fo.x + a.ox, (fo.y ?? fo.r) + a.oy, fo.z + a.oz); axeMesh.rotation.set(.6, Math.atan2(p.x - fo.x, p.z - fo.z), 0); }
+  else axeMesh.visible = false;
 }
 function axeTick() {
   const p = G.p; if (!p.axePull) return; const fo = G.foes.find(f => f.id === p.axePull && f.hp > 0);
@@ -2243,6 +2281,7 @@ function laserTick() {
   else el.style.display = 'none';
 }
 function render(dt) {
+  axeVisTick();
   if (G) { laserTick(); arenaTick(); for (const fo of G.foes) noteDmg(fo); }
   dmgNumsTick(dt);
   const t = performance.now() / 1000;
