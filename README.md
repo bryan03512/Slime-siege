@@ -117,3 +117,4 @@ The shop's weapons are split into Melee and Ranged tabs. New melee weapons use t
 - Mortar (300): a glowing ring shows where it lands; the shell arrives 1.5 s later and blasts 6 m. Evolves into Twin mortar (2 shells).
 - Older guns evolve too: Hydra rifle (5-round bursts, +30%), Slime storm (+40%, +50% magazine), Goo lance sniper (+40%, double blast), Storm rail (40% faster charge, +40%), Geyser shotgun (12 pellets, stronger kick), Corroder (burn x2 for 5 s), Storm bow (40% faster draw, pins +50%).
 - Guns do their full listed damage again (the melee-first 60% cut is gone).
+- Bubble gun mastery: 1 XP for every shot that hits a robot (even one too big to trap); its kills give no XP.

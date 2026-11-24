@@ -376,7 +376,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 85 · guns at full damage</p>
+        <p class="ver">Version 86 · bubble gun XP per hit</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -686,13 +686,17 @@ function applyEvolutions() { // evolved weapons rewrite their own stats, so ever
 applyEvolutions();
 // a melee kill with a max-level, not-yet-evolved weapon fills its mastery bar
 function masteryKill(fo, melee) {
-  const p = G?.p, id = p?.gun, g = GUNS[id]; if (!g || (g.mode === 'melee') !== !!melee || (levels[id] || 0) < MAX_LEVEL || !EVOLVE[id] || evolved.includes(id) || fo.clone) return;
-  mastery[id] = Math.min(MASTERY_XP, (mastery[id] || 0) + (MASTERY_GAIN[fo.type] || 1)); store.set('ss-mastery', mastery);
+  const p = G?.p, id = p?.gun, g = GUNS[id]; if (!g || (g.mode === 'melee') !== !!melee || fo.clone || id === 'bubble') return; // the bubble gun earns XP per hit instead
+  addMastery(id, MASTERY_GAIN[fo.type] || 1);
+}
+function addMastery(id, xp) {
+  const p = G?.p, g = GUNS[id]; if (!g || (levels[id] || 0) < MAX_LEVEL || !EVOLVE[id] || evolved.includes(id)) return;
+  mastery[id] = Math.min(MASTERY_XP, (mastery[id] || 0) + xp); store.set('ss-mastery', mastery);
   if (mastery[id] < MASTERY_XP) return;
   evolved.push(id); store.set('ss-evolved', evolved);
   const ev = EVOLVE[id];
   if (ev.into) { if (!owned.includes(ev.into)) { owned.push(ev.into); store.set('ss-guns', owned); } banner('Mastered!', `${g.name} unlocked the ${GUNS[ev.into].name}. Equip it in the shop.`); }
-  else { const old = g.name; applyEvolutions(); applyGun(p, id); banner('Evolved!', `${old} became the ${g.name}`); }
+  else { const old = g.name; applyEvolutions(); if (p?.gun === id) applyGun(p, id); banner('Evolved!', `${old} became the ${g.name}`); }
   ring([660, 880, 1320], 1, .03); say('Your weapon evolved! So shiny!', 'cheer', true);
 }
 let cos = store.get('ss-cos', { owned: ['stock', 'cross'], color: 'stock', cross: 'cross' });
@@ -1527,7 +1531,7 @@ function fire(opt = {}) {
     if (head) { fo.hsT = G.t; beep(1900, .07, 'square', .03, 600); }
     fo.hp -= dmg * (head ? HEADSHOT : 1); fo.flash = .07;
     if (gd.acid) { fo.burnT = gd.burnT || ACID_BURN; fo.burnDps = ACID_DPS * (gd.burnMul || 1) * p.dmg * (p.dmgMul || 1) * (1 + .12 * (levels.acid || 0)) * GUN_DAMAGE; }
-    if (gd.bubble) trapBubble(fo); if (gd === GUNS.xbow) { fo.boltN = (fo.boltN || 0) + 1; if (!(fo.boltT > 0)) fo.boltT = 2; }
+    if (gd.bubble) { trapBubble(fo); if (i === 0) addMastery('bubble', 1); } /* bubble gun: 1 mastery XP per shot that hits a robot */ if (gd === GUNS.xbow) { fo.boltN = (fo.boltN || 0) + 1; if (!(fo.boltT > 0)) fo.boltT = 2; }
     if (opt.pin) { fo.pinT = ENEMIES[fo.type].boss ? opt.pin * .4 : opt.pin; fo.kx = fo.kz = 0; if (ENEMIES[fo.type].boss) { fo.hook = null; fo.windT = 0; } burst(fo.x, fo.y ?? fo.r, fo.z, '#3ef0ff', 12, 6, .06); } fo.kx += dx * (gd.scope ? 9 : 2.2); fo.kz += dz * (gd.scope ? 9 : 2.2);
     burst(ox + dx * t, oy + dy * t, oz + dz * t, ENEMIES[fo.type].glow, 5, 6, .06); marker();
     if (fo.hp <= 0) kill(fo); else if (!opt.quiet) sfx.hit();
