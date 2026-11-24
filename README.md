@@ -99,9 +99,20 @@ The shop's weapons are split into Melee and Ranged tabs. New melee weapons use t
 - Pogo and skip lance bounces no longer grow each time: same height and speed every bounce (the +50% damage per bounce in a row stays).
 
 ## Mastery and evolved weapons (v80)
-- Once a melee weapon is level 5, melee kills with it fill a mastery bar (100 XP: walker/drone 1, heavy 3, bulwark 6, titan 10, colossus 16, Duelist 40). The bar shows on its shop card and under your ammo while you hold it.
+- Once a melee weapon is level 5, melee kills with it fill a mastery bar (200 XP: walker/drone 1, heavy 3, bulwark 6, titan 10, colossus 16, Duelist 40). The bar shows on its shop card and under your ammo while you hold it.
 - A full bar evolves the weapon: Goo Excalibur (sword), Quake hammer, Rail spear, Titan gloves (can throw tanks), Mega drill, Twin splitter, Aegis ricochet (7 bounces), Hall of mirrors (two echoes), Hook reaper. The pogo lance instead unlocks the skip lance as a separate weapon; the skip lance is no longer sold.
 - Ricochet shield in the off hand: with the shield as your melee weapon and a gun in hand, hold V to block (or the Shield button on touch screens) and tap it to throw. In hand, the fire button still blocks and throws as before.
 - Shop: the mastery bar sits on its own line above the buttons. The skip lance only shows in the shop once the pogo lance is mastered; skip lances bought before it became an evolution were refunded (150 coins).
 - Splitter axe: the throw is now visible: a big glowing axe spins through the air with a slime trail, sticks in the robot (the one in your hand disappears meanwhile), and spins back to you if it misses.
 - The thrown axe always comes back: it turns around after 1.5 s in the air, outruns you on the way back, snaps to your hand after 4 s at most, and flies back if the robot it's stuck in dies.
+
+## New guns and gun mastery (v84)
+- Mastery now takes 200 XP, and guns have it too: at level 5, kills with the gun you're holding fill its bar.
+- Homing darts (180): 3 darts that home in on the robot nearest your crosshair. Evolves into Swarm darts (5 darts).
+- Slime crossbow (190): bolts stick and explode 2 s after the first; each extra bolt makes the blast bigger. Evolves into Repeater crossbow (3-bolt bursts).
+- Goo launcher (200): sticky bomb, 1 s fuse, slows robots 50% for 3 s. Evolves into Swamp launcher (bigger blast, 70% slow).
+- Echo pistol (210): every shot repeats 0.5 s later from where you stood at half damage, aimed at the robot you hit (or the same way if it died). Evolves into Echo chamber (two echoes).
+- Bubble gun (220): small hit that traps a robot for 5 s; it floats up helpless and takes 50% more damage. Tanks and the Duelist are too big. Evolves into Titan bubbler (traps them too).
+- Gravity grenade (240): 3 per magazine; pulls robots within 10 m together for 2 s, then blasts. Tanks and the Duelist aren't pulled. Evolves into Singularity (pulls them too).
+- Mortar (300): a glowing ring shows where it lands; the shell arrives 1.5 s later and blasts 6 m. Evolves into Twin mortar (2 shells).
+- Older guns evolve too: Hydra rifle (5-round bursts, +30%), Slime storm (+40%, +50% magazine), Goo lance sniper (+40%, double blast), Storm rail (40% faster charge, +40%), Geyser shotgun (12 pellets, stronger kick), Corroder (burn x2 for 5 s), Storm bow (40% faster draw, pins +50%).
