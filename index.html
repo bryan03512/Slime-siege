@@ -376,7 +376,7 @@ canvas{display:block;width:100%;height:100%}
         <p class="best menu-best" id="loadout"></p>
         <p class="sndtest"><button class="btn alt" id="sndBtn">Test sound</button> <span id="sndState"></span></p>
         <p class="best menu-best" id="bestTitle"></p>
-        <p class="ver">Version 84 · seven new guns, gun mastery</p>
+        <p class="ver">Version 85 · guns at full damage</p>
       </div>
     </section>
     <section class="overlay" id="ovControls" hidden>
@@ -591,7 +591,7 @@ let slowT = 0; // slow motion for clashes and finishers
 const DRONE_AIM = 1.8;        // seconds a drone holds its red laser on you before it fires
 const PARRY_BUFFER = .5;      // you can still parry a drone shot this long after it hits you
 // Melee first: guns are a backup with limited spare ammo, refilled by melee kills
-const GUN_DAMAGE = .6;          // guns do 60% of their listed damage
+const GUN_DAMAGE = 1;           // guns do their full listed damage (was 60% after the melee-first change)
 const SPARE_MAGS = 2;           // spare ammo you start a run with, in magazines
 const MELEE_AMMO = .5;          // a melee kill adds half a magazine of spare ammo
 const MELEE_HEAL = 4;           // health back per melee kill

@@ -116,3 +116,4 @@ The shop's weapons are split into Melee and Ranged tabs. New melee weapons use t
 - Gravity grenade (240): 3 per magazine; pulls robots within 10 m together for 2 s, then blasts. Tanks and the Duelist aren't pulled. Evolves into Singularity (pulls them too).
 - Mortar (300): a glowing ring shows where it lands; the shell arrives 1.5 s later and blasts 6 m. Evolves into Twin mortar (2 shells).
 - Older guns evolve too: Hydra rifle (5-round bursts, +30%), Slime storm (+40%, +50% magazine), Goo lance sniper (+40%, double blast), Storm rail (40% faster charge, +40%), Geyser shotgun (12 pellets, stronger kick), Corroder (burn x2 for 5 s), Storm bow (40% faster draw, pins +50%).
+- Guns do their full listed damage again (the melee-first 60% cut is gone).
